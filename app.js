@@ -103,6 +103,12 @@ const lessons = {
         {cons:'P', cells:['Pa','Pe','Pi','Po','Pu','Paw','Pah','Peh','Pih','Poh','Puh','Pawh']},
         {cons:'S', cells:['Sa','Se','Si','So','Su','Saw','Sah','Seh','Sih','Soh','Suh','Sawh']},
         {cons:'T', cells:['Ta','Te','Ti','To','Tu','Taw','Tah','Teh','Tih','Toh','Tuh','Tawh']},
+        {cons:'V', cells:['Va','Ve','Vi','Vo','Vu','Vaw','Vah','Veh','Vih','Voh','Vuh','Vawh']},
+        {cons:'Z', cells:['Za','Ze','Zi','Zo','Zu','Zaw','Zah','Zeh','Zih','Zoh','Zuh','Zawh']},
+        {cons:'Ng', cells:['Nga','Nge','Ngi','Ngo','Ngu','Ngaw','Ngah','Ngeh','Ngih','Ngoh','Nguh','Ngawh']},
+        {cons:'Kh', cells:['Kha','Khe','Khi','Kho','Khu','Khaw','Khah','Kheh','Khih','Khoh','Khuh','Khawh']},
+        {cons:'Ph', cells:['Pha','Phe','Phi','Pho','Phu','Phaw','Phah','Pheh','Phih','Phoh','Phuh','Phawh']},
+        {cons:'Th', cells:['Tha','The','Thi','Tho','Thu','Thaw','Thah','Theh','Thih','Thoh','Thuh','Thawh']},
       ],
       vowelHeaders: ['a','e','i','o','u','aw','ah','eh','ih','oh','uh','awh'],
       sentences: [
