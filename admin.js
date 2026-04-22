@@ -897,12 +897,20 @@ function setPending() { pendingChanges = true; }
 
 // ── EXPORT / IMPORT ──
 function exportData() {
-  const blob = new Blob([JSON.stringify(adminData, null, 2)], { type: 'application/json' });
+  const payload = {
+    _version: 1,
+    _exported: new Date().toISOString(),
+    content:   adminData,
+    structure: customStructure,
+    features:  getFlags(),
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'zolai-admin-data.json';
+  a.download = `zolai-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
-  showToast('Data exported');
+  showToast('Backup exported');
 }
 
 function importData(input) {
@@ -910,11 +918,23 @@ function importData(input) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      adminData = JSON.parse(e.target.result);
-      saveData();
-      showToast('Data imported successfully');
+      const raw = JSON.parse(e.target.result);
+      // Support both new format {_version,content,structure,features} and legacy bare adminData
+      if (raw._version) {
+        if (raw.content)   { adminData = raw.content;   saveData(); }
+        if (raw.structure) { customStructure = raw.structure; saveCustomStructure(); }
+        if (raw.features)  { saveFlags(raw.features); }
+      } else {
+        adminData = raw;
+        saveData();
+      }
+      buildRuntimeStructure();
+      buildSidebar();
+      showToast('Backup imported successfully');
       if (currentLevel && currentLesson !== null) renderEditor();
-    } catch { alert('Invalid JSON file.'); }
+      else document.getElementById('adminContent').innerHTML =
+        '<div style="padding:40px;text-align:center;color:var(--text-dim)">Import complete — select a lesson to continue editing.</div>';
+    } catch { alert('Invalid backup file.'); }
   };
   reader.readAsText(file);
   input.value = '';
