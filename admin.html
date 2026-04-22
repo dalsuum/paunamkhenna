@@ -448,19 +448,22 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
 /* ── ITEM AUDIO GRID ── */
 .item-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 8px;
 }
 .item-cell {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 6px;
+  gap: 4px;
+  padding: 14px 6px 10px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  transition: border-color 0.15s;
+  transition: border-color 0.2s;
+  cursor: pointer;
+  user-select: none;
 }
 .item-cell.has-audio { border-color: var(--gold-dim); }
 .item-cell-label {
@@ -468,8 +471,30 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
   font-size: 17px;
   font-weight: 600;
   color: var(--gold-light);
+  pointer-events: none;
 }
-.item-cell-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.item-cell-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+  pointer-events: none;
+}
+.item-cell.has-audio .item-cell-dot { background: var(--gold); }
+.item-cell-actions {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: rgba(10,10,14,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.item-cell:hover .item-cell-actions { opacity: 1; }
+.item-cell input[type="file"] { display: none; }
 
 /* ── ANALYTICS ── */
 .analytics-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -1030,12 +1055,13 @@ function getItemSection(td) {
     const safeKey = key.replace(/[^a-zA-Z0-9]/g, '_');
     return `<div class="item-cell${hasAudio ? ' has-audio' : ''}" id="icell-${safeKey}">
       <div class="item-cell-label">${key}</div>
+      <div class="item-cell-dot"></div>
+      ${hasAudio ? `<audio id="ia-${safeKey}" src="${savedItems[key].audio}" style="display:none"></audio>` : ''}
       <div class="item-cell-actions">
         ${hasAudio
-          ? `<button class="icon-btn" onclick="playItemKeyAudio('${safeKey}')" title="Play">&#9654;</button>
-             <audio id="ia-${safeKey}" src="${savedItems[key].audio}" style="display:none"></audio>`
+          ? `<button class="icon-btn" onclick="playItemKeyAudio('${safeKey}')" title="Play">&#9654;</button>`
           : ''}
-        <label class="icon-btn" title="Upload audio" style="cursor:pointer">
+        <label class="icon-btn" title="${hasAudio ? 'Replace' : 'Upload'}" style="cursor:pointer">
           🎵<input type="file" accept="audio/*" onchange="handleItemKeyAudio(this,'${key}','${safeKey}')">
         </label>
         ${hasAudio
