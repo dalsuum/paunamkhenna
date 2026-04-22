@@ -1159,35 +1159,6 @@ function renderEditor() {
       ${td.audio ? `<button class="clear-btn" onclick="clearMedia('audio')">✕ Remove audio</button>` : ''}
     </div>`;
 
-  const emptyRow = `<tr><td colspan="4" style="padding:14px 10px;color:var(--text-dim);font-size:12px;text-align:center">
-    No items yet — click + Add Item below
-  </td></tr>`;
-
-  const vocabRows = (td.vocab && td.vocab.length > 0)
-    ? td.vocab.map((v, i) => buildVocabRow(i, v.z, v.e, v.audio)).join('')
-    : emptyRow;
-
-  const vocabSection = `
-    <div class="section-card">
-      <div class="section-title">≋ Vocabulary Items
-        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— shown below tab content in app</span>
-      </div>
-      <table class="vocab-table">
-        <thead>
-          <tr>
-            <th style="width:34%">Zolai</th>
-            <th style="width:40%">English</th>
-            <th style="width:15%">Audio</th>
-            <th style="width:11%"></th>
-          </tr>
-        </thead>
-        <tbody id="vocabBody">${vocabRows}</tbody>
-      </table>
-      <button class="btn btn-outline" onclick="addVocabRow()" style="margin-top:12px;font-size:12px;padding:7px 16px">
-        + Add Item
-      </button>
-    </div>`;
-
   const contentSection = getContentSection();
 
   document.getElementById('adminContent').innerHTML = `
@@ -1195,7 +1166,6 @@ function renderEditor() {
     ${contentSection}
     ${imgSection}
     ${audioSection}
-    ${vocabSection}
   `;
   document.getElementById('saveBar').style.display = 'flex';
 }
