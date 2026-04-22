@@ -528,6 +528,13 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
 }
 .content-input-z { font-family: 'DM Mono', monospace; color: var(--gold-light); }
 .content-input-z:focus, .content-input-e:focus { border-color: var(--gold-dim); }
+.content-row input[type="file"] { display: none; }
+.content-row-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0;
+  transition: background 0.2s;
+}
+.content-row-dot.has-audio { background: var(--gold); }
 
 /* ── ANALYTICS ── */
 .analytics-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -924,6 +931,7 @@ let currentLesson = null;
 let currentTab = 0;
 let pendingChanges = false;
 let currentContentRows = [];
+let currentTabItems = {};
 
 const DATA_KEY    = 'zolai_admin_data';
 const PW_KEY      = 'zolai_admin_pw';
@@ -1180,7 +1188,6 @@ function renderEditor() {
       </button>
     </div>`;
 
-  const itemSection = getItemSection(td);
   const contentSection = getContentSection();
 
   document.getElementById('adminContent').innerHTML = `
@@ -1188,7 +1195,6 @@ function renderEditor() {
     ${contentSection}
     ${imgSection}
     ${audioSection}
-    ${itemSection}
     ${vocabSection}
   `;
   document.getElementById('saveBar').style.display = 'flex';
@@ -1238,6 +1244,7 @@ function initContentRows(td) {
     const manifest = CONTENT_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
     currentContentRows = manifest ? manifest.items.map(item => ({ z: item.z || '', e: item.e || '' })) : [];
   }
+  currentTabItems = td.items || {};
 }
 
 function renderContentRows() {
@@ -1249,16 +1256,58 @@ function renderContentRows() {
 
 function buildContentRow(idx) {
   const r = currentContentRows[idx];
+  const key = r.z;
+  const hasAudio = !!(key && currentTabItems[key]?.audio);
   return `<div class="content-row" data-idx="${idx}">
+    ${hasAudio ? `<audio id="cra-${idx}" src="${currentTabItems[key].audio}" style="display:none"></audio>` : ''}
     <div class="content-row-body">
       <span class="content-row-z">${esc(r.z)}</span>
       ${r.e ? `<span class="content-row-e">${esc(r.e)}</span>` : ''}
     </div>
+    <div class="content-row-dot${hasAudio ? ' has-audio' : ''}"></div>
     <div class="content-row-actions">
-      <button class="icon-btn" onclick="editContentRow(${idx})" title="Edit">&#9998;</button>
-      <button class="icon-btn del" onclick="deleteContentRow(${idx})" title="Delete">&#10005;</button>
+      <button class="icon-btn" onclick="editContentRow(${idx})" title="Edit text">&#9998;</button>
+      <label class="icon-btn" title="${hasAudio ? 'Replace audio' : 'Upload audio'}" style="cursor:pointer">
+        &#127925;<input type="file" accept="audio/*" onchange="handleContentRowAudio(this,${idx})">
+      </label>
+      ${hasAudio
+        ? `<button class="icon-btn" onclick="playContentRowAudio(${idx})" title="Play">&#9654;</button>
+           <button class="icon-btn del" onclick="clearContentRowAudio(${idx})" title="Remove audio">&#8960;</button>`
+        : ''}
+      <button class="icon-btn del" onclick="deleteContentRow(${idx})" title="Delete row">&#128465;</button>
     </div>
   </div>`;
+}
+
+function handleContentRowAudio(input, idx) {
+  const file = input.files[0]; if (!file) return;
+  const key = currentContentRows[idx]?.z;
+  if (!key?.trim()) return;
+  readFile(file, 2, data => {
+    const td = collectEdits();
+    if (!td.items) td.items = {};
+    if (!td.items[key]) td.items[key] = {};
+    td.items[key].audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData();
+    currentTabItems = td.items;
+    renderContentRows();
+    showToast(`Audio added for "${key}"`);
+  });
+}
+
+function playContentRowAudio(idx) { document.getElementById(`cra-${idx}`)?.play(); }
+
+function clearContentRowAudio(idx) {
+  const key = currentContentRows[idx]?.z;
+  if (!key) return;
+  const td = collectEdits();
+  if (td.items?.[key]) delete td.items[key];
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData();
+  currentTabItems = td.items || {};
+  renderContentRows();
+  showToast(`Audio removed from "${key}"`);
 }
 
 function editContentRow(idx) {
@@ -1315,7 +1364,7 @@ function getContentSection() {
     <div class="section-card">
       <div class="section-title">&#9998; Tab Content
         <span style="font-size:11px;font-weight:400;color:var(--text-dim)">
-          — ${esc(label)}${isOverridden ? ' &middot; <span style="color:var(--gold)">custom override active</span>' : ' &middot; showing defaults (edit to override)'}
+          — ${esc(label)}${isOverridden ? ' &middot; <span style="color:var(--gold)">custom override active</span>' : ' &middot; showing defaults'} &middot; hover row to edit or add audio
         </span>
       </div>
       <div class="content-rows-list" id="contentRowsList">
