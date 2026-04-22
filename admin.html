@@ -566,6 +566,89 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
   .admin-content { padding: 16px; }
   .media-grid { grid-template-columns: 1fr; }
 }
+
+/* ── STRUCTURE EDITOR ── */
+.str-level-block {
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 10px; overflow: hidden;
+}
+.str-level-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: var(--surface2);
+}
+.str-level-icon { font-size: 18px; flex-shrink: 0; }
+.str-level-name { font-size: 14px; font-weight: 600; flex: 1; }
+.str-level-actions { display: flex; gap: 6px; margin-left: auto; }
+
+.str-level-body { padding: 10px 14px 12px; }
+
+.str-lesson-row {
+  padding: 8px 10px; border-radius: 6px;
+  background: var(--surface3); margin-bottom: 5px;
+}
+.str-lesson-header { display: flex; align-items: center; gap: 8px; }
+.str-lesson-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--border); color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.str-lesson-title { flex: 1; font-size: 13px; color: var(--text); }
+.str-lesson-actions { display: flex; gap: 4px; }
+
+.str-tabs-row {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding-top: 6px; padding-left: 28px;
+}
+.str-tab-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 11px; color: var(--text-muted);
+}
+.str-tab-del {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-dim); font-size: 13px; line-height: 1;
+  padding: 0 1px; display: flex; align-items: center;
+}
+.str-tab-del:hover { color: var(--red); }
+.str-tab-add {
+  font-size: 11px; color: var(--gold-dim);
+  background: none; border: 1px dashed var(--border);
+  border-radius: 4px; padding: 2px 8px; cursor: pointer;
+}
+.str-tab-add:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+.str-btn {
+  font-size: 11px; padding: 4px 10px; border-radius: 5px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer; white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+}
+.str-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+.str-btn.add { border-color: rgba(201,168,76,0.3); color: var(--gold-dim); }
+.str-btn.add:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.06); }
+.str-btn.danger { color: var(--red); border-color: rgba(201,74,74,0.3); }
+.str-btn.danger:hover { background: rgba(201,74,74,0.1); }
+
+.str-input {
+  padding: 6px 10px; border-radius: 5px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 12px; outline: none;
+  font-family: 'DM Sans', sans-serif; transition: border-color 0.15s;
+}
+.str-input:focus { border-color: var(--gold-dim); }
+
+.str-form-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+.str-nav-btn {
+  width: 100%; padding: 9px 20px;
+  background: none; border: none; text-align: left;
+  color: var(--text-muted); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; transition: color 0.15s;
+}
+.str-nav-btn:hover { color: var(--text); }
+.str-nav-btn.active { color: var(--gold); }
 </style>
 </head>
 <body>
@@ -626,6 +709,9 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
       <div id="levelNav"></div>
 
       <div style="border-top:1px solid var(--border);margin-top:auto">
+        <button class="str-nav-btn" id="structureNavBtn" onclick="showStructureEditor()">
+          <span>🗂</span><span>Manage Structure</span>
+        </button>
         <button class="controls-nav-btn" id="controlsNavBtn" onclick="showFeatureControls()">
           <span>⚙</span><span>Feature Controls</span>
         </button>
@@ -932,9 +1018,12 @@ let currentTab = 0;
 let pendingChanges = false;
 let currentContentRows = [];
 let currentTabItems = {};
+let customStructure = {}; // overrides stored in localStorage
+let runtimeStructure = {}; // merged: hardcoded structure + custom
 
-const DATA_KEY    = 'zolai_admin_data';
-const PW_KEY      = 'zolai_admin_pw';
+const DATA_KEY      = 'zolai_admin_data';
+const STRUCTURE_KEY = 'zolai_structure';
+const PW_KEY        = 'zolai_admin_pw';
 const LOCKOUT_KEY = 'zolai_admin_lockout';
 const MAX_ATTEMPTS   = 5;
 const LOCKOUT_MS     = 10 * 60 * 1000; // 10 minutes
@@ -1064,9 +1153,49 @@ window.addEventListener('load', () => {
 function loadData() {
   try { adminData = JSON.parse(localStorage.getItem(DATA_KEY) || '{}'); }
   catch { adminData = {}; }
+  loadCustomStructure();
 }
 
 function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(adminData)); }
+
+// ── STRUCTURE (runtime merge of hardcoded defaults + custom overrides) ──
+function loadCustomStructure() {
+  try { customStructure = JSON.parse(localStorage.getItem(STRUCTURE_KEY) || '{}'); }
+  catch { customStructure = {}; }
+  buildRuntimeStructure();
+}
+
+function saveCustomStructure() {
+  localStorage.setItem(STRUCTURE_KEY, JSON.stringify(customStructure));
+  buildRuntimeStructure();
+}
+
+function buildRuntimeStructure() {
+  runtimeStructure = JSON.parse(JSON.stringify(structure)); // deep clone defaults
+  const deleted = customStructure._deletedLevels || [];
+  for (const lid of deleted) delete runtimeStructure[lid];
+  for (const [lid, lvl] of Object.entries(customStructure)) {
+    if (lid === '_deletedLevels') continue;
+    if (!runtimeStructure[lid]) {
+      runtimeStructure[lid] = { name: lvl.name || lid, icon: lvl.icon || '📚',
+        color: lvl.color || '#7a8aa0', zolai: lvl.zolai || '', _custom: true, lessons: {} };
+    } else {
+      if (lvl.name)  runtimeStructure[lid].name  = lvl.name;
+      if (lvl.icon)  runtimeStructure[lid].icon  = lvl.icon;
+      if (lvl.color) runtimeStructure[lid].color = lvl.color;
+      if (lvl.zolai !== undefined) runtimeStructure[lid].zolai = lvl.zolai;
+    }
+    for (const [num, ls] of Object.entries(lvl.lessons || {})) {
+      if (!runtimeStructure[lid].lessons[num]) {
+        runtimeStructure[lid].lessons[num] = { title: ls.title || `Lesson ${num}`, tabs: ls.tabs || ['Content','Flashcards'] };
+      } else {
+        if (ls.title) runtimeStructure[lid].lessons[num].title = ls.title;
+        if (ls.tabs)  runtimeStructure[lid].lessons[num].tabs  = ls.tabs;
+      }
+    }
+    for (const num of (lvl._deletedLessons || [])) delete runtimeStructure[lid].lessons[num];
+  }
+}
 
 function getTabData(lvl, lsn, tab) {
   return adminData?.[lvl]?.[lsn]?.[tab] || { image: null, audio: null, vocab: [], items: {} };
@@ -1081,12 +1210,14 @@ function setTabData(lvl, lsn, tab, data) {
 // ── SIDEBAR ──
 function buildSidebar() {
   let html = '';
-  for (const [lid, lvl] of Object.entries(structure)) {
+  for (const [lid, lvl] of Object.entries(runtimeStructure)) {
+    const lessonNums = Object.keys(lvl.lessons).sort((a,b) => a-b);
     html += `<button class="level-btn" id="lvl-${lid}" onclick="toggleLevel('${lid}')">
       <span>${lvl.icon}</span><span>${lvl.name}</span>
     </button>
     <div class="lesson-nav" id="lessons-${lid}" style="display:none">`;
-    for (const [num, ls] of Object.entries(lvl.lessons)) {
+    for (const num of lessonNums) {
+      const ls = lvl.lessons[num];
       html += `<button class="lesson-btn" id="lsn-${lid}-${num}"
         onclick="selectLesson('${lid}',${num})">${num}. ${ls.title}</button>`;
     }
@@ -1116,16 +1247,16 @@ function selectLesson(lid, num) {
   document.querySelectorAll('.lesson-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`lsn-${lid}-${num}`).classList.add('active');
 
-  const ls = structure[lid].lessons[num];
+  const ls = runtimeStructure[lid].lessons[num];
   document.getElementById('topCrumb').textContent =
-    `${structure[lid].name} › Lesson ${num} · ${ls.title}`;
+    `${runtimeStructure[lid].name} › Lesson ${num} · ${ls.title}`;
 
   renderEditor();
 }
 
 // ── EDITOR ──
 function renderEditor() {
-  const ls = structure[currentLevel].lessons[currentLesson];
+  const ls = runtimeStructure[currentLevel].lessons[currentLesson];
   const td = getTabData(currentLevel, currentLesson, currentTab);
   initContentRows(td);
 
@@ -1542,6 +1673,258 @@ function importData(input) {
   input.value = '';
 }
 
+// ── STRUCTURE EDITOR ──
+function showStructureEditor() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = null; currentLesson = null;
+  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.controls-nav-btn,.analytics-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('structureNavBtn').classList.add('active');
+  document.getElementById('saveBar').style.display = 'none';
+  document.getElementById('topCrumb').textContent = 'Structure Editor';
+  renderStructureEditor();
+}
+
+function renderStructureEditor() {
+  let html = '';
+  for (const [lid, lvl] of Object.entries(runtimeStructure)) html += buildStrLevelBlock(lid, lvl);
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title" style="justify-content:space-between">
+        <span>🗂 Level &amp; Lesson Structure</span>
+        <button class="btn btn-gold" onclick="addLevelForm()" style="font-size:12px;padding:6px 14px">+ New Level</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">
+        Add or edit levels, lessons, and tabs. Changes save immediately and appear in the app.
+      </div>
+      <div id="strLevelList">${html}</div>
+    </div>`;
+}
+
+function buildStrLevelBlock(lid, lvl) {
+  const isCustom = !structure[lid];
+  const lessonNums = Object.keys(lvl.lessons).sort((a,b) => a-b);
+  const lessonsHtml = lessonNums.length ? lessonNums.map(num => {
+    const ls = lvl.lessons[num];
+    const tabChips = (ls.tabs||[]).map((t,ti) =>
+      `<span class="str-tab-chip">${esc(t)}<button class="str-tab-del" onclick="deleteTab('${lid}',${num},${ti})" title="Remove tab">×</button></span>`
+    ).join('');
+    return `<div class="str-lesson-row" id="str-ls-${lid}-${num}">
+      <div class="str-lesson-header">
+        <span class="str-lesson-num">${num}</span>
+        <span class="str-lesson-title">${esc(ls.title)}</span>
+        <div class="str-lesson-actions">
+          <button class="str-btn" onclick="editLessonForm('${lid}',${num})">✏ Edit</button>
+          <button class="str-btn danger" onclick="deleteLesson('${lid}',${num})">✕</button>
+        </div>
+      </div>
+      <div class="str-tabs-row" id="str-tabs-${lid}-${num}">
+        ${tabChips}
+        <button class="str-tab-add" onclick="addTabForm('${lid}',${num})">+ tab</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:var(--text-dim);font-size:12px;padding:6px 0">No lessons yet — add one below.</div>';
+  return `<div class="str-level-block" id="str-lvl-${lid}">
+    <div class="str-level-header" id="str-lhdr-${lid}">
+      <span class="str-level-icon">${esc(lvl.icon)}</span>
+      <span class="str-level-name">${esc(lvl.name)}</span>
+      <div class="str-level-actions">
+        <button class="str-btn" onclick="editLevelForm('${lid}')">✏ Edit</button>
+        ${isCustom ? `<button class="str-btn danger" onclick="deleteLevel('${lid}')">✕ Delete</button>` : ''}
+      </div>
+    </div>
+    <div class="str-level-body">
+      ${lessonsHtml}
+      <div id="str-add-ls-${lid}" style="margin-top:8px">
+        <button class="str-btn add" onclick="showAddLessonForm('${lid}')">+ Add Lesson</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Level edit ──
+function editLevelForm(lid) {
+  const lvl = runtimeStructure[lid];
+  document.getElementById(`str-lhdr-${lid}`).innerHTML = `
+    <input class="str-input" id="el-icon-${lid}" value="${esc(lvl.icon)}" placeholder="Icon" style="width:54px;text-align:center">
+    <input class="str-input" id="el-name-${lid}" value="${esc(lvl.name)}" placeholder="Level name" style="flex:1">
+    <input class="str-input" id="el-zolai-${lid}" value="${esc(lvl.zolai||'')}" placeholder="Subtitle (optional)" style="flex:1">
+    <button class="str-btn add" onclick="saveLevelEdit('${lid}')">Save</button>
+    <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>`;
+  document.getElementById(`el-name-${lid}`)?.focus();
+}
+
+function saveLevelEdit(lid) {
+  const icon  = document.getElementById(`el-icon-${lid}`)?.value.trim()  || runtimeStructure[lid].icon;
+  const name  = document.getElementById(`el-name-${lid}`)?.value.trim();
+  const zolai = document.getElementById(`el-zolai-${lid}`)?.value.trim() || '';
+  if (!name) { showToast('Enter a level name'); return; }
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  customStructure[lid].name  = name;
+  customStructure[lid].icon  = icon;
+  customStructure[lid].zolai = zolai;
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Level updated');
+}
+
+// ── New level ──
+function addLevelForm() {
+  const list = document.getElementById('strLevelList');
+  const div = document.createElement('div');
+  div.className = 'str-level-block';
+  div.id = 'str-new-lvl-form';
+  div.innerHTML = `
+    <div class="str-level-header" style="background:var(--surface3)">
+      <span style="font-size:13px;font-weight:600;color:var(--gold-light)">New Level</span>
+    </div>
+    <div class="str-level-body">
+      <div class="str-form-row">
+        <input class="str-input" id="nlvl-id"    placeholder="Level ID — letters/numbers only (e.g. advanced2)" style="flex:1.5;min-width:140px">
+        <input class="str-input" id="nlvl-icon"  placeholder="Icon" value="📚" style="width:60px;text-align:center">
+        <input class="str-input" id="nlvl-name"  placeholder="Display name" style="flex:1;min-width:100px">
+        <input class="str-input" id="nlvl-zolai" placeholder="Subtitle (optional)" style="flex:1;min-width:100px">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="str-btn add" onclick="saveNewLevel()">Create Level</button>
+        <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>
+      </div>
+    </div>`;
+  list.prepend(div);
+  document.getElementById('nlvl-id')?.focus();
+}
+
+function saveNewLevel() {
+  const raw   = document.getElementById('nlvl-id')?.value.trim() || '';
+  const id    = raw.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  const icon  = document.getElementById('nlvl-icon')?.value.trim()  || '📚';
+  const name  = document.getElementById('nlvl-name')?.value.trim();
+  const zolai = document.getElementById('nlvl-zolai')?.value.trim() || '';
+  if (!id)   { showToast('Enter a level ID'); return; }
+  if (!name) { showToast('Enter a level name'); return; }
+  if (runtimeStructure[id]) { showToast('Level ID already exists'); return; }
+  customStructure[id] = { _custom: true, name, icon, zolai, color: '#7a8aa0', lessons: {} };
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast(`Level "${name}" created`);
+}
+
+function deleteLevel(lid) {
+  if (!confirm(`Delete level "${runtimeStructure[lid]?.name}"? All its lessons will be removed.`)) return;
+  if (!customStructure._deletedLevels) customStructure._deletedLevels = [];
+  customStructure._deletedLevels.push(lid);
+  delete customStructure[lid];
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Level deleted');
+}
+
+// ── Lesson edit ──
+function showAddLessonForm(lid) {
+  document.getElementById(`str-add-ls-${lid}`).innerHTML = `
+    <div class="str-form-row" style="margin-top:4px">
+      <input class="str-input" id="nls-title-${lid}" placeholder="Lesson title" style="flex:2;min-width:120px">
+      <input class="str-input" id="nls-tabs-${lid}"  placeholder="Tabs (comma-separated, e.g. Vocab, Practice, Flashcards)" style="flex:3;min-width:160px">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="str-btn add" onclick="saveNewLesson('${lid}')">Add Lesson</button>
+      <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>
+    </div>`;
+  document.getElementById(`nls-title-${lid}`)?.focus();
+}
+
+function saveNewLesson(lid) {
+  const title   = document.getElementById(`nls-title-${lid}`)?.value.trim();
+  const tabsRaw = document.getElementById(`nls-tabs-${lid}`)?.value.trim();
+  if (!title) { showToast('Enter a lesson title'); return; }
+  const tabs = tabsRaw ? tabsRaw.split(',').map(t => t.trim()).filter(Boolean) : ['Content','Flashcards'];
+  const existingNums = Object.keys(runtimeStructure[lid].lessons).map(Number);
+  const nextNum = existingNums.length ? Math.max(...existingNums) + 1 : 1;
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  customStructure[lid].lessons[nextNum] = { title, tabs };
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast(`Lesson ${nextNum} added`);
+}
+
+function editLessonForm(lid, num) {
+  const ls = runtimeStructure[lid].lessons[num];
+  const el = document.getElementById(`str-ls-${lid}-${num}`);
+  if (!el) return;
+  el.innerHTML = `
+    <div class="str-form-row">
+      <input class="str-input" id="els-title-${lid}-${num}" value="${esc(ls.title)}" placeholder="Lesson title" style="flex:2;min-width:120px">
+      <input class="str-input" id="els-tabs-${lid}-${num}"  value="${esc((ls.tabs||[]).join(', '))}" placeholder="Tabs (comma-separated)" style="flex:3;min-width:160px">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="str-btn add" onclick="saveLessonEdit('${lid}',${num})">Save</button>
+      <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>
+    </div>`;
+  document.getElementById(`els-title-${lid}-${num}`)?.focus();
+}
+
+function saveLessonEdit(lid, num) {
+  const title   = document.getElementById(`els-title-${lid}-${num}`)?.value.trim();
+  const tabsRaw = document.getElementById(`els-tabs-${lid}-${num}`)?.value.trim();
+  if (!title) { showToast('Enter a title'); return; }
+  const tabs = tabsRaw ? tabsRaw.split(',').map(t => t.trim()).filter(Boolean) : ['Content'];
+  if (!tabs.length) { showToast('Add at least one tab'); return; }
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  customStructure[lid].lessons[num] = { ...customStructure[lid].lessons[num], title, tabs };
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Lesson updated');
+}
+
+function deleteLesson(lid, num) {
+  if (!confirm(`Delete Lesson ${num}: "${runtimeStructure[lid].lessons[num]?.title}"?`)) return;
+  if (!customStructure[lid]) customStructure[lid] = {};
+  if (!customStructure[lid]._deletedLessons) customStructure[lid]._deletedLessons = [];
+  if (!customStructure[lid]._deletedLessons.includes(+num)) customStructure[lid]._deletedLessons.push(+num);
+  if (customStructure[lid].lessons?.[num]) delete customStructure[lid].lessons[num];
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Lesson deleted');
+}
+
+// ── Tab edit ──
+function addTabForm(lid, num) {
+  const row = document.getElementById(`str-tabs-${lid}-${num}`);
+  if (!row) return;
+  const addBtn = row.querySelector('.str-tab-add');
+  if (addBtn) addBtn.style.display = 'none';
+  const inp = document.createElement('input');
+  inp.className = 'str-input'; inp.placeholder = 'Tab name';
+  inp.style.cssText = 'width:120px;display:inline-block';
+  inp.onkeydown = e => { if (e.key==='Enter') saveNewTab(lid,num,inp.value); if (e.key==='Escape') renderStructureEditor(); };
+  const btn = document.createElement('button');
+  btn.className = 'str-btn add'; btn.textContent = 'Add';
+  btn.onclick = () => saveNewTab(lid, num, inp.value);
+  row.appendChild(inp); row.appendChild(btn); inp.focus();
+}
+
+function saveNewTab(lid, num, tabName) {
+  const name = (tabName||'').trim();
+  if (!name) { showToast('Enter a tab name'); return; }
+  const tabs = [...(runtimeStructure[lid].lessons[num].tabs||[]), name];
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  if (!customStructure[lid].lessons[num]) customStructure[lid].lessons[num] = { title: runtimeStructure[lid].lessons[num].title };
+  customStructure[lid].lessons[num].tabs = tabs;
+  saveCustomStructure(); renderStructureEditor();
+  showToast('Tab added');
+}
+
+function deleteTab(lid, num, tabIdx) {
+  const tabs = [...(runtimeStructure[lid].lessons[num].tabs||[])];
+  if (tabs.length <= 1) { showToast('Cannot remove the only tab'); return; }
+  if (!confirm(`Remove tab "${tabs[tabIdx]}"?`)) return;
+  tabs.splice(tabIdx, 1);
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  if (!customStructure[lid].lessons[num]) customStructure[lid].lessons[num] = { title: runtimeStructure[lid].lessons[num].title };
+  customStructure[lid].lessons[num].tabs = tabs;
+  saveCustomStructure(); renderStructureEditor();
+  showToast('Tab removed');
+}
+
 // ── FEATURE FLAGS ──
 const FLAGS_KEY = 'zolai_features';
 
@@ -1591,7 +1974,7 @@ function showFeatureControls() {
   }).join('');
 
   let levelHtml = '';
-  for (const [lid, lvl] of Object.entries(structure)) {
+  for (const [lid, lvl] of Object.entries(runtimeStructure)) {
     let lessonRows = '';
     for (const [num, ls] of Object.entries(lvl.lessons)) {
       const lessonOn = flags.levels?.[lid]?.[num]?.enabled !== false;
@@ -1652,7 +2035,8 @@ function showFeatureControls() {
     </div>
   `;
   // Open first level by default
-  toggleCtrlSection('beginner');
+  const firstLid = Object.keys(runtimeStructure)[0];
+  if (firstLid) toggleCtrlSection(firstLid);
 }
 
 function toggleCtrlSection(lid) {
@@ -1703,7 +2087,6 @@ function resetAllFlags() {
   if (!confirm('Reset all feature controls to default (everything enabled)?')) return;
   localStorage.removeItem(FLAGS_KEY);
   showFeatureControls();
-  toggleCtrlSection('beginner');
   showToast('All controls reset to default');
 }
 
@@ -1851,8 +2234,8 @@ function showAnalytics() {
     .sort((a, b) => b[1] - a[1])
     .map(([k, n]) => {
       const [lvl, lsn] = k.split('.');
-      const title = structure[lvl]?.lessons[lsn]?.title || lsn;
-      const lvlName = structure[lvl]?.name || lvl;
+      const title = runtimeStructure[lvl]?.lessons[lsn]?.title || lsn;
+      const lvlName = runtimeStructure[lvl]?.name || lvl;
       const pct = Math.round((n / maxCount) * 100);
       return `<tr>
         <td><span style="font-size:11px;color:var(--text-dim)">${lvlName}</span></td>
@@ -1869,7 +2252,7 @@ function showAnalytics() {
   log.forEach(e => { levelCounts[e.level] = (levelCounts[e.level] || 0) + 1; });
   const levelRows = Object.entries(levelCounts).map(([lvl, n]) =>
     `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px">
-      ${structure[lvl]?.icon || ''} ${structure[lvl]?.name || lvl} <strong style="color:var(--gold)">${n}</strong>
+      ${runtimeStructure[lvl]?.icon || ''} ${runtimeStructure[lvl]?.name || lvl} <strong style="color:var(--gold)">${n}</strong>
     </span>`
   ).join('') || `<span style="font-size:12px;color:var(--text-dim)">—</span>`;
 

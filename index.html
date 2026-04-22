@@ -1485,82 +1485,8 @@
     <div class="ls-sub">Select the level that best matches your current Zolai knowledge. You can change levels anytime.</div>
   </div>
 
-  <div class="ls-grid">
-    <div class="ls-card" data-level="beginner" onclick="selectLevel('beginner')" tabindex="0">
-      <div class="ls-card-badge">Level 1</div>
-      <div class="ls-card-icon">🌱</div>
-      <div class="ls-card-title">Beginner</div>
-      <div class="ls-card-zolai">Zolai Sim Ni</div>
-      <div class="ls-card-desc">Start from zero. Learn the alphabet, basic sounds, greetings, and your first 100 Zolai words.</div>
-      <div class="ls-card-topics">
-        <span class="ls-topic">Sounds</span>
-        <span class="ls-topic">Alphabet</span>
-        <span class="ls-topic">Greetings</span>
-        <span class="ls-topic">100 Core Words</span>
-        <span class="ls-topic">Numbers</span>
-      </div>
-      <div class="ls-card-cta">
-        <span class="ls-cta-label">Start here if you're new</span>
-        <span class="ls-cta-arrow">→</span>
-      </div>
-    </div>
-
-    <div class="ls-card" data-level="elementary" onclick="selectLevel('elementary')" tabindex="0">
-      <div class="ls-card-badge">Level 2</div>
-      <div class="ls-card-icon">📖</div>
-      <div class="ls-card-title">Elementary</div>
-      <div class="ls-card-zolai">Paunam Khenna 1</div>
-      <div class="ls-card-desc">Build your first sentences. Learn numbers, time expressions, and simple everyday conversations.</div>
-      <div class="ls-card-topics">
-        <span class="ls-topic">Basic Sentences</span>
-        <span class="ls-topic">Numbers</span>
-        <span class="ls-topic">Time</span>
-        <span class="ls-topic">Articles</span>
-        <span class="ls-topic">Dialogues</span>
-      </div>
-      <div class="ls-card-cta">
-        <span class="ls-cta-label">For early learners</span>
-        <span class="ls-cta-arrow">→</span>
-      </div>
-    </div>
-
-    <div class="ls-card" data-level="intermediate" onclick="selectLevel('intermediate')" tabindex="0">
-      <div class="ls-card-badge">Level 3</div>
-      <div class="ls-card-icon">⚗️</div>
-      <div class="ls-card-title">Intermediate</div>
-      <div class="ls-card-zolai">Paunam Khenna 2</div>
-      <div class="ls-card-desc">Master Zolai grammar. Study nouns, verbs, adjectives, pronouns, and all tense forms.</div>
-      <div class="ls-card-topics">
-        <span class="ls-topic">Nouns</span>
-        <span class="ls-topic">Verbs</span>
-        <span class="ls-topic">Adjectives</span>
-        <span class="ls-topic">Pronouns</span>
-        <span class="ls-topic">Tenses</span>
-      </div>
-      <div class="ls-card-cta">
-        <span class="ls-cta-label">Know the basics already</span>
-        <span class="ls-cta-arrow">→</span>
-      </div>
-    </div>
-
-    <div class="ls-card" data-level="advanced" onclick="selectLevel('advanced')" tabindex="0">
-      <div class="ls-card-badge">Level 4</div>
-      <div class="ls-card-icon">🏔️</div>
-      <div class="ls-card-title">Advanced</div>
-      <div class="ls-card-zolai">Paunam Khenna 3</div>
-      <div class="ls-card-desc">Reach fluency. Study punctuation, proverbs, Zomi cultural texts, and free composition.</div>
-      <div class="ls-card-topics">
-        <span class="ls-topic">Punctuation</span>
-        <span class="ls-topic">Proverbs</span>
-        <span class="ls-topic">Cultural Texts</span>
-        <span class="ls-topic">Composition</span>
-        <span class="ls-topic">Free Writing</span>
-      </div>
-      <div class="ls-card-cta">
-        <span class="ls-cta-label">For serious learners</span>
-        <span class="ls-cta-arrow">→</span>
-      </div>
-    </div>
+  <div class="ls-grid" id="lsGrid">
+    <!-- Populated by renderLevelSelector() in JS -->
   </div>
   </div><!-- /.ls-inner -->
 </div>
@@ -2687,6 +2613,9 @@ const levelData = {
     zolai: 'Zolai Sim Ni',
     color: '#4a9b7a',
     icon: '🌱',
+    desc: 'Start from zero. Learn the alphabet, basic sounds, greetings, and your first 100 Zolai words.',
+    topics: ['Sounds','Alphabet','Greetings','100 Core Words','Numbers'],
+    cta: "Start here if you're new",
     lessons: {
       1: {
         title: "Alphabet & Sounds",
@@ -2783,6 +2712,9 @@ const levelData = {
     zolai: 'Paunam Khenna 1',
     color: '#5b8fd4',
     icon: '📖',
+    desc: 'Build your first sentences. Learn numbers, time expressions, and simple everyday conversations.',
+    topics: ['Basic Sentences','Numbers','Time','Articles','Dialogues'],
+    cta: 'For early learners',
     lessons: {
       1: {
         title: "Basic Sentences",
@@ -2871,6 +2803,9 @@ const levelData = {
     zolai: 'Paunam Khenna 2',
     color: '#c9a84c',
     icon: '⚗️',
+    desc: 'Master Zolai grammar. Study nouns, verbs, adjectives, pronouns, and all tense forms.',
+    topics: ['Nouns','Verbs','Adjectives','Pronouns','Tenses'],
+    cta: 'Know the basics already',
     lessons: {
       1: {
         title: "Nouns (Minte)",
@@ -2970,6 +2905,9 @@ const levelData = {
     zolai: 'Paunam Khenna 3',
     color: '#c9604a',
     icon: '🏔️',
+    desc: 'Reach fluency. Study punctuation, proverbs, Zomi cultural texts, and free composition.',
+    topics: ['Punctuation','Proverbs','Cultural Texts','Composition','Free Writing'],
+    cta: 'For serious learners',
     lessons: {
       1: {
         title: "Punctuation (Lailepna)",
@@ -3057,6 +2995,82 @@ const levelData = {
     ]
   }
 };
+
+// ── APPLY CUSTOM STRUCTURE FROM ADMIN ──
+(function applyCustomStructure() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('zolai_structure') || '{}');
+    for (const lid of (saved._deletedLevels || [])) delete levelData[lid];
+    for (const [lid, lvl] of Object.entries(saved)) {
+      if (lid === '_deletedLevels') continue;
+      if (!levelData[lid]) {
+        levelData[lid] = {
+          name: lvl.name || lid, icon: lvl.icon || '📚',
+          color: lvl.color || '#7a8aa0', zolai: lvl.zolai || '',
+          desc: lvl.desc || '', topics: lvl.topics || [],
+          cta: lvl.cta || 'Start learning',
+          lessons: {}, vocabData: [], quizBank: []
+        };
+      } else {
+        if (lvl.name)   levelData[lid].name   = lvl.name;
+        if (lvl.icon)   levelData[lid].icon   = lvl.icon;
+        if (lvl.color)  levelData[lid].color  = lvl.color;
+        if (lvl.zolai !== undefined) levelData[lid].zolai = lvl.zolai;
+        if (lvl.desc)   levelData[lid].desc   = lvl.desc;
+        if (lvl.topics) levelData[lid].topics = lvl.topics;
+        if (lvl.cta)    levelData[lid].cta    = lvl.cta;
+      }
+      for (const [num, ls] of Object.entries(lvl.lessons || {})) {
+        const n = +num;
+        if (!levelData[lid].lessons[n]) {
+          levelData[lid].lessons[n] = {
+            title: ls.title || `Lesson ${n}`, subtitle: ls.subtitle || '',
+            badge: ls.badge || `Lesson ${n}`, tabs: ls.tabs || ['Content','Flashcards']
+          };
+        } else {
+          if (ls.title)    levelData[lid].lessons[n].title    = ls.title;
+          if (ls.tabs)     levelData[lid].lessons[n].tabs     = ls.tabs;
+          if (ls.subtitle) levelData[lid].lessons[n].subtitle = ls.subtitle;
+          if (ls.badge)    levelData[lid].lessons[n].badge    = ls.badge;
+        }
+      }
+      for (const num of (lvl._deletedLessons || [])) delete levelData[lid].lessons[+num];
+    }
+  } catch(e) {}
+})();
+
+function renderLevelSelector() {
+  const grid = document.getElementById('lsGrid');
+  if (!grid) return;
+  const levelIds = Object.keys(levelData);
+  grid.innerHTML = levelIds.map((lid, i) => {
+    const lvl = levelData[lid];
+    const topicsHtml = (lvl.topics||[]).map(t => `<span class="ls-topic">${t}</span>`).join('');
+    return `<div class="ls-card" data-level="${lid}" onclick="selectLevel('${lid}')" tabindex="0">
+      <div class="ls-card-badge">Level ${i+1}</div>
+      <div class="ls-card-icon">${lvl.icon}</div>
+      <div class="ls-card-title">${lvl.name}</div>
+      ${lvl.zolai  ? `<div class="ls-card-zolai">${lvl.zolai}</div>` : ''}
+      ${lvl.desc   ? `<div class="ls-card-desc">${lvl.desc}</div>`   : ''}
+      ${topicsHtml ? `<div class="ls-card-topics">${topicsHtml}</div>` : ''}
+      <div class="ls-card-cta">
+        <span class="ls-cta-label">${lvl.cta || 'Start learning'}</span>
+        <span class="ls-cta-arrow">→</span>
+      </div>
+    </div>`;
+  }).join('');
+  // Inject CSS for custom level colors (built-ins already have static CSS rules)
+  const builtIn = ['beginner','elementary','intermediate','advanced'];
+  levelIds.filter(lid => !builtIn.includes(lid)).forEach(lid => {
+    const color = levelData[lid].color || '#7a8aa0';
+    let s = document.getElementById(`style-lvl-${lid}`);
+    if (!s) { s = document.createElement('style'); s.id = `style-lvl-${lid}`; document.head.appendChild(s); }
+    const light = color + 'cc'; const dim = color + '80';
+    s.textContent = `.ls-card[data-level="${lid}"] { --card-color: ${color}; }
+      body[data-level="${lid}"] { --lc:${color};--lc-dim:${dim};--lc-glow:${color}1e;--gold:${color};--gold-light:${light};--gold-dim:${dim}; }`;
+  });
+}
+renderLevelSelector();
 
 // ── VOCABULARY VIEW ──
 function renderVocabulary(c) {
@@ -3190,10 +3204,10 @@ function goLevelSelector() {
 function renderSidebarLessons(levelId) {
   const ld = levelData[levelId];
   const nav = document.getElementById('dynamicNav');
-  const total = Object.keys(ld.lessons).length;
+  const sortedNums = Object.keys(ld.lessons).map(Number).sort((a,b) => a-b);
   let html = '<div class="nav-section-label" style="margin-top:12px">Lessons</div>';
   let enabledCount = 0;
-  for (let i = 1; i <= total; i++) {
+  for (const i of sortedNums) {
     if (!isLessonEnabled(levelId, i)) continue;
     enabledCount++;
     const l = ld.lessons[i];
@@ -3213,7 +3227,7 @@ function renderSidebarLessons(levelId) {
   // Update mobile lesson picker
   const mlp = document.getElementById('lessonPicker');
   let mlpHtml = '';
-  for (let i = 1; i <= total; i++) {
+  for (const i of sortedNums) {
     if (!isLessonEnabled(levelId, i)) continue;
     mlpHtml += `<button class="mlp-btn" onclick="showLesson(${i}); closeLessonPicker()">${i} · ${ld.lessons[i].title}</button>`;
   }
@@ -3221,7 +3235,7 @@ function renderSidebarLessons(levelId) {
     mlpHtml += `<button class="mlp-btn" onclick="showView('vocabulary'); closeLessonPicker()">◈ Vocabulary</button>`;
   }
   mlp.innerHTML = mlpHtml;
-  state.totalLessons = enabledCount || total;
+  state.totalLessons = enabledCount || sortedNums.length;
   applyFeatureFlags();
 }
 
@@ -3239,14 +3253,15 @@ function getLevelLessons() {
 function showLesson(n) {
   if (!currentLevel) return;
   const ld = levelData[currentLevel];
+  const sortedNums = Object.keys(ld.lessons).map(Number).sort((a,b) => a-b);
   // If this lesson is disabled, find the nearest enabled one
   if (!isLessonEnabled(currentLevel, n)) {
-    const total = Object.keys(ld.lessons).length;
-    for (let k = n + 1; k <= total; k++) {
-      if (isLessonEnabled(currentLevel, k) && ld.lessons[k]) { return showLesson(k); }
+    const idx = sortedNums.indexOf(n);
+    for (let i = idx+1; i < sortedNums.length; i++) {
+      if (isLessonEnabled(currentLevel, sortedNums[i])) return showLesson(sortedNums[i]);
     }
-    for (let k = n - 1; k >= 1; k--) {
-      if (isLessonEnabled(currentLevel, k) && ld.lessons[k]) { return showLesson(k); }
+    for (let i = idx-1; i >= 0; i--) {
+      if (isLessonEnabled(currentLevel, sortedNums[i])) return showLesson(sortedNums[i]);
     }
     return showView('home');
   }
@@ -3266,7 +3281,8 @@ function renderLevelLesson(n, c, tabIdx) {
   if (!currentLevel) return;
   const ld = levelData[currentLevel];
   const l = ld.lessons[n];
-  const total = Object.keys(ld.lessons).length;
+  const sortedNums = Object.keys(ld.lessons).map(Number).sort((a,b) => a-b);
+  const nIdx = sortedNums.indexOf(n);
 
   // Build list of enabled tabs (preserve original index for rendering)
   const enabledTabs = l.tabs
@@ -3282,8 +3298,8 @@ function renderLevelLesson(n, c, tabIdx) {
 
   // Find next enabled lesson for the Next button
   let nextLesson = null;
-  for (let k = n + 1; k <= total; k++) {
-    if (isLessonEnabled(currentLevel, k)) { nextLesson = k; break; }
+  for (let i = nIdx + 1; i < sortedNums.length; i++) {
+    if (isLessonEnabled(currentLevel, sortedNums[i])) { nextLesson = sortedNums[i]; break; }
   }
   const isQuizEnabled = isGlobalEnabled('quiz');
   const nextBtn = nextLesson
@@ -3294,8 +3310,8 @@ function renderLevelLesson(n, c, tabIdx) {
 
   // Find previous enabled lesson
   let prevLesson = null;
-  for (let k = n - 1; k >= 1; k--) {
-    if (isLessonEnabled(currentLevel, k)) { prevLesson = k; break; }
+  for (let i = nIdx - 1; i >= 0; i--) {
+    if (isLessonEnabled(currentLevel, sortedNums[i])) { prevLesson = sortedNums[i]; break; }
   }
 
   c.innerHTML = `
