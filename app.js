@@ -271,7 +271,7 @@ const lessons = {
   },
   6: {
     title: "Adjectives",
-    subtitle: "Pianzia kammalte — descriptive words that modify nouns. Zolai adjectives come in five types and have a systematic comparison system.",
+    subtitle: "Pianzia kammalte — descriptive words that modify nouns. Zolai adjectives come in six types and have a systematic comparison system.",
     badge: "Lesson VI · Adjectives",
     tabs: ['Types', 'Comparison', 'Practice'],
     content: {
@@ -281,6 +281,7 @@ const lessons = {
         { name: 'Amalzah Lak Pianzia', eng: 'Number', desc: 'Describes countable amounts.', ex: 'nga (five), sawmnih (twenty), giat (eight)' },
         { name: 'Lahkhiatna Lak Pianzia', eng: 'Demonstrative', desc: 'Points to specific things.', ex: 'hih (this), hua (that), tua (that one)' },
         { name: 'Dotna Lak Pianzia', eng: 'Interrogative', desc: 'Used in questions.', ex: 'bangci (what kind), koi (which)' },
+        { name: 'Neihna Lak Pianzia', eng: 'Possessive', desc: 'Shows ownership or possession.', ex: "ka (my), na (your), taang' (his), lia' (her), ih (our)" },
       ],
       comparison: [
         { degree: 'Positive', zolai_suffix: '(root form)', example: 'Mangpu in, a thahat mi khat ahi hi.', english: 'Mangpu is a strong person.' },
@@ -329,6 +330,7 @@ const quizBank = [
   { q: "The Comparative degree in Zolai is formed by adding?", opts: ["+ pen","+ zaw","+ mahmah","+ bek"], ans: 1, lesson: 6 },
   { q: "What type of adjective is 'hih' (this)?", opts: ["Quality","Number","Demonstrative","Interrogative"], ans: 2, lesson: 6 },
   { q: "What does 'hat pen' mean?", opts: ["Very strong","Strongest","Stronger than","Quite strong"], ans: 1, lesson: 6 },
+  { q: "Which type of adjective is 'ka' (my) or 'na' (your) in Zolai?", opts: ["Quality Adjective","Demonstrative Adjective","Interrogative Adjective","Possessive Adjective"], ans: 3, lesson: 6 },
 ];
 
 // ── RENDER HELPERS ──
@@ -679,7 +681,7 @@ function renderLessonTab(n, tabIdx) {
     if (tabIdx === 0) {
       return `
         <div class="card">
-          <div class="card-title">Five Types of Adjectives</div>
+          <div class="card-title">Six Types of Adjectives</div>
           <table class="grammar-table">
             <tr><th>Zolai Term</th><th>Type</th><th>Description</th><th>Examples</th></tr>
             ${d.types.map(t=>`
@@ -1272,6 +1274,7 @@ const levelData = {
         {z:'Amalzah lak pianzia', e:'Number Adjective'},
         {z:'Lahkhiatna lak pianzia', e:'Demonstrative Adjective'},
         {z:'Dotna lak pianzia', e:'Interrogative Adjective'},
+        {z:'Neihna lak pianzia', e:'Possessive Adjective'},
         {z:'hoih / hoihzaw / hoihpen', e:'good / better / best'},
         {z:'hat / hatzaw / hatpen', e:'strong / stronger / strongest'},
         {z:'baih / baihzaw / baihpen', e:'far / farther / farthest'},
@@ -2253,9 +2256,9 @@ function renderIntermediateTab(n, tabIdx) {
       <div class="info-box" style="margin-top:12px">Hover to reveal.</div></div>`;
   }
   if (n === 3) {
-    const types = [{name:'Phacia lak pianzia',en:'Quality Adjective',desc:'Describes qualities: hoih (good), sau (tall), gol (round), thau (heavy).'},{name:'Phazah lak pianzia',en:'Quantity Adjective',desc:'Describes amounts: tampi (many), tawmkha (few), beek (all).'},{name:'Amalzah lak pianzia',en:'Number Adjective',desc:'Specific numbers: nga (five), sawmnih (twenty), giat (eight).'},{name:'Lahkhiatna lak pianzia',en:'Demonstrative Adjective',desc:'Points to specific things: hih (this), hua (that), tua (that).'},{name:'Dotna lak pianzia',en:'Interrogative Adjective',desc:'Asks about things: bang ci (what kind), koi (which), bang zah (how many).'}];
+    const types = [{name:'Phacia lak pianzia',en:'Quality Adjective',desc:'Describes qualities: hoih (good), sau (tall), gol (round), thau (heavy).'},{name:'Phazah lak pianzia',en:'Quantity Adjective',desc:'Describes amounts: tampi (many), tawmkha (few), beek (all).'},{name:'Amalzah lak pianzia',en:'Number Adjective',desc:'Specific numbers: nga (five), sawmnih (twenty), giat (eight).'},{name:'Lahkhiatna lak pianzia',en:'Demonstrative Adjective',desc:'Points to specific things: hih (this), hua (that), tua (that).'},{name:'Dotna lak pianzia',en:'Interrogative Adjective',desc:'Asks about things: bang ci (what kind), koi (which), bang zah (how many).'},{name:'Neihna lak pianzia',en:'Possessive Adjective',desc:"Shows ownership: ka (my), na (your), taang' (his), lia' (her), ih (our), amau' (their)."}];
     const comp = [{z:'hoih',e:'good'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},{z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},{z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Five Types of Adjectives (Pianzia)</div>
+    if (tabIdx === 0) return `<div class="card"><div class="card-title">Six Types of Adjectives (Pianzia)</div>
       ${types.map(t=>`<div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:2px">${t.name}</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${t.en}</div><div style="font-size:13px;color:var(--text-muted)">${t.desc}</div></div>`).join('')}</div>`;
     if (tabIdx === 1) return `<div class="card"><div class="card-title">Comparison of Adjectives (Saikak/Tehkak)</div>
       <div class="info-box">Add <strong>-zaw</strong> for Comparative (better), <strong>-pen</strong> for Superlative (best).</div>
