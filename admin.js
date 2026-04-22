@@ -1486,10 +1486,13 @@ function showAnalytics() {
   const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
   const gaId = localStorage.getItem('zolai_ga_id') || '';
 
+  const sessions = log.filter(e => e.type === 'session').length;
+  const lessonLog = log.filter(e => !e.type || e.type === 'lesson');
+
   // Aggregate by level+lesson
   const counts = {};
   let total = 0;
-  log.forEach(e => {
+  lessonLog.forEach(e => {
     const k = `${e.level}.${e.lesson}`;
     counts[k] = (counts[k] || 0) + 1;
     total++;
@@ -1500,7 +1503,7 @@ function showAnalytics() {
     .sort((a, b) => b[1] - a[1])
     .map(([k, n]) => {
       const [lvl, lsn] = k.split('.');
-      const title = runtimeStructure[lvl]?.lessons[lsn]?.title || lsn;
+      const title = runtimeStructure[lvl]?.lessons[lsn]?.title || `Lesson ${lsn}`;
       const lvlName = runtimeStructure[lvl]?.name || lvl;
       const pct = Math.round((n / maxCount) * 100);
       return `<tr>
@@ -1511,11 +1514,11 @@ function showAnalytics() {
           <div class="stat-bar" style="width:${pct}%"></div>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="3" style="padding:20px;color:var(--text-dim);text-align:center;font-size:13px">No visits recorded yet — open the app and browse lessons.</td></tr>`;
+    }).join('') || `<tr><td colspan="3" style="padding:20px;color:var(--text-dim);text-align:center;font-size:13px">No lesson visits yet — open the main app and browse lessons to see data here.</td></tr>`;
 
-  // Level breakdown
+  // Level breakdown (lesson visits only)
   const levelCounts = {};
-  log.forEach(e => { levelCounts[e.level] = (levelCounts[e.level] || 0) + 1; });
+  lessonLog.forEach(e => { levelCounts[e.level] = (levelCounts[e.level] || 0) + 1; });
   const levelRows = Object.entries(levelCounts).map(([lvl, n]) =>
     `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px">
       ${runtimeStructure[lvl]?.icon || ''} ${runtimeStructure[lvl]?.name || lvl} <strong style="color:var(--gold)">${n}</strong>
@@ -1528,7 +1531,11 @@ function showAnalytics() {
 
       <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:1;min-width:120px">
-          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Total Visits (this device)</div>
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">App Sessions (this device)</div>
+          <div style="font-size:28px;font-weight:600;color:var(--gold-light)">${sessions}</div>
+        </div>
+        <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:1;min-width:120px">
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Lesson Opens (this device)</div>
           <div style="font-size:28px;font-weight:600;color:var(--gold-light)">${total}</div>
         </div>
         <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:2;min-width:200px">
@@ -1536,6 +1543,7 @@ function showAnalytics() {
           <div style="display:flex;gap:8px;flex-wrap:wrap">${levelRows}</div>
         </div>
       </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">&#9432; Data shown is from <strong>this browser only</strong>. Connect Firebase below to collect cross-device scores, or Google Analytics 4 for full visitor insights.</div>
 
       <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Lesson Visit Breakdown</div>
       <table class="analytics-table">

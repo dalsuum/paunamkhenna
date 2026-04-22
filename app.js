@@ -1558,6 +1558,7 @@ let currentLevel = null;
 function selectLevel(levelId) {
   try {
     currentLevel = levelId;
+    localStorage.setItem('zolai_selected_level', levelId);
     const ld = levelData[levelId];
     
     if (!ld) {
@@ -1604,6 +1605,7 @@ function selectLevel(levelId) {
 function goLevelSelector() {
   document.getElementById('levelSelector').style.display = 'flex';
   document.getElementById('mainApp').style.display = 'none';
+  localStorage.removeItem('zolai_selected_level');
   currentLevel = null;
   document.body.removeAttribute('data-level');
   state.completedLessons.clear();
@@ -2573,22 +2575,36 @@ function updateXP() {
 
 // ── INIT: show level selector, hide main app ──
 function initializeApp() {
+  // Track session start
+  try {
+    const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
+    log.push({ ts: Date.now(), type: 'session' });
+    if (log.length > 500) log.splice(0, log.length - 500);
+    localStorage.setItem('zolai_visit_log', JSON.stringify(log));
+  } catch(e) {}
+
+  state.totalLessons = 5;
+  state.currentQuizBank = null;
+
+  // Restore previously selected level
+  const savedLevel = localStorage.getItem('zolai_selected_level');
+  if (savedLevel && levelData[savedLevel]) {
+    selectLevel(savedLevel);
+    return;
+  }
+
   const levelSelector = document.getElementById('levelSelector');
   const mainApp = document.getElementById('mainApp');
-  
+
   if (levelSelector) {
     levelSelector.style.display = 'flex';
     levelSelector.style.visibility = 'visible';
     levelSelector.style.opacity = '1';
   }
-  
   if (mainApp) {
     mainApp.style.display = 'none';
     mainApp.style.visibility = 'hidden';
   }
-  
-  state.totalLessons = 5;
-  state.currentQuizBank = null;
 }
 
 // Initialize immediately on page load or when DOM is ready
