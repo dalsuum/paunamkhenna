@@ -980,11 +980,18 @@
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 32px 20px;
     overflow-y: auto;
     pointer-events: auto;
+  }
+
+  .ls-inner {
+    margin: auto;
+    width: 100%;
+    max-width: 720px;
+    padding: 32px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   #levelSelector::before {
@@ -1471,6 +1478,7 @@
 
 
 <div id="levelSelector">
+  <div class="ls-inner">
   <div class="ls-header">
     <div class="ls-eyebrow">Paunam Khenna — Zolai Language</div>
     <div class="ls-title">Choose your<br><em>learning level</em></div>
@@ -1554,6 +1562,7 @@
       </div>
     </div>
   </div>
+  </div><!-- /.ls-inner -->
 </div>
 
 
