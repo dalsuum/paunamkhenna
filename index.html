@@ -3316,9 +3316,9 @@ function renderLevelLesson(n, c, tabIdx) {
 
   c.innerHTML = `
     <div class="lesson-header">
-      <div class="lesson-badge">${l.badge}</div>
-      <div class="lesson-title">${l.title}</div>
-      <div class="lesson-subtitle">${l.subtitle}</div>
+      <div class="lesson-badge">${l.badge || ''}</div>
+      <div class="lesson-title">${l.title || ''}</div>
+      <div class="lesson-subtitle">${l.subtitle || ''}</div>
     </div>
 
     <div class="tabs" id="lessonTabs">
@@ -4013,7 +4013,7 @@ function renderHome(c) {
         <div class="module-card" onclick="showLesson(${num})">
           <div class="module-icon" style="font-size:20px">${num}</div>
           <div class="module-title">${l.title}</div>
-          <div class="module-desc">${l.subtitle.substring(0,80)}...</div>
+          <div class="module-desc">${(l.subtitle||'').substring(0,80)}${l.subtitle?.length>80?'...':''}</div>
           <div class="module-progress">
             <div class="mini-bar"><div class="mini-fill" style="width:${state.completedLessons.has(parseInt(num))?100:0}%"></div></div>
             <span>${state.completedLessons.has(parseInt(num)) ? '✓ Done' : 'Start'}</span>

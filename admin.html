@@ -1207,6 +1207,16 @@ function setTabData(lvl, lsn, tab, data) {
   adminData[lvl][lsn][tab] = data;
 }
 
+// ── NAV STATE HELPERS ──
+function clearBottomNav() {
+  document.querySelectorAll('.controls-nav-btn,.analytics-nav-btn,.str-nav-btn').forEach(b => b.classList.remove('active'));
+}
+function clearAllNav() {
+  document.querySelectorAll('.lesson-nav').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
+  clearBottomNav();
+}
+
 // ── SIDEBAR ──
 function buildSidebar() {
   let html = '';
@@ -1244,8 +1254,9 @@ function selectLesson(lid, num) {
   currentLesson = num;
   currentTab = 0;
 
+  clearBottomNav();
   document.querySelectorAll('.lesson-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`lsn-${lid}-${num}`).classList.add('active');
+  document.getElementById(`lsn-${lid}-${num}`)?.classList.add('active');
 
   const ls = runtimeStructure[lid].lessons[num];
   document.getElementById('topCrumb').textContent =
@@ -1678,8 +1689,7 @@ function showStructureEditor() {
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
   currentLevel = null; currentLesson = null;
-  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.controls-nav-btn,.analytics-nav-btn').forEach(b => b.classList.remove('active'));
+  clearAllNav();
   document.getElementById('structureNavBtn').classList.add('active');
   document.getElementById('saveBar').style.display = 'none';
   document.getElementById('topCrumb').textContent = 'Structure Editor';
@@ -1941,8 +1951,7 @@ function showFeatureControls() {
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
   currentLevel = null; currentLesson = null;
-  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.analytics-nav-btn,.controls-nav-btn').forEach(b => b.classList.remove('active'));
+  clearAllNav();
   document.getElementById('controlsNavBtn').classList.add('active');
   document.getElementById('saveBar').style.display = 'none';
   document.getElementById('topCrumb').textContent = 'Feature Controls';
@@ -2120,8 +2129,7 @@ function showAdminLeaderboard() {
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
   currentLevel = null; currentLesson = null;
-  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.analytics-nav-btn').forEach(b => b.classList.remove('active'));
+  clearAllNav();
   document.getElementById('leaderboardNavBtn').classList.add('active');
   document.getElementById('saveBar').style.display = 'none';
   document.getElementById('topCrumb').textContent = 'Leaderboard';
@@ -2213,8 +2221,8 @@ function showAnalytics() {
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
   currentLevel = null; currentLesson = null;
-  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.analytics-nav-btn').forEach(b => b.classList.add('active'));
+  clearAllNav();
+  document.getElementById('analyticsNavBtn').classList.add('active');
   document.getElementById('saveBar').style.display = 'none';
 
   const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
