@@ -435,15 +435,6 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
 }
 .tab-ctrl-item.tab-off { opacity: 0.45; }
 
-/* ── CONTROLS NAV ── */
-.controls-nav-btn {
-  width: 100%; padding: 9px 20px;
-  background: none; border: none; text-align: left;
-  color: var(--text-muted); font-size: 13px; cursor: pointer;
-  display: flex; align-items: center; gap: 8px; transition: color 0.15s;
-}
-.controls-nav-btn:hover { color: var(--text); }
-.controls-nav-btn.active { color: var(--gold); }
 
 /* ── ITEM AUDIO GRID ── */
 .item-grid {
@@ -709,11 +700,8 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
       <div id="levelNav"></div>
 
       <div style="border-top:1px solid var(--border);margin-top:auto">
-        <button class="str-nav-btn" id="structureNavBtn" onclick="showStructureEditor()">
-          <span>🗂</span><span>Manage Structure</span>
-        </button>
-        <button class="controls-nav-btn" id="controlsNavBtn" onclick="showFeatureControls()">
-          <span>⚙</span><span>Feature Controls</span>
+        <button class="str-nav-btn" id="settingsNavBtn" onclick="showSettings('structure')">
+          <span>⚙</span><span>Settings</span>
         </button>
         <button class="analytics-nav-btn" id="analyticsNavBtn" onclick="showAnalytics()">
           <span>📊</span><span>Analytics</span>
@@ -1020,6 +1008,7 @@ let currentContentRows = [];
 let currentTabItems = {};
 let customStructure = {}; // overrides stored in localStorage
 let runtimeStructure = {}; // merged: hardcoded structure + custom
+let activeSettingsTab = 'structure';
 
 const DATA_KEY      = 'zolai_admin_data';
 const STRUCTURE_KEY = 'zolai_structure';
@@ -1209,7 +1198,7 @@ function setTabData(lvl, lsn, tab, data) {
 
 // ── NAV STATE HELPERS ──
 function clearBottomNav() {
-  document.querySelectorAll('.controls-nav-btn,.analytics-nav-btn,.str-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.analytics-nav-btn,.str-nav-btn').forEach(b => b.classList.remove('active'));
 }
 function clearAllNav() {
   document.querySelectorAll('.lesson-nav').forEach(el => el.style.display = 'none');
@@ -1685,21 +1674,31 @@ function importData(input) {
 }
 
 // ── STRUCTURE EDITOR ──
-function showStructureEditor() {
+function showSettings(tab) {
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
   currentLevel = null; currentLesson = null;
   clearAllNav();
-  document.getElementById('structureNavBtn').classList.add('active');
+  activeSettingsTab = tab || activeSettingsTab || 'structure';
+  document.getElementById('settingsNavBtn').classList.add('active');
   document.getElementById('saveBar').style.display = 'none';
-  document.getElementById('topCrumb').textContent = 'Structure Editor';
-  renderStructureEditor();
+  document.getElementById('topCrumb').textContent = 'Settings';
+  if (activeSettingsTab === 'structure') renderStructureEditor();
+  else renderFeatureControls();
+}
+
+function settingsTabBar() {
+  return `<div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px">
+    <button onclick="showSettings('structure')" style="padding:5px 16px;border-radius:16px;font-size:12px;cursor:pointer;border:1px solid ${activeSettingsTab==='structure'?'var(--gold)':'transparent'};background:${activeSettingsTab==='structure'?'rgba(201,168,76,0.1)':'transparent'};color:${activeSettingsTab==='structure'?'var(--gold)':'var(--text-muted)'}">🗂 Structure</button>
+    <button onclick="showSettings('features')" style="padding:5px 16px;border-radius:16px;font-size:12px;cursor:pointer;border:1px solid ${activeSettingsTab==='features'?'var(--gold)':'transparent'};background:${activeSettingsTab==='features'?'rgba(201,168,76,0.1)':'transparent'};color:${activeSettingsTab==='features'?'var(--gold)':'var(--text-muted)'}">⚙ Features</button>
+  </div>`;
 }
 
 function renderStructureEditor() {
+  activeSettingsTab = 'structure';
   let html = '';
   for (const [lid, lvl] of Object.entries(runtimeStructure)) html += buildStrLevelBlock(lid, lvl);
-  document.getElementById('adminContent').innerHTML = `
+  document.getElementById('adminContent').innerHTML = settingsTabBar() + `
     <div class="section-card">
       <div class="section-title" style="justify-content:space-between">
         <span>🗂 Level &amp; Lesson Structure</span>
@@ -1947,15 +1946,8 @@ function saveFlags(flags) {
   localStorage.setItem(FLAGS_KEY, JSON.stringify(flags));
 }
 
-function showFeatureControls() {
-  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
-  pendingChanges = false;
-  currentLevel = null; currentLesson = null;
-  clearAllNav();
-  document.getElementById('controlsNavBtn').classList.add('active');
-  document.getElementById('saveBar').style.display = 'none';
-  document.getElementById('topCrumb').textContent = 'Feature Controls';
-
+function renderFeatureControls() {
+  activeSettingsTab = 'features';
   const flags = getFlags();
 
   const globalDefs = [
@@ -2022,7 +2014,7 @@ function showFeatureControls() {
       </div>`;
   }
 
-  document.getElementById('adminContent').innerHTML = `
+  document.getElementById('adminContent').innerHTML = settingsTabBar() + `
     <div class="section-card">
       <div class="section-title">Global Features
         <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— changes apply immediately for all users</span>
@@ -2043,7 +2035,6 @@ function showFeatureControls() {
       </button>
     </div>
   `;
-  // Open first level by default
   const firstLid = Object.keys(runtimeStructure)[0];
   if (firstLid) toggleCtrlSection(firstLid);
 }
@@ -2071,7 +2062,7 @@ function toggleLesson(level, lesson, enabled) {
   if (!flags.levels[level][lesson]) flags.levels[level][lesson] = {};
   flags.levels[level][lesson].enabled = enabled;
   saveFlags(flags);
-  showFeatureControls();
+  renderFeatureControls();
   // Re-open the level that was just changed
   toggleCtrlSection(level);
   showToast(`Lesson ${lesson} ${enabled ? 'enabled' : 'disabled'}`);
@@ -2095,7 +2086,7 @@ function toggleTab(level, lesson, tabIdx, enabled) {
 function resetAllFlags() {
   if (!confirm('Reset all feature controls to default (everything enabled)?')) return;
   localStorage.removeItem(FLAGS_KEY);
-  showFeatureControls();
+  renderFeatureControls();
   showToast('All controls reset to default');
 }
 
