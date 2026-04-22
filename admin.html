@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Paunam Khenna</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0c0a;
+  --surface: #181410;
+  --surface2: #221e18;
+  --surface3: #2e2820;
+  --border: #3a3228;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-dim: #7a6230;
+  --text: #f0e8d8;
+  --text-muted: #9a8f7e;
+  --text-dim: #5a5248;
+  --red: #c94a4a;
+  --green: #4a9b7a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── LOGIN ── */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-title { font-size: 20px; font-weight: 600; text-align: center; }
+.login-sub { font-size: 13px; color: var(--text-muted); text-align: center; }
+.error-msg { font-size: 12px; color: var(--red); text-align: center; min-height: 16px; }
+
+/* ── LAYOUT ── */
+.admin-layout { display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR ── */
+.admin-sidebar {
+  width: 256px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-top {
+  padding: 22px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.sidebar-title { font-size: 16px; font-weight: 600; }
+.sidebar-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.nav-label-small {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 12px 20px 6px;
+}
+
+.level-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.level-btn:hover { color: var(--text); background: var(--surface2); }
+.level-btn.active { color: var(--gold); background: var(--surface2); }
+
+.lesson-nav {
+  margin: 2px 0 2px 30px;
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+}
+
+.lesson-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  text-align: left;
+  border-radius: 6px;
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+
+.lesson-btn:hover { color: var(--text-muted); background: var(--surface2); }
+.lesson-btn.active { color: var(--gold-light); background: rgba(201,168,76,0.08); }
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── MAIN ── */
+.admin-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.admin-topbar {
+  height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.topbar-crumb { font-size: 12px; color: var(--text-muted); }
+.topbar-actions { display: flex; gap: 10px; }
+
+.admin-content {
+  flex: 1;
+  padding: 28px;
+  max-width: 820px;
+  overflow-y: auto;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-gold { background: var(--gold); color: #0e0c0a; }
+.btn-gold:hover { background: var(--gold-light); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-red { background: transparent; border: 1px solid rgba(201,74,74,0.4); color: var(--red); }
+.btn-red:hover { background: rgba(201,74,74,0.1); }
+
+/* ── FORMS ── */
+.form-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; }
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus { border-color: var(--gold-dim); }
+.form-input::placeholder { color: var(--text-dim); }
+
+/* ── TAB BAR ── */
+.tab-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 22px; }
+
+.tab-pill {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+
+.tab-pill:hover { border-color: var(--gold-dim); color: var(--text); }
+.tab-pill.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+
+/* ── SECTION CARD ── */
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-light);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── UPLOAD AREAS ── */
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-area:hover { border-color: var(--gold-dim); }
+.upload-area.has-file { border-color: var(--gold-dim); border-style: solid; }
+.upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-icon { font-size: 26px; margin-bottom: 6px; }
+.upload-label { font-size: 13px; color: var(--text-muted); margin-bottom: 3px; }
+.upload-sub { font-size: 11px; color: var(--text-dim); }
+
+.upload-preview { margin-top: 12px; }
+.upload-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; object-fit: contain; }
+audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
+
+.clear-btn {
+  font-size: 11px;
+  color: var(--red);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  padding: 2px 0;
+}
+
+.clear-btn:hover { text-decoration: underline; }
+
+/* ── VOCAB TABLE ── */
+.vocab-table { width: 100%; border-collapse: collapse; }
+
+.vocab-table th {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.vocab-row-edit { border-bottom: 1px solid var(--border); }
+.vocab-row-edit td { padding: 7px 5px; vertical-align: middle; }
+
+.vocab-input {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.vocab-input:focus { border-color: var(--gold-dim); }
+.vocab-input.en { font-family: 'DM Sans', sans-serif; font-style: italic; }
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover { border-color: var(--gold); color: var(--gold); }
+.icon-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+.audio-cell { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
+.audio-cell input[type="file"] { display: none; }
+
+/* ── SAVE BAR ── */
+.save-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 13px 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── PLACEHOLDER ── */
+.placeholder { text-align: center; padding: 80px 20px; color: var(--text-dim); }
+.placeholder-icon { font-size: 44px; margin-bottom: 14px; }
+.placeholder-text { font-size: 14px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  background: var(--surface3);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  color: var(--text);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+.toast.show { opacity: 1; }
+
+/* ── TOGGLE SWITCH ── */
+.toggle-switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 22px; cursor: pointer; transition: background 0.2s, border-color 0.2s;
+}
+.toggle-track::before {
+  content: ''; position: absolute;
+  width: 14px; height: 14px; left: 3px; top: 3px;
+  background: var(--text-dim); border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle-switch input:checked + .toggle-track { background: rgba(201,168,76,0.25); border-color: var(--gold-dim); }
+.toggle-switch input:checked + .toggle-track::before { transform: translateX(16px); background: var(--gold); }
+.toggle-switch input:disabled + .toggle-track { opacity: 0.4; cursor: not-allowed; }
+
+/* ── FEATURE CONTROLS ── */
+.control-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 0; border-bottom: 1px solid var(--border);
+}
+.control-row:last-child { border-bottom: none; }
+.control-row-label { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.control-icon { font-size: 16px; width: 22px; text-align: center; }
+.control-hint { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+.level-ctrl-section { margin-bottom: 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.level-ctrl-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; cursor: pointer; user-select: none;
+  background: var(--surface2); font-size: 14px; font-weight: 500;
+  transition: background 0.15s;
+}
+.level-ctrl-header:hover { background: var(--surface3); }
+.level-ctrl-body { padding: 0 16px 12px; display: none; }
+.level-ctrl-body.open { display: block; }
+
+.lesson-ctrl-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.lesson-ctrl-row:last-child { border-bottom: none; }
+.lesson-ctrl-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.lesson-ctrl-title { font-size: 13px; font-weight: 500; }
+.lesson-ctrl-title.dimmed { color: var(--text-dim); }
+
+.tab-ctrl-row { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 48px; }
+.tab-ctrl-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 12px; color: var(--text-muted);
+}
+.tab-ctrl-item.tab-off { opacity: 0.45; }
+
+/* ── CONTROLS NAV ── */
+.controls-nav-btn {
+  width: 100%; padding: 9px 20px;
+  background: none; border: none; text-align: left;
+  color: var(--text-muted); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; transition: color 0.15s;
+}
+.controls-nav-btn:hover { color: var(--text); }
+.controls-nav-btn.active { color: var(--gold); }
+
+/* ── ITEM AUDIO GRID ── */
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+.item-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color 0.15s;
+}
+.item-cell.has-audio { border-color: var(--gold-dim); }
+.item-cell-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gold-light);
+}
+.item-cell-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+
+/* ── ANALYTICS ── */
+.analytics-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.analytics-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-dim); font-weight: 400; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.analytics-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+.analytics-table tr:last-child td { border-bottom: none; }
+.stat-bar { height: 4px; border-radius: 2px; background: var(--gold-dim); margin-top: 4px; }
+
+/* ── ANALYTICS NAV ── */
+.analytics-nav-btn {
+  width: 100%;
+  padding: 9px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s;
+}
+.analytics-nav-btn:hover { color: var(--text); }
+.analytics-nav-btn.active { color: var(--gold); }
+
+@media (max-width: 640px) {
+  .admin-sidebar { width: 200px; }
+  .admin-content { padding: 16px; }
+  .media-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── FIRST-RUN SETUP ── -->
+<div id="setupScreen" style="display:none">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-title">Create Admin Password</div>
+      <div class="login-sub">First-time setup — choose a strong password to protect this panel</div>
+      <div>
+        <label class="form-label">New Password</label>
+        <input type="password" class="form-input" id="setupPw1" placeholder="Minimum 8 characters"
+          onkeydown="if(event.key==='Enter')document.getElementById('setupPw2').focus()">
+      </div>
+      <div>
+        <label class="form-label">Confirm Password</label>
+        <input type="password" class="form-input" id="setupPw2" placeholder="Re-enter password"
+          onkeydown="if(event.key==='Enter')setupPassword()">
+      </div>
+      <button class="btn btn-gold" onclick="setupPassword()">Create Password →</button>
+      <div class="error-msg" id="setupError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGIN ── -->
+<div id="loginScreen" style="display:none">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-title">Admin Panel</div>
+      <div class="login-sub">Paunam Khenna — Content Editor</div>
+      <div>
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="pwInput" placeholder="Enter password"
+          onkeydown="if(event.key==='Enter')login()">
+      </div>
+      <button class="btn btn-gold" id="loginBtn" onclick="login()">Sign In →</button>
+      <div class="error-msg" id="loginError"></div>
+      <div id="lockoutMsg" style="font-size:12px;color:var(--red);text-align:center;min-height:16px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADMIN ── -->
+<div id="adminMain" style="display:none">
+  <div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-logo">Paunam Khenna</div>
+        <div class="sidebar-title">Admin Panel</div>
+        <div class="sidebar-sub">Content Editor</div>
+      </div>
+
+      <div class="nav-label-small">Levels &amp; Lessons</div>
+      <div id="levelNav"></div>
+
+      <div style="border-top:1px solid var(--border);margin-top:auto">
+        <button class="controls-nav-btn" id="controlsNavBtn" onclick="showFeatureControls()">
+          <span>⚙</span><span>Feature Controls</span>
+        </button>
+        <button class="analytics-nav-btn" id="analyticsNavBtn" onclick="showAnalytics()">
+          <span>📊</span><span>Analytics</span>
+        </button>
+        <button class="analytics-nav-btn" id="leaderboardNavBtn" onclick="showAdminLeaderboard()">
+          <span>🏆</span><span>Leaderboard</span>
+        </button>
+      </div>
+
+      <div class="sidebar-bottom">
+        <button class="btn btn-outline" onclick="exportData()" style="font-size:12px;padding:7px 12px">↓ Export JSON</button>
+        <label class="btn btn-outline" style="font-size:12px;padding:7px 12px;cursor:pointer;text-align:center">
+          ↑ Import JSON
+          <input type="file" accept=".json" style="display:none" onchange="importData(this)">
+        </label>
+        <button class="btn btn-outline" onclick="changePassword()" style="font-size:12px;padding:7px 12px">⚙ Change Password</button>
+        <button class="btn btn-red" onclick="logout()" style="font-size:12px;padding:7px 12px">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main">
+      <div class="admin-topbar">
+        <div class="topbar-crumb" id="topCrumb">Select a level and lesson from the sidebar</div>
+        <div class="topbar-actions">
+          <a href="index.html" target="_blank"
+            class="btn btn-outline" style="font-size:12px;padding:6px 14px;text-decoration:none">↗ View App</a>
+        </div>
+      </div>
+
+      <div class="admin-content" id="adminContent">
+        <div class="placeholder">
+          <div class="placeholder-icon">◈</div>
+          <div class="placeholder-text">Select a level and lesson from the sidebar to begin editing</div>
+        </div>
+      </div>
+
+      <div class="save-bar" id="saveBar" style="display:none">
+        <button class="btn btn-outline" onclick="discardChanges()">Discard</button>
+        <button class="btn btn-gold" onclick="saveChanges()">Save Changes</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── LEVEL STRUCTURE ──
+const structure = {
+  beginner: { name: 'Beginner', icon: '🌱', lessons: {
+    1: { title: 'Alphabet & Sounds',    tabs: ['Consonants','Vowels','Practice','Flashcards'] },
+    2: { title: 'Syllable Patterns',    tabs: ['Simple','With -h','Practice','Flashcards'] },
+    3: { title: 'Greetings & Phrases',  tabs: ['Greetings','Phrases','Practice','Flashcards'] },
+    4: { title: 'Core 100 Words',       tabs: ['Nouns','Verbs','Particles','Flashcards'] },
+    5: { title: 'Numbers',              tabs: ['Cardinal','Ordinal','Days & Months','Flashcards'] },
+  }},
+  elementary: { name: 'Elementary', icon: '📖', lessons: {
+    1: { title: 'Basic Sentences',      tabs: ['Structure','Examples','Practice','Flashcards'] },
+    2: { title: 'Numbers & Counting',   tabs: ['Cardinal','Ordinal','In Sentences','Flashcards'] },
+    3: { title: 'Time Expressions',     tabs: ['Days','Months','Time of Day','Flashcards'] },
+    4: { title: 'Articles',             tabs: ['Indefinite','Definite','Practice','Flashcards'] },
+    5: { title: 'Simple Dialogues',     tabs: ['Greetings','Questions','Practice','Flashcards'] },
+  }},
+  intermediate: { name: 'Intermediate', icon: '⚗️', lessons: {
+    1: { title: 'Nouns (Minte)',            tabs: ['Types','Examples','Practice','Flashcards'] },
+    2: { title: 'Verbs (Sepna)',            tabs: ['Types','Examples','Practice','Flashcards'] },
+    3: { title: 'Adjectives (Pianzia)',     tabs: ['Types','Comparison','Practice','Flashcards'] },
+    4: { title: 'Pronouns (Mintaang)',      tabs: ['Personal','Possessive','Practice','Flashcards'] },
+    5: { title: 'Tense (Hun Lahkhiatna)',   tabs: ['Present','Past & Future','Practice','Flashcards'] },
+  }},
+  advanced: { name: 'Advanced', icon: '🏔️', lessons: {
+    1: { title: 'Punctuation (Lailepna)',         tabs: ['Marks','Rules','Practice','Flashcards'] },
+    2: { title: 'Proverbs (Paunak)',               tabs: ['Proverbs A-M','Proverbs N-Z','Practice','Flashcards'] },
+    3: { title: 'Cultural Texts',                  tabs: ['Zo History','Customs','Practice','Flashcards'] },
+    4: { title: 'Composition (Kampau Luanzia)',    tabs: ['Voice','Letter Writing','Practice','Flashcards'] },
+    5: { title: 'Free Writing',                    tabs: ['Word Lists','Vocabulary','Practice','Flashcards'] },
+  }},
+};
+
+// ── ITEM MANIFEST — defines addressable atoms per level/lesson/tab ──
+// key: item label shown; value: used as storage key in adminData items{}
+const ITEM_MANIFEST = {
+  beginner: {
+    1: {
+      0: { label: 'Consonants', items: ['B','C','D','G','H','K','L','M','N','P','S','T','V','Z','Ng','Kh','Ph','Th'] },
+      1: { label: 'Vowels',     items: ['a','e','i','o','u','aw'] },
+    },
+    3: {
+      0: { label: 'Greetings', items: ['Hallo','Lungdam mahmah hi','Na dam hiam?','Ka dam hi','Hong phawk den','Na lawm it'] },
+    },
+    5: {
+      0: { label: 'Cardinal Numbers', items: ['Khat','Nih','Thum','Li','Nga','Uk','Sagih','Giet','Kua','Sawm'] },
+    },
+  },
+  elementary: {
+    2: {
+      0: { label: 'Cardinal', items: ['1','2','3','4','5','6','7','8','9','10','20','50','100'] },
+    },
+    3: {
+      0: { label: 'Days', items: ['Zantan','Nitak','Nini','Nizah','Niton','Ninam','Nituk'] },
+    },
+  },
+};
+
+// ── STATE ──
+let adminData = {};
+let currentLevel = null;
+let currentLesson = null;
+let currentTab = 0;
+let pendingChanges = false;
+
+const DATA_KEY    = 'zolai_admin_data';
+const PW_KEY      = 'zolai_admin_pw';
+const LOCKOUT_KEY = 'zolai_admin_lockout';
+const MAX_ATTEMPTS   = 5;
+const LOCKOUT_MS     = 10 * 60 * 1000; // 10 minutes
+
+// ── CRYPTO — SHA-256 via Web Crypto API ──
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function isPasswordSet() {
+  const h = localStorage.getItem(PW_KEY);
+  return !!(h && h.length === 64 && /^[0-9a-f]+$/.test(h));
+}
+
+// ── LOCKOUT ──
+function getLockout() {
+  try { return JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{"attempts":0,"until":0}'); }
+  catch { return { attempts: 0, until: 0 }; }
+}
+function setLockout(l) { localStorage.setItem(LOCKOUT_KEY, JSON.stringify(l)); }
+
+let _lockoutTimer = null;
+function refreshLockoutUI() {
+  const l = getLockout();
+  const msg = document.getElementById('lockoutMsg');
+  const btn = document.getElementById('loginBtn');
+  const inp = document.getElementById('pwInput');
+  if (!msg) return;
+  clearTimeout(_lockoutTimer);
+
+  if (l.until > Date.now()) {
+    const secs = Math.ceil((l.until - Date.now()) / 1000);
+    const m = Math.floor(secs / 60), s = secs % 60;
+    msg.textContent = `Too many attempts. Try again in ${m}:${String(s).padStart(2,'0')}`;
+    if (btn) btn.disabled = true;
+    if (inp) inp.disabled = true;
+    _lockoutTimer = setTimeout(refreshLockoutUI, 1000);
+  } else {
+    const remaining = MAX_ATTEMPTS - (l.attempts || 0);
+    msg.textContent = l.attempts > 0 ? `${remaining} attempt${remaining !== 1 ? 's' : ''} remaining` : '';
+    if (btn) btn.disabled = false;
+    if (inp) { inp.disabled = false; inp.focus(); }
+  }
+}
+
+// ── AUTH ──
+async function login() {
+  const l = getLockout();
+  if (l.until > Date.now()) { refreshLockoutUI(); return; }
+
+  const pw = document.getElementById('pwInput').value;
+  if (!pw) return;
+
+  const hash = await hashPw(pw);
+  if (hash === localStorage.getItem(PW_KEY)) {
+    setLockout({ attempts: 0, until: 0 });
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminMain').style.display = 'block';
+    loadData();
+    buildSidebar();
+  } else {
+    const l2 = getLockout();
+    l2.attempts = (l2.attempts || 0) + 1;
+    if (l2.attempts >= MAX_ATTEMPTS) {
+      l2.until = Date.now() + LOCKOUT_MS;
+    }
+    setLockout(l2);
+    document.getElementById('loginError').textContent = 'Incorrect password.';
+    document.getElementById('pwInput').value = '';
+    refreshLockoutUI();
+  }
+}
+
+async function setupPassword() {
+  const pw1 = document.getElementById('setupPw1').value;
+  const pw2 = document.getElementById('setupPw2').value;
+  const err = document.getElementById('setupError');
+  if (pw1.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+  if (pw1 !== pw2)    { err.textContent = 'Passwords do not match.'; return; }
+  const hash = await hashPw(pw1);
+  localStorage.setItem(PW_KEY, hash);
+  setLockout({ attempts: 0, until: 0 });
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('adminMain').style.display = 'block';
+  loadData();
+  buildSidebar();
+}
+
+function logout() {
+  document.getElementById('adminMain').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('loginError').textContent = '';
+  refreshLockoutUI();
+}
+
+async function changePassword() {
+  const current = prompt('Enter your current password:');
+  if (!current) return;
+  const currentHash = await hashPw(current);
+  if (currentHash !== localStorage.getItem(PW_KEY)) {
+    alert('Incorrect current password.');
+    return;
+  }
+  const np = prompt('New password (min 8 characters):');
+  if (!np) return;
+  if (np.length < 8) { alert('Password must be at least 8 characters.'); return; }
+  const np2 = prompt('Confirm new password:');
+  if (np !== np2) { alert('Passwords do not match.'); return; }
+  const hash = await hashPw(np);
+  localStorage.setItem(PW_KEY, hash);
+  showToast('Password updated ✓');
+}
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  if (!isPasswordSet()) {
+    document.getElementById('setupScreen').style.display = 'flex';
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    refreshLockoutUI();
+  }
+});
+
+// ── DATA ──
+function loadData() {
+  try { adminData = JSON.parse(localStorage.getItem(DATA_KEY) || '{}'); }
+  catch { adminData = {}; }
+}
+
+function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(adminData)); }
+
+function getTabData(lvl, lsn, tab) {
+  return adminData?.[lvl]?.[lsn]?.[tab] || { image: null, audio: null, vocab: [], items: {} };
+}
+
+function setTabData(lvl, lsn, tab, data) {
+  if (!adminData[lvl])         adminData[lvl] = {};
+  if (!adminData[lvl][lsn])    adminData[lvl][lsn] = {};
+  adminData[lvl][lsn][tab] = data;
+}
+
+// ── SIDEBAR ──
+function buildSidebar() {
+  let html = '';
+  for (const [lid, lvl] of Object.entries(structure)) {
+    html += `<button class="level-btn" id="lvl-${lid}" onclick="toggleLevel('${lid}')">
+      <span>${lvl.icon}</span><span>${lvl.name}</span>
+    </button>
+    <div class="lesson-nav" id="lessons-${lid}" style="display:none">`;
+    for (const [num, ls] of Object.entries(lvl.lessons)) {
+      html += `<button class="lesson-btn" id="lsn-${lid}-${num}"
+        onclick="selectLesson('${lid}',${num})">${num}. ${ls.title}</button>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('levelNav').innerHTML = html;
+}
+
+function toggleLevel(lid) {
+  const nav = document.getElementById(`lessons-${lid}`);
+  const isOpen = nav.style.display !== 'none';
+  document.querySelectorAll('.lesson-nav').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  if (!isOpen) {
+    nav.style.display = 'block';
+    document.getElementById(`lvl-${lid}`).classList.add('active');
+  }
+}
+
+function selectLesson(lid, num) {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = lid;
+  currentLesson = num;
+  currentTab = 0;
+
+  document.querySelectorAll('.lesson-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`lsn-${lid}-${num}`).classList.add('active');
+
+  const ls = structure[lid].lessons[num];
+  document.getElementById('topCrumb').textContent =
+    `${structure[lid].name} › Lesson ${num} · ${ls.title}`;
+
+  renderEditor();
+}
+
+// ── EDITOR ──
+function renderEditor() {
+  const ls = structure[currentLevel].lessons[currentLesson];
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+
+  const tabBar = ls.tabs.map((t, i) =>
+    `<button class="tab-pill${i===currentTab?' active':''}" onclick="switchTab(${i})">${t}</button>`
+  ).join('');
+
+  const imgSection = `
+    <div class="section-card">
+      <div class="section-title">📷 Tab Image</div>
+      <div class="upload-area${td.image?' has-file':''}" id="imgArea">
+        <input type="file" accept="image/*" onchange="handleImageUpload(this)">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-label">${td.image ? 'Image uploaded — click to replace' : 'Click to upload an image'}</div>
+        <div class="upload-sub">JPG, PNG, WebP, GIF · max 2 MB</div>
+        ${td.image ? `<div class="upload-preview"><img src="${td.image}" alt="preview"></div>` : ''}
+      </div>
+      ${td.image ? `<button class="clear-btn" onclick="clearMedia('image')">✕ Remove image</button>` : ''}
+    </div>`;
+
+  const audioSection = `
+    <div class="section-card">
+      <div class="section-title">🔊 Tab Audio</div>
+      <div class="upload-area${td.audio?' has-file':''}" id="audioArea">
+        <input type="file" accept="audio/*" onchange="handleTabAudio(this)">
+        <div class="upload-icon">🎵</div>
+        <div class="upload-label">${td.audio ? 'Audio uploaded — click to replace' : 'Click to upload audio'}</div>
+        <div class="upload-sub">MP3, OGG, WAV · max 5 MB · plays at top of tab in app</div>
+        ${td.audio ? `<audio class="tab-audio" controls src="${td.audio}"></audio>` : ''}
+      </div>
+      ${td.audio ? `<button class="clear-btn" onclick="clearMedia('audio')">✕ Remove audio</button>` : ''}
+    </div>`;
+
+  const emptyRow = `<tr><td colspan="4" style="padding:14px 10px;color:var(--text-dim);font-size:12px;text-align:center">
+    No items yet — click + Add Item below
+  </td></tr>`;
+
+  const vocabRows = (td.vocab && td.vocab.length > 0)
+    ? td.vocab.map((v, i) => buildVocabRow(i, v.z, v.e, v.audio)).join('')
+    : emptyRow;
+
+  const vocabSection = `
+    <div class="section-card">
+      <div class="section-title">≋ Vocabulary Items
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— shown below tab content in app</span>
+      </div>
+      <table class="vocab-table">
+        <thead>
+          <tr>
+            <th style="width:34%">Zolai</th>
+            <th style="width:40%">English</th>
+            <th style="width:15%">Audio</th>
+            <th style="width:11%"></th>
+          </tr>
+        </thead>
+        <tbody id="vocabBody">${vocabRows}</tbody>
+      </table>
+      <button class="btn btn-outline" onclick="addVocabRow()" style="margin-top:12px;font-size:12px;padding:7px 16px">
+        + Add Item
+      </button>
+    </div>`;
+
+  const itemSection = getItemSection(td);
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="tab-bar">${tabBar}</div>
+    ${imgSection}
+    ${audioSection}
+    ${itemSection}
+    ${vocabSection}
+  `;
+  document.getElementById('saveBar').style.display = 'flex';
+}
+
+function getItemSection(td) {
+  const manifest = ITEM_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+  if (!manifest) return '';
+  const savedItems = td.items || {};
+
+  const cells = manifest.items.map(key => {
+    const hasAudio = !!savedItems[key]?.audio;
+    const safeKey = key.replace(/[^a-zA-Z0-9]/g, '_');
+    return `<div class="item-cell${hasAudio ? ' has-audio' : ''}" id="icell-${safeKey}">
+      <div class="item-cell-label">${key}</div>
+      <div class="item-cell-actions">
+        ${hasAudio
+          ? `<button class="icon-btn" onclick="playItemKeyAudio('${safeKey}')" title="Play">&#9654;</button>
+             <audio id="ia-${safeKey}" src="${savedItems[key].audio}" style="display:none"></audio>`
+          : ''}
+        <label class="icon-btn" title="Upload audio" style="cursor:pointer">
+          🎵<input type="file" accept="audio/*" onchange="handleItemKeyAudio(this,'${key}','${safeKey}')">
+        </label>
+        ${hasAudio
+          ? `<button class="icon-btn del" onclick="clearItemKeyAudio('${key}','${safeKey}')" title="Remove">&#10005;</button>`
+          : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="section-card">
+      <div class="section-title">&#128308; Item Audio
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— ${manifest.label} &middot; add pronunciation to each item</span>
+      </div>
+      <div class="item-grid">${cells}</div>
+    </div>`;
+}
+
+function buildVocabRow(i, z, e, audio) {
+  return `<tr class="vocab-row-edit" id="vrow-${i}">
+    <td><input class="vocab-input" id="vz-${i}" type="text" value="${esc(z)}" placeholder="Zolai text" oninput="setPending()"></td>
+    <td><input class="vocab-input en" id="ve-${i}" type="text" value="${esc(e)}" placeholder="English meaning" oninput="setPending()"></td>
+    <td>
+      <div class="audio-cell">
+        ${audio ? `<button class="icon-btn" onclick="playItemAudio(${i})" title="Play">▶</button>
+                   <audio id="va-${i}" src="${audio}" style="display:none"></audio>` : ''}
+        <label class="icon-btn" title="Upload audio" style="cursor:pointer">
+          🎵<input type="file" accept="audio/*" onchange="handleItemAudio(this,${i})">
+        </label>
+        ${audio ? `<button class="icon-btn del" onclick="clearItemAudio(${i})" title="Remove audio">✕</button>` : ''}
+      </div>
+    </td>
+    <td><button class="icon-btn del" onclick="deleteRow(${i})" title="Delete">🗑</button></td>
+  </tr>`;
+}
+
+function switchTab(idx) {
+  if (pendingChanges && !confirm('Switch tab? Unsaved changes will be lost.')) return;
+  pendingChanges = false;
+  currentTab = idx;
+  renderEditor();
+}
+
+function addVocabRow() {
+  const tbody = document.getElementById('vocabBody');
+  // Remove empty placeholder row if present
+  const placeholder = tbody.querySelector('tr:not(.vocab-row-edit)');
+  if (placeholder) placeholder.remove();
+  const i = tbody.querySelectorAll('.vocab-row-edit').length;
+  tbody.insertAdjacentHTML('beforeend', buildVocabRow(i, '', '', null));
+  setPending();
+}
+
+function deleteRow(i) {
+  document.getElementById(`vrow-${i}`)?.remove();
+  // Re-index remaining rows
+  document.querySelectorAll('.vocab-row-edit').forEach((row, idx) => {
+    row.id = `vrow-${idx}`;
+    row.querySelector('[id^="vz-"]').id = `vz-${idx}`;
+    row.querySelector('[id^="ve-"]').id = `ve-${idx}`;
+  });
+  setPending();
+}
+
+// ── MEDIA HANDLERS ──
+function readFile(file, maxMB, callback) {
+  if (file.size > maxMB * 1024 * 1024) {
+    alert(`File too large. Max ${maxMB} MB allowed.`);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => callback(e.target.result);
+  reader.readAsDataURL(file);
+}
+
+function handleImageUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 2, data => {
+    const td = getTabData(currentLevel, currentLesson, currentTab);
+    td.image = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast('Image uploaded');
+  });
+}
+
+function handleTabAudio(input) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 5, data => {
+    const td = getTabData(currentLevel, currentLesson, currentTab);
+    td.audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast('Audio uploaded');
+  });
+}
+
+function handleItemAudio(input, i) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 2, data => {
+    const td = collectEdits();
+    if (!td.vocab[i]) td.vocab[i] = { z: '', e: '' };
+    td.vocab[i].audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast('Item audio uploaded');
+  });
+}
+
+function clearMedia(type) {
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  td[type] = null;
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData(); renderEditor();
+  showToast(`${type === 'image' ? 'Image' : 'Audio'} removed`);
+}
+
+function clearItemAudio(i) {
+  const td = collectEdits();
+  if (td.vocab[i]) td.vocab[i].audio = null;
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData(); renderEditor(); showToast('Item audio removed');
+}
+
+function playItemAudio(i) { document.getElementById(`va-${i}`)?.play(); }
+
+function handleItemKeyAudio(input, key, safeKey) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 2, data => {
+    const td = getTabData(currentLevel, currentLesson, currentTab);
+    if (!td.items) td.items = {};
+    if (!td.items[key]) td.items[key] = {};
+    td.items[key].audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast(`Audio added for "${key}"`);
+  });
+}
+
+function clearItemKeyAudio(key, safeKey) {
+  const td = collectEdits();
+  if (td.items?.[key]) { td.items[key].audio = null; delete td.items[key]; }
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData(); renderEditor(); showToast(`Audio removed from "${key}"`);
+}
+
+function playItemKeyAudio(safeKey) { document.getElementById(`ia-${safeKey}`)?.play(); }
+
+// ── SAVE / DISCARD ──
+function collectEdits() {
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  const rows = document.querySelectorAll('.vocab-row-edit');
+  const vocab = [];
+  rows.forEach((_, i) => {
+    const z = document.getElementById(`vz-${i}`)?.value.trim() || '';
+    const e = document.getElementById(`ve-${i}`)?.value.trim() || '';
+    if (z || e) vocab.push({ z, e, audio: td.vocab?.[i]?.audio || null });
+  });
+  return { image: td.image, audio: td.audio, vocab, items: td.items || {} };
+}
+
+function saveChanges() {
+  const td = collectEdits();
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData();
+  pendingChanges = false;
+  showToast('Saved successfully ✓');
+  renderEditor();
+}
+
+function discardChanges() {
+  if (!confirm('Discard all unsaved changes for this tab?')) return;
+  pendingChanges = false;
+  renderEditor();
+}
+
+function setPending() { pendingChanges = true; }
+
+// ── EXPORT / IMPORT ──
+function exportData() {
+  const blob = new Blob([JSON.stringify(adminData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zolai-admin-data.json';
+  a.click();
+  showToast('Data exported');
+}
+
+function importData(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      adminData = JSON.parse(e.target.result);
+      saveData();
+      showToast('Data imported successfully');
+      if (currentLevel && currentLesson !== null) renderEditor();
+    } catch { alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ── FEATURE FLAGS ──
+const FLAGS_KEY = 'zolai_features';
+
+function getFlags() {
+  try { return JSON.parse(localStorage.getItem(FLAGS_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveFlags(flags) {
+  localStorage.setItem(FLAGS_KEY, JSON.stringify(flags));
+}
+
+function showFeatureControls() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = null; currentLesson = null;
+  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.analytics-nav-btn,.controls-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('controlsNavBtn').classList.add('active');
+  document.getElementById('saveBar').style.display = 'none';
+  document.getElementById('topCrumb').textContent = 'Feature Controls';
+
+  const flags = getFlags();
+
+  const globalDefs = [
+    { key: 'quiz',        label: 'Quiz Mode',        icon: '✦', hint: 'Allow students to take level quizzes' },
+    { key: 'vocabulary',  label: 'Vocabulary',        icon: '◈', hint: 'Show the vocabulary browser page' },
+    { key: 'leaderboard', label: 'Leaderboard',       icon: '🏆', hint: 'Show the global score leaderboard' },
+    { key: 'reference',   label: 'Grammar Reference', icon: '≡', hint: 'Show the grammar reference page' },
+  ];
+
+  const globalRows = globalDefs.map(f => {
+    const on = flags.global?.[f.key] !== false;
+    return `<div class="control-row">
+      <div>
+        <div class="control-row-label">
+          <span class="control-icon">${f.icon}</span>
+          <span>${f.label}</span>
+        </div>
+        <div class="control-hint" style="padding-left:32px">${f.hint}</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" ${on?'checked':''} onchange="toggleGlobal('${f.key}',this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    </div>`;
+  }).join('');
+
+  let levelHtml = '';
+  for (const [lid, lvl] of Object.entries(structure)) {
+    let lessonRows = '';
+    for (const [num, ls] of Object.entries(lvl.lessons)) {
+      const lessonOn = flags.levels?.[lid]?.[num]?.enabled !== false;
+      const tabToggles = ls.tabs.map((tab, ti) => {
+        const tabOn = flags.levels?.[lid]?.[num]?.tabs?.[ti] !== false;
+        return `<div class="tab-ctrl-item ${tabOn?'':'tab-off'}">
+          <span>${tab}</span>
+          <label class="toggle-switch" style="width:28px;height:16px">
+            <input type="checkbox" ${tabOn?'checked':''} ${!lessonOn?'disabled':''}
+              onchange="toggleTab('${lid}',${num},${ti},this.checked)">
+            <span class="toggle-track" style="border-radius:16px"></span>
+          </label>
+        </div>`;
+      }).join('');
+      lessonRows += `
+        <div class="lesson-ctrl-row">
+          <div class="lesson-ctrl-header">
+            <label class="toggle-switch">
+              <input type="checkbox" ${lessonOn?'checked':''} onchange="toggleLesson('${lid}',${num},this.checked)">
+              <span class="toggle-track"></span>
+            </label>
+            <span class="lesson-ctrl-title ${lessonOn?'':'dimmed'}">${num}. ${ls.title}</span>
+          </div>
+          <div class="tab-ctrl-row">${tabToggles}</div>
+        </div>`;
+    }
+    levelHtml += `
+      <div class="level-ctrl-section" style="margin-bottom:8px">
+        <div class="level-ctrl-header" onclick="toggleCtrlSection('${lid}')">
+          <span>${lvl.icon} ${lvl.name}</span>
+          <span id="ctrl-arrow-${lid}" style="color:var(--text-dim);font-size:12px">▾</span>
+        </div>
+        <div class="level-ctrl-body" id="ctrl-body-${lid}">
+          ${lessonRows}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">Global Features
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— changes apply immediately for all users</span>
+      </div>
+      <div>${globalRows}</div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">Level &amp; Tab Controls
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— hide lessons or individual tabs per level</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">
+        Disabling a lesson removes it from the student sidebar. Disabling a tab hides that tab inside the lesson.
+      </div>
+      <div>${levelHtml}</div>
+      <button onclick="resetAllFlags()"
+        style="margin-top:14px;font-size:11px;color:var(--text-dim);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer">
+        Reset all to default (enable everything)
+      </button>
+    </div>
+  `;
+  // Open first level by default
+  toggleCtrlSection('beginner');
+}
+
+function toggleCtrlSection(lid) {
+  const body = document.getElementById(`ctrl-body-${lid}`);
+  const arrow = document.getElementById(`ctrl-arrow-${lid}`);
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  if (arrow) arrow.textContent = open ? '▾' : '▸';
+}
+
+function toggleGlobal(feature, enabled) {
+  const flags = getFlags();
+  if (!flags.global) flags.global = {};
+  flags.global[feature] = enabled;
+  saveFlags(flags);
+  showToast(`${feature} ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+function toggleLesson(level, lesson, enabled) {
+  const flags = getFlags();
+  if (!flags.levels) flags.levels = {};
+  if (!flags.levels[level]) flags.levels[level] = {};
+  if (!flags.levels[level][lesson]) flags.levels[level][lesson] = {};
+  flags.levels[level][lesson].enabled = enabled;
+  saveFlags(flags);
+  showFeatureControls();
+  // Re-open the level that was just changed
+  toggleCtrlSection(level);
+  showToast(`Lesson ${lesson} ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+function toggleTab(level, lesson, tabIdx, enabled) {
+  const flags = getFlags();
+  if (!flags.levels) flags.levels = {};
+  if (!flags.levels[level]) flags.levels[level] = {};
+  if (!flags.levels[level][lesson]) flags.levels[level][lesson] = {};
+  if (!flags.levels[level][lesson].tabs) flags.levels[level][lesson].tabs = {};
+  flags.levels[level][lesson].tabs[tabIdx] = enabled;
+  saveFlags(flags);
+  // Update just this tab item visually (no full re-render)
+  const checkbox = event.target;
+  const item = checkbox.closest('.tab-ctrl-item');
+  if (item) item.classList.toggle('tab-off', !enabled);
+  showToast(`Tab ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+function resetAllFlags() {
+  if (!confirm('Reset all feature controls to default (everything enabled)?')) return;
+  localStorage.removeItem(FLAGS_KEY);
+  showFeatureControls();
+  toggleCtrlSection('beginner');
+  showToast('All controls reset to default');
+}
+
+// ── FIREBASE ──
+function saveFbUrl() {
+  const url = (document.getElementById('fbUrlInput').value || '').trim().replace(/\/$/, '');
+  if (url && !url.startsWith('https://')) {
+    alert('URL must start with https://');
+    return;
+  }
+  if (url) localStorage.setItem('zolai_firebase_url', url);
+  else localStorage.removeItem('zolai_firebase_url');
+  showToast(url ? 'Firebase URL saved' : 'Firebase URL cleared');
+  showAnalytics();
+}
+
+function saveGaId() {
+  const id = (document.getElementById('gaIdInput').value || '').trim();
+  if (id && !/^G-[A-Z0-9]+$/.test(id)) {
+    alert('Invalid format. GA4 Measurement IDs look like: G-ABCD1234');
+    return;
+  }
+  if (id) localStorage.setItem('zolai_ga_id', id);
+  else localStorage.removeItem('zolai_ga_id');
+  showToast(id ? `GA4 configured: ${id}` : 'GA4 ID cleared');
+  showAnalytics();
+}
+
+// ── ADMIN LEADERBOARD ──
+function showAdminLeaderboard() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = null; currentLesson = null;
+  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.analytics-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('leaderboardNavBtn').classList.add('active');
+  document.getElementById('saveBar').style.display = 'none';
+  document.getElementById('topCrumb').textContent = 'Leaderboard';
+
+  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  if (!fbUrl) {
+    document.getElementById('adminContent').innerHTML = `
+      <div class="section-card" style="text-align:center;padding:48px">
+        <div style="font-size:36px;margin-bottom:16px">🏆</div>
+        <div style="font-size:15px;font-weight:500;margin-bottom:8px">Firebase not configured</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">
+          Set up a Firebase Realtime Database URL in the Analytics panel first.
+        </div>
+        <button class="btn btn-gold" onclick="showAnalytics()" style="font-size:13px">Go to Analytics &#8594;</button>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>&#127942; Leaderboard — All Submissions</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" onclick="showAdminLeaderboard()" style="font-size:12px;padding:6px 12px">&#8635; Refresh</button>
+          <button class="btn btn-red" onclick="clearAllScores()" style="font-size:12px;padding:6px 12px">Clear All</button>
+        </div>
+      </div>
+      <div id="adminLbBody" style="margin-top:16px">
+        <div style="text-align:center;padding:32px;color:var(--text-dim)">Loading...</div>
+      </div>
+    </div>`;
+
+  fetch(fbUrl + '/scores.json')
+    .then(r => r.json())
+    .then(data => {
+      if (!data) { document.getElementById('adminLbBody').innerHTML = `<div style="color:var(--text-dim);padding:20px;text-align:center">No scores yet.</div>`; return; }
+      const entries = Object.entries(data).map(([k,v]) => ({...v, _key: k}));
+      entries.sort((a,b) => b.xp - a.xp);
+      const rows = entries.map((s, i) => `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px;color:var(--text-dim);text-align:center">#${i+1}</td>
+          <td style="padding:10px;font-weight:500">${esc(s.name)}</td>
+          <td style="padding:10px;font-size:11px;color:var(--text-muted)">${esc(s.level||'')}</td>
+          <td style="padding:10px;font-family:'DM Mono',monospace;color:var(--gold-light)">${s.xp||0} XP</td>
+          <td style="padding:10px;color:var(--text-muted)">${s.quizScore||0}/${s.quizTotal||0} (${s.quizPct||0}%)</td>
+          <td style="padding:10px;color:var(--text-dim);font-size:12px">${esc(s.date||'')}</td>
+          <td style="padding:10px;text-align:center">
+            <button class="icon-btn del" onclick="deleteScore('${esc(s._key)}')" title="Delete">&#128465;</button>
+          </td>
+        </tr>`).join('');
+      document.getElementById('adminLbBody').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:center">Rank</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Name</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Level</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">XP</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Quiz</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Date</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:center">Del</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-dim)">${entries.length} submission${entries.length!==1?'s':''}</div>`;
+    })
+    .catch(() => {
+      document.getElementById('adminLbBody').innerHTML = `<div style="color:var(--text-muted);padding:20px;text-align:center">Failed to load. Check Firebase URL in Analytics.</div>`;
+    });
+}
+
+function deleteScore(key) {
+  if (!confirm('Delete this score entry?')) return;
+  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  fetch(`${fbUrl}/scores/${key}.json`, { method: 'DELETE' })
+    .then(() => { showToast('Score deleted'); showAdminLeaderboard(); })
+    .catch(() => alert('Failed to delete. Check Firebase URL and rules.'));
+}
+
+function clearAllScores() {
+  if (!confirm('Delete ALL scores? This cannot be undone.')) return;
+  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  fetch(`${fbUrl}/scores.json`, { method: 'DELETE' })
+    .then(() => { showToast('All scores cleared'); showAdminLeaderboard(); })
+    .catch(() => alert('Failed to clear scores.'));
+}
+
+// ── ANALYTICS ──
+function showAnalytics() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = null; currentLesson = null;
+  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.analytics-nav-btn').forEach(b => b.classList.add('active'));
+  document.getElementById('saveBar').style.display = 'none';
+
+  const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
+  const gaId = localStorage.getItem('zolai_ga_id') || '';
+
+  // Aggregate by level+lesson
+  const counts = {};
+  let total = 0;
+  log.forEach(e => {
+    const k = `${e.level}.${e.lesson}`;
+    counts[k] = (counts[k] || 0) + 1;
+    total++;
+  });
+  const maxCount = Math.max(1, ...Object.values(counts));
+
+  const rows = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => {
+      const [lvl, lsn] = k.split('.');
+      const title = structure[lvl]?.lessons[lsn]?.title || lsn;
+      const lvlName = structure[lvl]?.name || lvl;
+      const pct = Math.round((n / maxCount) * 100);
+      return `<tr>
+        <td><span style="font-size:11px;color:var(--text-dim)">${lvlName}</span></td>
+        <td>${title}</td>
+        <td style="width:120px">
+          <div>${n} visit${n!==1?'s':''}</div>
+          <div class="stat-bar" style="width:${pct}%"></div>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="3" style="padding:20px;color:var(--text-dim);text-align:center;font-size:13px">No visits recorded yet — open the app and browse lessons.</td></tr>`;
+
+  // Level breakdown
+  const levelCounts = {};
+  log.forEach(e => { levelCounts[e.level] = (levelCounts[e.level] || 0) + 1; });
+  const levelRows = Object.entries(levelCounts).map(([lvl, n]) =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px">
+      ${structure[lvl]?.icon || ''} ${structure[lvl]?.name || lvl} <strong style="color:var(--gold)">${n}</strong>
+    </span>`
+  ).join('') || `<span style="font-size:12px;color:var(--text-dim)">—</span>`;
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">&#128202; Site Analytics</div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:1;min-width:120px">
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Total Visits (this device)</div>
+          <div style="font-size:28px;font-weight:600;color:var(--gold-light)">${total}</div>
+        </div>
+        <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:2;min-width:200px">
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">By Level</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${levelRows}</div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Lesson Visit Breakdown</div>
+      <table class="analytics-table">
+        <thead><tr><th>Level</th><th>Lesson</th><th>Visits</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <button onclick="clearVisitLog()"
+        style="margin-top:10px;font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:4px 12px;cursor:pointer">
+        Clear visit log
+      </button>
+
+      <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Firebase Realtime Database — Leaderboard Backend</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
+          The leaderboard needs a free Firebase Realtime Database to store scores across devices.<br>
+          1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--gold)">console.firebase.google.com</a> → Create project → Build → Realtime Database.<br>
+          2. Start in <strong>test mode</strong> (open read/write rules).<br>
+          3. Copy the database URL (e.g. <code style="color:var(--gold-light)">https://yourapp-default-rtdb.firebaseio.com</code>) and paste below.
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="fbUrlInput" value="${esc(localStorage.getItem('zolai_firebase_url')||'')}"
+            placeholder="https://your-project-default-rtdb.firebaseio.com"
+            style="flex:1;min-width:200px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none">
+          <button class="btn btn-gold" onclick="saveFbUrl()" style="font-size:12px;padding:9px 16px">Save</button>
+        </div>
+        ${localStorage.getItem('zolai_firebase_url')
+          ? `<div style="margin-top:8px;font-size:12px;color:var(--green)">&#10003; Active — <a href="${esc(localStorage.getItem('zolai_firebase_url'))}/scores.json" target="_blank" style="color:var(--gold)">view raw data &#8599;</a></div>`
+          : ''}
+      </div>
+
+      <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Google Analytics 4 — Age, Gender &amp; Country</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
+          The visit log above only captures <em>this device</em>. To see <strong>all users</strong> —
+          including their country, device, and estimated age/gender — connect Google Analytics 4 (free).<br>
+          1. Go to <a href="https://analytics.google.com" target="_blank" style="color:var(--gold)">analytics.google.com</a>,
+          create a Web property, and copy your <strong>Measurement ID</strong> (format: <code style="color:var(--gold-light)">G-XXXXXXXX</code>).<br>
+          2. Paste it below. The app will automatically send lesson-view events to GA4.
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="gaIdInput" value="${esc(gaId)}" placeholder="G-XXXXXXXXXX"
+            style="flex:1;min-width:160px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none">
+          <button class="btn btn-gold" onclick="saveGaId()" style="font-size:12px;padding:9px 16px">Save</button>
+          ${gaId ? `<a href="https://analytics.google.com" target="_blank" class="btn btn-outline" style="font-size:12px;padding:9px 16px;text-decoration:none">Open GA4 Dashboard &#8599;</a>` : ''}
+        </div>
+        ${gaId ? `<div style="margin-top:8px;font-size:12px;color:var(--green)">&#10003; Active — tracking events with ID: <strong>${esc(gaId)}</strong></div>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('topCrumb').textContent = 'Analytics';
+}
+
+function clearVisitLog() {
+  if (!confirm('Clear all visit history on this device?')) return;
+  localStorage.removeItem('zolai_visit_log');
+  showAnalytics();
+  showToast('Visit log cleared');
+}
+
+// ── UTILS ──
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// Warn on page leave with unsaved changes
+window.addEventListener('beforeunload', e => {
+  if (pendingChanges) { e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+</body>
+</html>

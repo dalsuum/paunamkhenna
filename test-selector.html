@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Level Selector</title>
+<style>
+  :root {
+    --bg: #0e0c0a;
+    --surface: #181410;
+    --border: #3a3228;
+    --gold: #c9a84c;
+    --text: #f0e8d8;
+    --text-muted: #9a8f7e;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: sans-serif;
+    min-height: 100vh;
+  }
+  
+  #levelSelector {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+  
+  .ls-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 680px;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+  }
+  
+  .ls-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    z-index: 10;
+    pointer-events: auto;
+    user-select: none;
+  }
+  
+  .ls-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-3px);
+    box-shadow: 0 0 0 2px var(--gold), 0 8px 24px rgba(0,0,0,0.4);
+  }
+  
+  .ls-card-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  
+  .ls-card-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  
+  .ls-cta {
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+  
+  .debug {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    max-width: 200px;
+  }
+</style>
+</head>
+<body>
+
+<div id="levelSelector">
+  <div style="text-align:center;margin-bottom:40px">
+    <h1 style="margin-bottom:12px">Choose Your Level</h1>
+    <p style="color:var(--text-muted)">Click a card to select</p>
+  </div>
+  
+  <div class="ls-grid">
+    <div class="ls-card" onclick="handleClick('beginner')" style="cursor: pointer;">
+      <div class="ls-card-title">🌱 Beginner</div>
+      <div class="ls-card-desc">Start from zero</div>
+      <div class="ls-cta">Click me →</div>
+    </div>
+    
+    <div class="ls-card" onclick="handleClick('elementary')" style="cursor: pointer;">
+      <div class="ls-card-title">📖 Elementary</div>
+      <div class="ls-card-desc">Build sentences</div>
+      <div class="ls-cta">Click me →</div>
+    </div>
+    
+    <div class="ls-card" onclick="handleClick('intermediate')" style="cursor: pointer;">
+      <div class="ls-card-title">⚗️ Intermediate</div>
+      <div class="ls-card-desc">Master grammar</div>
+      <div class="ls-cta">Click me →</div>
+    </div>
+    
+    <div class="ls-card" onclick="handleClick('advanced')" style="cursor: pointer;">
+      <div class="ls-card-title">🏔️ Advanced</div>
+      <div class="ls-card-desc">Reach fluency</div>
+      <div class="ls-cta">Click me →</div>
+    </div>
+  </div>
+</div>
+
+<div class="debug" id="debug">
+  <strong>Debug Info:</strong><br>
+  <span id="clicks">Clicks: 0</span><br>
+  <span id="last">Last: None</span>
+</div>
+
+<script>
+let clickCount = 0;
+
+function handleClick(level) {
+  clickCount++;
+  document.getElementById('clicks').textContent = 'Clicks: ' + clickCount;
+  document.getElementById('last').textContent = 'Last: ' + level;
+  console.log('Clicked:', level);
+  alert('You selected: ' + level);
+}
+
+// Test that onclick is working
+console.log('Page loaded. Try clicking the cards.');
+console.log('onclick handlers are attached to .ls-card elements');
+</script>
+
+</body>
+</html>
