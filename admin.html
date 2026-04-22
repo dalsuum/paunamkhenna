@@ -645,26 +645,104 @@ const structure = {
 };
 
 // ── ITEM MANIFEST — defines addressable atoms per level/lesson/tab ──
-// key: item label shown; value: used as storage key in adminData items{}
+// keys must exactly match the .vocab-zo textContent or .syllable-cell textContent rendered in index.html
 const ITEM_MANIFEST = {
   beginner: {
     1: {
       0: { label: 'Consonants', items: ['B','C','D','G','H','K','L','M','N','P','S','T','V','Z','Ng','Kh','Ph','Th'] },
-      1: { label: 'Vowels',     items: ['a','e','i','o','u','aw'] },
+      1: { label: 'Vowels', items: ['a','e','i','o','u','aw'] },
+      2: { label: 'Practice Sentences', items: ['Alu a to hi.','Bi a po zo hi.','Be a su hi.','Ga a la hi.','Ni a sa hi.','Ka mo a gi hi.','Haza va la hi.','Tho a na hi.','Mawtaw ka mu hi.'] },
+    },
+    2: {
+      0: { label: 'Basic Syllables', items: ['Ba','Be','Bi','Bo','Bu','Baw','Ca','Ce','Ci','Co','Cu','Caw','Da','De','Di','Do','Du','Daw','Ka','Ke','Ki','Ko','Ku','Kaw','La','Le','Li','Lo','Lu','Law','Ma','Me','Mi','Mo','Mu','Maw','Na','Ne','Ni','No','Nu','Naw','Pa','Pe','Pi','Po','Pu','Paw','Sa','Se','Si','So','Su','Saw','Ta','Te','Ti','To','Tu','Taw'] },
+      1: { label: 'Syllables with -h', items: ['Bah','Beh','Bih','Boh','Buh','Bawh','Cah','Ceh','Cih','Coh','Cuh','Cawh','Dah','Deh','Dih','Doh','Duh','Dawh','Kah','Keh','Kih','Koh','Kuh','Kawh','Lah','Leh','Lih','Loh','Luh','Lawh','Mah','Meh','Mih','Moh','Muh','Mawh','Nah','Neh','Nih','Noh','Nuh','Nawh'] },
+      2: { label: 'Practice Sentences', items: ['Lo ah buhtuh a huh hi.','Zato ah zaa a nuh hi.','Gah leh teh kane hi.','A u buh tuh a huh hi.','A behpa a huh hi.','Sameh a ne hi.','A pi a dah mahmah hi.','Lo ahuh a, a zawh pih hi.'] },
     },
     3: {
-      0: { label: 'Greetings', items: ['Hallo','Lungdam mahmah hi','Na dam hiam?','Ka dam hi','Hong phawk den','Na lawm it'] },
+      0: { label: 'Greetings', items: ['Hallo / Dammaw','Na dam hiam?','Ka dam hi.','Lungdam mahmah hi.','Itna lianpi tawh kong zawn hi.','Hong phawk den.','Na lawm it.','Kong it pa/nu.'] },
+      1: { label: 'Common Phrases', items: ['Kei ka dam hi.','Nang na dam hiam?','Ka lungdam mahmah hi.','Ka siate nuam thei mahmah uh hi.','Ka nu leh innkuanpih teng zong ka phawk mahmah hi.','Ih kimuh lungdam un.'] },
+      2: { label: 'Practice (hover)', items: ['Hallo / Dammaw','Na dam hiam?','Ka dam hi.','Lungdam mahmah hi.','Itna lianpi tawh kong zawn hi.'] },
+    },
+    4: {
+      0: { label: 'Essential Nouns', items: ['mi','inn','lo','tui','ni','zan','lam','sang','gam','khua','nu','pa','ta','u','nau','laibu','sum','mawtaw','vanleng','an'] },
+      1: { label: 'Essential Verbs', items: ['pai','ciah','ne','dawn','om','tai','sim','gel','sa','mu','theih','it','dawng','ngaih','sep','pia','la','lam','tu','lum'] },
+      2: { label: 'Particles & Markers', items: ['hi','leh','in','a','tawh','ah','panin','nadingin','napi-in','zong','bek','mahmah','kei/lo','hiam','ding hi'] },
     },
     5: {
-      0: { label: 'Cardinal Numbers', items: ['Khat','Nih','Thum','Li','Nga','Uk','Sagih','Giet','Kua','Sawm'] },
+      0: { label: 'Cardinal Numbers', items: ['bem','khat','nih','thum','li','nga','guk','sagih','giat','kua','sawmkhat','sawmnih','zakhat','tulkhat','thenkhat','awnkhat'] },
+      1: { label: 'Ordinal Numbers', items: ['a khatna','a nihna','a thumna','a lina','a ngana','a masa','a tawpna'] },
+      2: { label: 'Days & Months', items: ['Nipi','Pizang','Pithai','Nilai','Laizing','Laithai','Nino','Theinosihkha','Tunkha','Dota','Dopi','Zingkha','Gamkha','Tangsihkha','Tangkha'] },
     },
   },
   elementary: {
+    1: {
+      1: { label: 'Example Sentences', items: ['Va-ak in moh a tuah hi.','Ka nu ka it hi.','Inn a hoih mahmah hi.','Huih a nung hi.','Sakol in, leng a kai hi.'] },
+      2: { label: 'Sentence Types', items: ['Kei in nasep ka hanciam hi.','Kei in nasep ka hanciam kei hi.','Kei in nasep ka hanciam hiam?'] },
+    },
     2: {
-      0: { label: 'Cardinal', items: ['1','2','3','4','5','6','7','8','9','10','20','50','100'] },
+      0: { label: 'Full Number System', items: ['bem','khat','nih','thum','li','nga','guk','sagih','giat','kua','sawmkhat','sawmnih','sawmthum','sawmli','sawmnga','zakhat','zanga','tulkhat','thenkhat','sangkhat','awnkhat','makkhat'] },
+      1: { label: 'Ordinal & Counting', items: ['a khatna','a nihna','khatveina','nihveina','thumveina','sawmnih-sagih','zakhat-sawmnih'] },
+      2: { label: 'Numbers in Sentences', items: ['Ka sang uhah tukpeng kimawlna tualpi khat om hi.','Kum sawmnih a pha hi.','Khutme nga a nei hi.','Pak tampi a nei hi.'] },
     },
     3: {
-      0: { label: 'Days', items: ['Zantan','Nitak','Nini','Nizah','Niton','Ninam','Nituk'] },
+      0: { label: 'Days of the Week', items: ['Nipi','Pizang','Pithai','Nilai','Laizing','Laithai','Nino'] },
+      1: { label: 'Months (all 12)', items: ['Theinosihkha','Tunkha','Dota','Dopi','Zingkha','Gamkha','Tangsihkha','Tangkha','Phalkha','Khuadokha','Nokha','Kaukha'] },
+      2: { label: 'Time of Day', items: ['zingsang','nitak','zan','zingtunga','nai sagih','tu ni','zanin','taang','mai'] },
+    },
+    4: {
+      0: { label: 'Indefinite Article', items: ['sakol khat','laibu khat','mi citak khat','sikkeu khat'] },
+      1: { label: 'Definite Articles', items: ['Tua sakol pen','Tua sakol in','Tua laibu pen'] },
+      2: { label: 'Article Practice', items: ['Kumpipa in, sakol ___ tawh khual a zin hi.','___ sakol pen, a kaang ahi hi.','___ sakol in kumpipa a thei hi.'] },
+    },
+    5: {
+      0: { label: 'Greeting Dialogue', items: ['Na dam hiam?','Ka dam hi.','Na min bang ci hiam?','Ka min ___ ahi hi.','Koi pan hong pai na hia?','Zanin koi-ah om na hi vua?'] },
+      1: { label: 'Question Words', items: ['Kua?','Bang?','Koi?','Bang hunin?','Banghanghiam?','Bangci?','Bang zah?'] },
+      2: { label: 'Full Dialogue', items: ['A: Na dam hiam?','B: Ka dam hi, lungdam un. Nang zong na dam hiam?','A: Ka dam hi. Koi-ah na pai hiam?','B: Ka sang ah ka pai hi.'] },
+    },
+  },
+  intermediate: {
+    1: {
+      1: { label: 'Noun Examples', items: ['Ka gang a honghawh hi.','Utong a zempha mahmah hi.','Zato ah zatui kila hi.','Ka nu dikna in, genzawh lohin lian hi.'] },
+      2: { label: 'Identify Noun Type', items: ['Tedim','inn','cidamna','galkapte','Mang','lungdamna'] },
+    },
+    2: {
+      1: { label: 'Verb Examples', items: ['Bawng in lopa a ne hi.','Thangpu a tai hi.','Dimno a laam hi.','Naupangte a cidam hi.','Lianpi in kong a khak hi.','Mangno in naupang khat ahi hi.'] },
+      2: { label: 'Verb Types Practice', items: ['Kei-in laibu khat nei-ing.','Ni a taang hi.','Amah ka tanu ahi hi.'] },
+    },
+    3: {
+      1: { label: 'Adjective Comparison', items: ['hoih','hoihzaw','hoihpen','hat','hatzaw','hatpen','baih','baihzaw','baihpen'] },
+      2: { label: 'Adjective Practice', items: ['A mah in, inn hoih khat a nei hi.','Ciinno in, pak tampi a nei hi.','Hih tangvalpa in a thahat hi.','Mangpu sangin Thangpu a hatzaw hi.'] },
+    },
+    4: {
+      0: { label: 'Personal Pronouns', items: ['Kei','Nang','Taang','Lia','Amah','Eite','Note','Amaute'] },
+      1: { label: 'Possessive Pronouns', items: ['ka','na',"taang'","lia'",'ih',"amau'",'kei a','nang a'] },
+      2: { label: 'Pronoun Practice', items: ['Kei-in laibu khat nei-ing.','Hih in ka laibu ahi hi.','Hih laibu in kei a hi.','Nang mipil khat na hi hi.','Eite in inn khat nei hang.'] },
+    },
+    5: {
+      0: { label: 'Present Tense', items: ['Thangpu a tai hi.','Thangpu a tai laitak hi.','Ka na pai khinzo hi.','Ka na paipai khinzo hi.'] },
+      1: { label: 'Past & Future Tense', items: ['Thangpu a tai khin hi.','Thangpu a tai khit laitak hi.','Ka na pai khinzota hi.','Ka na paipai khinzota hi.','Thangpu a tai ding hi.','Thangpu a tai ding laitak hi.','Ka pai khinzo tading hi.'] },
+      2: { label: 'Tense Practice', items: ['Ka pai ding hi.','A tai khin hi.','Ka na paipai khinzo hi.','A om laitak hi.'] },
+    },
+  },
+  advanced: {
+    1: {
+      2: { label: 'Punctuation Practice', items: ['Lawm nang bang semsem na hia ___','Oh ___ Hong pai mahmah hi','Na hehnepnakammalte hangin ___ ka lungdam hi.'] },
+    },
+    2: {
+      2: { label: 'Proverb Quiz', items: ['Sial vom leh sial vom kiingai.','Suangpi suangneu in thek.','Zuau in a khap lawn.'] },
+    },
+    3: {
+      0: { label: 'Zo History Terms', items: ['Zomite','Zogam','Sengam','Khul'] },
+      2: { label: 'Cultural Vocabulary', items: ['Khuazindo','Meilah satni','Khuai aihna','Pawi','Thalloh','Zinkhak','Sungpi','Zawl'] },
+    },
+    4: {
+      0: { label: 'Active & Passive Voice', items: ['Cingno in lengladei sung a phiat hi.','Lengladei sung pen, Cingno in a phiat hi.','Lia in la khat a sa hi.','La khat pen, Lia in a sa hi.'] },
+      1: { label: 'Direct & Indirect Speech', items: ['Thangpi in, "Kei-in khual ka zin ding hi," a ci hi.','Thangpi in, amah khualzin ding, a gen hi.'] },
+      2: { label: 'Composition Practice', items: ['Taang in ticket te a khawm hi.','Lia in la khat a sa ding hi.'] },
+    },
+    5: {
+      0: { label: 'Grammar Terms', items: ['Kammal zatte','Paunam khenna','Kampau luanzia','Laigelhzia','Laimal gawmzia','Awsuah','Lailepna','Genbanga Genna','Gensawnna','A Sepna Thupisak','A Sep Thupisak','Hun lahkhiatna'] },
+      1: { label: 'Advanced Vocabulary', items: ['Angtang','Cidamna','Dikna','Hansanna','Hauhna','Lungdamna','Pilna','Suahtakna','Thukhunpi','Zomite'] },
     },
   },
 };

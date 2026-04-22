@@ -3331,15 +3331,32 @@ function applyAdminItemAudio(level, lesson, tabIdx) {
     const raw = localStorage.getItem('zolai_admin_data');
     if (!raw) return;
     const items = JSON.parse(raw)?.[level]?.[lesson]?.[tabIdx]?.items;
-    if (!items) return;
-    document.querySelectorAll('#tabContent [data-item-key]').forEach(el => {
-      const key = el.dataset.itemKey;
-      const audio = items[key]?.audio;
-      if (!audio) return;
+    if (!items || !Object.keys(items).length) return;
+    function wireAudio(el, key, audio) {
+      if (el.dataset.audioWired) return;
+      el.dataset.audioWired = '1';
       el.classList.add('has-admin-audio');
       el.title = `Tap to hear "${key}"`;
+      el.style.cursor = 'pointer';
       const snd = new Audio(audio);
       el.addEventListener('click', e => { e.stopPropagation(); snd.currentTime = 0; snd.play(); });
+    }
+    // Match by explicit data-item-key attribute
+    document.querySelectorAll('#tabContent [data-item-key]').forEach(el => {
+      const key = el.dataset.itemKey;
+      if (items[key]?.audio) wireAudio(el, key, items[key].audio);
+    });
+    // Match syllable-cell by text (consonants, vowels, syllables)
+    document.querySelectorAll('#tabContent .syllable-cell').forEach(el => {
+      const key = (el.querySelector('div') || el).textContent.trim();
+      if (items[key]?.audio) wireAudio(el, key, items[key].audio);
+    });
+    // Match vocab-row by its .vocab-zo text
+    document.querySelectorAll('#tabContent .vocab-row').forEach(el => {
+      const zoEl = el.querySelector('.vocab-zo');
+      if (!zoEl) return;
+      const key = zoEl.textContent.trim();
+      if (items[key]?.audio) wireAudio(el, key, items[key].audio);
     });
   } catch(e) {}
 }
