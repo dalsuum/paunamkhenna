@@ -1556,8 +1556,6 @@ function filterVocabList() {
 let currentLevel = null;
 
 function selectLevel(levelId) {
-  console.log('selectLevel called with:', levelId);
-  
   try {
     currentLevel = levelId;
     const ld = levelData[levelId];
@@ -1598,7 +1596,6 @@ function selectLevel(levelId) {
     updateXP();
     applyFeatureFlags();
 
-    console.log('Level selection complete:', levelId);
   } catch (error) {
     console.error('Error in selectLevel:', error);
   }
