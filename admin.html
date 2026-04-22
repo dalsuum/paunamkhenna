@@ -496,6 +496,39 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
 .item-cell:hover .item-cell-actions { opacity: 1; }
 .item-cell input[type="file"] { display: none; }
 
+/* ── CONTENT ROW EDITOR ── */
+.content-rows-list { display: flex; flex-direction: column; gap: 4px; }
+.content-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 6px;
+  background: var(--surface2); border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+.content-row:hover { border-color: var(--border); }
+.content-row-body { flex: 1; display: flex; gap: 10px; min-width: 0; align-items: center; }
+.content-row-z {
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  color: var(--gold-light); flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.content-row-e {
+  font-size: 12px; color: var(--text-muted); flex: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.content-row-actions {
+  display: flex; gap: 4px; flex-shrink: 0;
+  opacity: 0; transition: opacity 0.15s;
+}
+.content-row:hover .content-row-actions,
+.content-row.editing .content-row-actions { opacity: 1; }
+.content-input-z, .content-input-e {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); font-size: 12px;
+  padding: 5px 8px; outline: none; min-width: 0;
+}
+.content-input-z { font-family: 'DM Mono', monospace; color: var(--gold-light); }
+.content-input-z:focus, .content-input-e:focus { border-color: var(--gold-dim); }
+
 /* ── ANALYTICS ── */
 .analytics-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .analytics-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-dim); font-weight: 400; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -772,12 +805,125 @@ const ITEM_MANIFEST = {
   },
 };
 
+// ── CONTENT MANIFEST — default {z,e} rows for every tab ──
+const CONTENT_MANIFEST = {
+  beginner: {
+    1: {
+      0: { label: 'Consonants', items: [{z:'B'},{z:'C'},{z:'D'},{z:'G'},{z:'H'},{z:'K'},{z:'L'},{z:'M'},{z:'N'},{z:'P'},{z:'S'},{z:'T'},{z:'V'},{z:'Z'},{z:'Ng'},{z:'Kh'},{z:'Ph'},{z:'Th'}] },
+      1: { label: 'Vowels', items: [{z:'a',e:'as in "father"'},{z:'e',e:'as in "bed"'},{z:'i',e:'as in "see"'},{z:'o',e:'as in "open"'},{z:'u',e:'as in "put"'},{z:'aw',e:'rounded back vowel'}] },
+      2: { label: 'Practice Reading', items: [{z:'Alu a to hi.'},{z:'Bi a po zo hi.'},{z:'Be a su hi.'},{z:'Ga a la hi.'},{z:'Ni a sa hi.'},{z:'Ka mo a gi hi.'},{z:'Haza va la hi.'},{z:'Tho a na hi.'},{z:'Mawtaw ka mu hi.'}] },
+    },
+    2: {
+      0: { label: 'Basic Syllables', items: ['Ba','Be','Bi','Bo','Bu','Baw','Ca','Ce','Ci','Co','Cu','Caw','Da','De','Di','Do','Du','Daw','Ka','Ke','Ki','Ko','Ku','Kaw','La','Le','Li','Lo','Lu','Law','Ma','Me','Mi','Mo','Mu','Maw','Na','Ne','Ni','No','Nu','Naw','Pa','Pe','Pi','Po','Pu','Paw','Sa','Se','Si','So','Su','Saw','Ta','Te','Ti','To','Tu','Taw'].map(z=>({z})) },
+      1: { label: 'Syllables with -h', items: ['Bah','Beh','Bih','Boh','Buh','Bawh','Cah','Ceh','Cih','Coh','Cuh','Cawh','Dah','Deh','Dih','Doh','Duh','Dawh','Kah','Keh','Kih','Koh','Kuh','Kawh','Lah','Leh','Lih','Loh','Luh','Lawh','Mah','Meh','Mih','Moh','Muh','Mawh','Nah','Neh','Nih','Noh','Nuh','Nawh'].map(z=>({z})) },
+      2: { label: 'Practice Sentences', items: [{z:'Lo ah buhtuh a huh hi.'},{z:'Zato ah zaa a nuh hi.'},{z:'Gah leh teh kane hi.'},{z:'A u buh tuh a huh hi.'},{z:'A behpa a huh hi.'},{z:'Sameh a ne hi.'},{z:'A pi a dah mahmah hi.'},{z:'Lo ahuh a, a zawh pih hi.'}] },
+    },
+    3: {
+      0: { label: 'Greetings', items: [{z:'Hallo / Dammaw',e:'Hello (greeting song)'},{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Lungdam mahmah hi.',e:'I am very glad.'},{z:'Itna lianpi tawh kong zawn hi.',e:'I invite you with great love.'},{z:'Hong phawk den.',e:'Please remember (me/us).'},{z:'Na lawm it.',e:'Your loving friend.'},{z:'Kong it pa/nu.',e:'Dear father/mother.'}] },
+      1: { label: 'Common Phrases', items: [{z:'Kei ka dam hi.',e:'I am well.'},{z:'Nang na dam hiam?',e:'Are you well?'},{z:'Ka lungdam mahmah hi.',e:'I am very glad.'},{z:'Ka siate nuam thei mahmah uh hi.',e:'They are also very well.'},{z:'Ka nu leh innkuanpih teng zong ka phawk mahmah hi.',e:'I also greatly remember my mother and family.'},{z:'Ih kimuh lungdam un.',e:'We are glad to meet you (all).'}] },
+      2: { label: 'Practice (hover reveal)', items: [{z:'Hallo / Dammaw',e:'Hello (greeting song)'},{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Lungdam mahmah hi.',e:'I am very glad.'},{z:'Itna lianpi tawh kong zawn hi.',e:'I invite you with great love.'}] },
+    },
+    4: {
+      0: { label: 'Essential Nouns', items: [{z:'mi',e:'person'},{z:'inn',e:'house'},{z:'lo',e:'field/farm'},{z:'tui',e:'water'},{z:'ni',e:'sun/day'},{z:'zan',e:'night'},{z:'lam',e:'road/way'},{z:'sang',e:'school'},{z:'gam',e:'country/land'},{z:'khua',e:'village/town'},{z:'nu',e:'mother'},{z:'pa',e:'father'},{z:'ta',e:'child'},{z:'u',e:'elder sibling'},{z:'nau',e:'younger sibling'},{z:'laibu',e:'book'},{z:'sum',e:'money'},{z:'mawtaw',e:'car'},{z:'vanleng',e:'airplane'},{z:'an',e:'food/rice'}] },
+      1: { label: 'Essential Verbs', items: [{z:'pai',e:'go'},{z:'ciah',e:'come/return'},{z:'ne',e:'eat'},{z:'dawn',e:'drink'},{z:'om',e:'be/stay'},{z:'tai',e:'run'},{z:'sim',e:'read/study'},{z:'gel',e:'write'},{z:'sa',e:'sing'},{z:'mu',e:'see'},{z:'theih',e:'know'},{z:'it',e:'love'},{z:'dawng',e:'hear'},{z:'ngaih',e:'think/remember'},{z:'sep',e:'work'},{z:'pia',e:'give'},{z:'la',e:'take'},{z:'lam',e:'walk'},{z:'tu',e:'stand'},{z:'lum',e:'sleep'}] },
+      2: { label: 'Particles & Markers', items: [{z:'hi',e:'sentence ending (affirmative)'},{z:'leh',e:'and'},{z:'in',e:'subject marker'},{z:'a',e:'subject marker (3rd person)'},{z:'tawh',e:'with'},{z:'ah',e:'at/in'},{z:'panin',e:'from'},{z:'nadingin',e:'for/in order to'},{z:'napi-in',e:'although/even though'},{z:'zong',e:'also/too'},{z:'bek',e:'only/just'},{z:'mahmah',e:'very/greatly'},{z:'kei/lo',e:'not (negation)'},{z:'hiam',e:'question marker'},{z:'ding hi',e:'will (future)'}] },
+    },
+    5: {
+      0: { label: 'Cardinal Numbers', items: [{z:'bem',e:'0'},{z:'khat',e:'1'},{z:'nih',e:'2'},{z:'thum',e:'3'},{z:'li',e:'4'},{z:'nga',e:'5'},{z:'guk',e:'6'},{z:'sagih',e:'7'},{z:'giat',e:'8'},{z:'kua',e:'9'},{z:'sawmkhat',e:'10'},{z:'sawmnih',e:'20'},{z:'zakhat',e:'100'},{z:'tulkhat',e:'1,000'},{z:'thenkhat',e:'10,000'},{z:'awnkhat',e:'1,000,000'}] },
+      1: { label: 'Ordinal Numbers', items: [{z:'a khatna',e:'1st'},{z:'a nihna',e:'2nd'},{z:'a thumna',e:'3rd'},{z:'a lina',e:'4th'},{z:'a ngana',e:'5th'},{z:'a masa',e:'first (the original)'},{z:'a tawpna',e:'last'}] },
+      2: { label: 'Days & Months', items: [{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'},{z:'Theinosihkha',e:'January'},{z:'Tunkha',e:'February'},{z:'Dota',e:'March'},{z:'Dopi',e:'April'},{z:'Zingkha',e:'May'},{z:'Gamkha',e:'June'},{z:'Tangsihkha',e:'July'},{z:'Tangkha',e:'August'}] },
+    },
+  },
+  elementary: {
+    1: {
+      0: { label: 'Sentence Patterns', items: [{z:'Subject + Verb + hi',e:'Taang a tai hi. — He runs.'},{z:'Subject + in + Object + Verb + hi',e:'Lianpi in kong a khak hi. — Lianpi knocked the door.'},{z:'Subject + Adjective + hi',e:'Inn a hoih mahmah hi. — The house is very beautiful.'},{z:'Question: ...hiam?',e:'Nang na dam hiam? — Are you well?'}] },
+      1: { label: 'Example Sentences', items: [{z:'Va-ak in moh a tuah hi.',e:'The crow played a trick.'},{z:'Ka nu ka it hi.',e:'I love my mother.'},{z:'Inn a hoih mahmah hi.',e:'The house is very beautiful.'},{z:'Huih a nung hi.',e:'The wind is blowing.'},{z:'Sakol in, leng a kai hi.',e:'The horse climbed the hill.'}] },
+      2: { label: 'Positive / Negative / Question', items: [{z:'Kei in nasep ka hanciam hi.',e:'I work hard. (positive)'},{z:'Kei in nasep ka hanciam kei hi.',e:'I do not work hard. (negative)'},{z:'Kei in nasep ka hanciam hiam?',e:'Do I work hard? (question)'}] },
+    },
+    2: {
+      0: { label: 'Full Number System', items: [{z:'bem',e:'0'},{z:'khat',e:'1'},{z:'nih',e:'2'},{z:'thum',e:'3'},{z:'li',e:'4'},{z:'nga',e:'5'},{z:'guk',e:'6'},{z:'sagih',e:'7'},{z:'giat',e:'8'},{z:'kua',e:'9'},{z:'sawmkhat',e:'10'},{z:'sawmnih',e:'20'},{z:'sawmthum',e:'30'},{z:'sawmli',e:'40'},{z:'sawmnga',e:'50'},{z:'zakhat',e:'100'},{z:'zanga',e:'500'},{z:'tulkhat',e:'1,000'},{z:'thenkhat',e:'10,000'},{z:'sangkhat',e:'100,000'},{z:'awnkhat',e:'1,000,000'},{z:'makkhat',e:'10,000,000'}] },
+      1: { label: 'Ordinal & Counting', items: [{z:'a khatna',e:'first'},{z:'a nihna',e:'second'},{z:'khatveina',e:'once'},{z:'nihveina',e:'twice'},{z:'thumveina',e:'three times'},{z:'sawmnih-sagih',e:'27 (twenty-seven)'},{z:'zakhat-sawmnih',e:'120 (one hundred twenty)'}] },
+      2: { label: 'Numbers in Sentences', items: [{z:'Ka sang uhah tukpeng kimawlna tualpi khat om hi.',e:'There is one big sports ground at our school.'},{z:'Kum sawmnih a pha hi.',e:'She is 20 years old.'},{z:'Khutme nga a nei hi.',e:'She has five fingers.'},{z:'Pak tampi a nei hi.',e:'He has many chickens.'}] },
+    },
+    3: {
+      0: { label: 'Days of the Week', items: [{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'}] },
+      1: { label: 'Months (all 12)', items: [{z:'Theinosihkha',e:'January'},{z:'Tunkha',e:'February'},{z:'Dota',e:'March'},{z:'Dopi',e:'April'},{z:'Zingkha',e:'May'},{z:'Gamkha',e:'June'},{z:'Tangsihkha',e:'July'},{z:'Tangkha',e:'August'},{z:'Phalkha',e:'September'},{z:'Khuadokha',e:'October'},{z:'Nokha',e:'November'},{z:'Kaukha',e:'December'}] },
+      2: { label: 'Time of Day', items: [{z:'zingsang',e:'morning'},{z:'nitak',e:'evening/afternoon'},{z:'zan',e:'night'},{z:'zingtunga',e:'early morning'},{z:'nai sagih',e:"7 o'clock"},{z:'tu ni',e:'today'},{z:'zanin',e:'yesterday/last night'},{z:'taang',e:'tomorrow'},{z:'mai',e:'soon/later'}] },
+    },
+    4: {
+      0: { label: 'Indefinite Article', items: [{z:'sakol khat',e:'a horse (indefinite)'},{z:'laibu khat',e:'a book'},{z:'mi citak khat',e:'a certain person'},{z:'sikkeu khat',e:'a cat'}] },
+      1: { label: 'Definite Articles', items: [{z:'Tua sakol pen',e:'the horse (subject/topic)'},{z:'Tua sakol in',e:'the horse (doing/agent)'},{z:'Tua laibu pen',e:'the book (subject)'}] },
+      2: { label: 'Article Practice', items: [{z:'Kumpipa in, sakol ___ tawh khual a zin hi.',e:'Answer: khat (a horse)'},{z:'___ sakol pen, a kaang ahi hi.',e:'Answer: Tua (the horse — topic)'},{z:'___ sakol in kumpipa a thei hi.',e:'Answer: Tua (the horse — doing)'}] },
+    },
+    5: {
+      0: { label: 'Greeting Dialogue', items: [{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Na min bang ci hiam?',e:'What is your name?'},{z:'Ka min ___ ahi hi.',e:'My name is ___.'},{z:'Koi pan hong pai na hia?',e:'Where are you coming from?'},{z:'Zanin koi-ah om na hi vua?',e:'Where were you last night?'}] },
+      1: { label: 'Question Words', items: [{z:'Kua?',e:'Who?'},{z:'Bang?',e:'What?'},{z:'Koi?',e:'Where?'},{z:'Bang hunin?',e:'When?'},{z:'Banghanghiam?',e:'Why?'},{z:'Bangci?',e:'How?'},{z:'Bang zah?',e:'How many?'}] },
+      2: { label: 'Full Dialogue', items: [{z:'A: Na dam hiam?',e:'Are you well?'},{z:'B: Ka dam hi, lungdam un. Nang zong na dam hiam?',e:'I am well, thank you. Are you also well?'},{z:'A: Ka dam hi. Koi-ah na pai hiam?',e:'I am well. Where are you going?'},{z:'B: Ka sang ah ka pai hi.',e:'I am going to school.'}] },
+    },
+  },
+  intermediate: {
+    1: {
+      0: { label: 'Four Types of Nouns', items: [{z:'Neihkhawm min (Common Noun)',e:'Names shared by all of a kind — mi (person), khua (village), laibu (book).'},{z:'Neihtuam min (Proper Noun)',e:'Unique names, always capitalised — Tedim, Mang, Cingno.'},{z:'Lawnmawh min (Abstract Noun)',e:'Invisible things felt or thought — cidamna, dikna, lungdamna.'},{z:'Honlawhna min (Collective Noun)',e:'Names for groups — galkapte (soldiers), naupangte (children).'}] },
+      1: { label: 'Noun Examples in Sentences', items: [{z:'Ka gang a honghawh hi.',e:'My friend came.'},{z:'Utong a zempha mahmah hi.',e:'The Utong bird is very beautiful.'},{z:'Zato ah zatui kila hi.',e:'There is medicine at the market.'},{z:'Ka nu dikna in, genzawh lohin lian hi.',e:"My mother's righteousness shines without ceasing."}] },
+      2: { label: 'Identify the Noun Type', items: [{z:'Tedim',e:'Proper Noun (city name)'},{z:'inn',e:'Common Noun (house)'},{z:'cidamna',e:'Abstract Noun (health)'},{z:'galkapte',e:'Collective Noun (soldiers)'},{z:'Mang',e:'Proper Noun (a name)'},{z:'lungdamna',e:'Abstract Noun (happiness)'}] },
+    },
+    2: {
+      0: { label: 'Three Types of Verbs', items: [{z:'A thuak kisam sepna (Transitive Verb)',e:'Requires an object — Bawng in lopa a ne hi. (The cow eats grass.)'},{z:'A thuak kullo sepna (Intransitive Verb)',e:'Complete without an object — Thangpu a tai hi. (Thangpu runs.)'},{z:'A cinglo sepna (Helping Verb)',e:'Needs a complement — Naupangte a cidam hi. (Children are healthy.)'}] },
+      1: { label: 'Verb Examples', items: [{z:'Bawng in lopa a ne hi.',e:'The cow eats grass. (transitive: ne = eat)'},{z:'Thangpu a tai hi.',e:'Thangpu runs. (intransitive: tai = run)'},{z:'Dimno a laam hi.',e:'Dimno dances. (intransitive: laam = dance)'},{z:'Naupangte a cidam hi.',e:'Children are healthy. (helping verb)'},{z:'Lianpi in kong a khak hi.',e:'Lianpi knocked the door. (transitive: khak = knock)'},{z:'Mangno in naupang khat ahi hi.',e:'Mangno is a child. (helping: ahi hi)'}] },
+      2: { label: 'Verb Types Practice', items: [{z:'Kei-in laibu khat nei-ing.',e:'Transitive (nei = have; object = laibu)'},{z:'Ni a taang hi.',e:'Intransitive (taang = shine; no object)'},{z:'Amah ka tanu ahi hi.',e:'Helping verb (ahi hi = is)'}] },
+    },
+    3: {
+      0: { label: 'Five Types of Adjectives', items: [{z:'Phacia lak pianzia (Quality)',e:'hoih (good), sau (tall), gol (round), thau (heavy).'},{z:'Phazah lak pianzia (Quantity)',e:'tampi (many), tawmkha (few), beek (all).'},{z:'Amalzah lak pianzia (Number)',e:'nga (five), sawmnih (twenty), giat (eight).'},{z:'Lahkhiatna lak pianzia (Demonstrative)',e:'hih (this), hua (that), tua (that).'},{z:'Dotna lak pianzia (Interrogative)',e:'bang ci (what kind), koi (which), bang zah (how many).'}] },
+      1: { label: 'Comparison of Adjectives', items: [{z:'hoih',e:'good'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},{z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},{z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'}] },
+      2: { label: 'Adjective Practice', items: [{z:'A mah in, inn hoih khat a nei hi.',e:'hoih = quality adjective (good house)'},{z:'Ciinno in, pak tampi a nei hi.',e:'tampi = quantity adjective (many chickens)'},{z:'Hih tangvalpa in a thahat hi.',e:'hih = demonstrative adjective (this young man)'},{z:'Mangpu sangin Thangpu a hatzaw hi.',e:'hatzaw = comparative (stronger than Mangpu)'}] },
+    },
+    4: {
+      0: { label: 'Personal Pronouns', items: [{z:'Kei',e:'I (1st person sg.)'},{z:'Nang',e:'You (2nd person sg.)'},{z:'Taang',e:'He (3rd person masc.)'},{z:'Lia',e:'She (3rd person fem.)'},{z:'Amah',e:'He/She/It (general)'},{z:'Eite',e:'We (1st person pl.)'},{z:'Note',e:'You (2nd person pl.)'},{z:'Amaute',e:'They (3rd person pl.)'}] },
+      1: { label: 'Possessive Pronouns', items: [{z:'ka',e:'my'},{z:'na',e:'your'},{z:"taang'",e:'his'},{z:"lia'",e:'her'},{z:'ih',e:'our'},{z:"amau'",e:'their'},{z:'kei a',e:'mine'},{z:'nang a',e:'yours'}] },
+      2: { label: 'Pronoun Practice', items: [{z:'Kei-in laibu khat nei-ing.',e:'I have a book. (Kei = I, subject)'},{z:'Hih in ka laibu ahi hi.',e:'This is my book. (ka = my)'},{z:'Hih laibu in kei a hi.',e:'This book is mine. (kei a = mine)'},{z:'Nang mipil khat na hi hi.',e:'You are a wise person. (Nang = you)'},{z:'Eite in inn khat nei hang.',e:'We have a house. (Eite = we)'}] },
+    },
+    5: {
+      0: { label: 'Present Tense', items: [{z:'Thangpu a tai hi.',e:'Thangpu runs. (Simple Present)'},{z:'Thangpu a tai laitak hi.',e:'Thangpu is running. (Present Continuous)'},{z:'Ka na pai khinzo hi.',e:'I have gone. (Present Perfect)'},{z:'Ka na paipai khinzo hi.',e:'I have been going. (Present Perfect Continuous)'}] },
+      1: { label: 'Past & Future Tense', items: [{z:'Thangpu a tai khin hi.',e:'Thangpu ran. (Simple Past)'},{z:'Thangpu a tai khit laitak hi.',e:'Thangpu was running. (Past Continuous)'},{z:'Ka na pai khinzota hi.',e:'I had gone. (Past Perfect)'},{z:'Ka na paipai khinzota hi.',e:'I had been going. (Past Perfect Continuous)'},{z:'Thangpu a tai ding hi.',e:'Thangpu will run. (Simple Future)'},{z:'Thangpu a tai ding laitak hi.',e:'Thangpu will be running. (Future Continuous)'},{z:'Ka pai khinzo tading hi.',e:'I will have gone. (Future Perfect)'}] },
+      2: { label: 'Tense Practice', items: [{z:'Ka pai ding hi.',e:'Simple Future (I will go)'},{z:'A tai khin hi.',e:'Simple Past (He ran)'},{z:'Ka na paipai khinzo hi.',e:'Present Perfect Continuous (I have been going)'},{z:'A om laitak hi.',e:'Present Continuous (He is staying)'}] },
+    },
+  },
+  advanced: {
+    1: {
+      0: { label: '12 Punctuation Marks', items: [{z:'Husanna',e:', comma — separates clause elements, lists.'},{z:'Ngaklang',e:'; semi-colon — longer pause; joins related independent clauses.'},{z:'Ngakna',e:': colon — introduces a list or explanation.'},{z:'Tawpna',e:'. full stop — ends a complete sentence.'},{z:'Dotna',e:'? question mark — ends a question sentence.'},{z:'Phawnna',e:'! exclamation mark — after exclamatory words.'},{z:'Kamhonna / Kamkhakna',e:'" " quotation mark — encloses direct speech.'},{z:"Neihsa lak / Tanglak",e:"' apostrophe — shows possession."},{z:'Thekna',e:'- hyphen — joins compound words.'},{z:'Git-phei',e:'_ dash — longer break or explanation mid-sentence.'},{z:'Git-awn',e:'/ slash — separates alternatives.'},{z:'Kual / Umtuam',e:'( ) brackets — encloses explanatory information.'}] },
+      1: { label: 'Punctuation Rules', items: [{z:'Kill him, not let him go.',e:'Comma changes meaning completely! Correct: "Kill him, not: let him go."'},{z:'Na hehnepnakammalte hangin, ka lungdam hi; a lungsim nuamsak hi.',e:'Semi-colons join related clauses.'},{z:"Taang'khedap",e:"Apostrophe shows possession: Taang's shoes."}] },
+      2: { label: 'Punctuation Practice', items: [{z:'Lawm nang bang semsem na hia ___',e:'? (question mark — Dotna)'},{z:'Oh ___ Hong pai mahmah hi',e:'! (exclamation — Phawnna)'},{z:'Na hehnepnakammalte hangin ___ ka lungdam hi.',e:', (comma — Husanna)'}] },
+    },
+    2: {
+      0: { label: 'Proverbs A–M', items: [{z:'Ak a pute in sangnaupang note a it hi.',e:'Like a mother hen loving her chicks (unconditional love).'},{z:'Beng zong kim citciat tangzang kiguang.',e:'Even a basket, when full, finds its place. (Wisdom gains recognition.)'},{z:'Kamsiam siallei sang, kamsia sial liau.',e:'A wise speaker gains a cow; a foolish one loses cattle.'},{z:'Kawl zong tuidamin kiho.',e:'Even a worm knows to swim in water.'},{z:'Kom Kim zong tapasal sagih neisa nawkik.',e:'The seemingly impossible can repeat.'},{z:'Lam nai tawn nuam behiang kum kua-a tung lo.',e:'A pleasant path not walked regularly takes years to reach.'},{z:'Leii leh ha zong kipet.',e:'Even iron and bone can break. (Even the strongest have limits.)'},{z:'Meima lo-ah tho, tu lo.',e:"Don't rise without fire, don't stand without reason."}] },
+      1: { label: 'Proverbs N–Z', items: [{z:'Mihing leh papo.',e:'A person and a pot (life is as fragile as pottery).'},{z:'Sial vom leh sial vom kiingai.',e:'Cattle of the same kind graze together. (Like attracts like.)'},{z:'Suangpi suangneu in thek.',e:'A great tree is felled by a small axe.'},{z:'Thupha in kongbiang kan lo, thusia in mual kua khum.',e:'Bad news spreads faster than good.'},{z:'Va-ak cingkam sakhau taw-ah kikuah lo.',e:'The crow on the strong branch does not fear the axe.'},{z:'Zawlthu kalah sial thawl.',e:"In a close friend's talk, great things become small."},{z:'Zawng nek ngau in thalpu.',e:'The dog that eats ends up being fined. (Actions have consequences.)'},{z:'Zuau in a khap lawn.',e:'A liar is caught eventually. (Truth always prevails.)'}] },
+      2: { label: 'Proverb Quiz', items: [{z:'Sial vom leh sial vom kiingai.',e:'Like attracts like.'},{z:'Suangpi suangneu in thek.',e:'Small things overcome great ones.'},{z:'Zuau in a khap lawn.',e:'Liars are always caught.'}] },
+    },
+    3: {
+      0: { label: 'Zo History', items: [{z:'Zomite',e:'Zo people (collective name)'},{z:'Zogam',e:'Zo homeland'},{z:'Sengam',e:'Mongolia (ancestral origin)'},{z:'Khul',e:'Cave shelter (ancient dwelling)'}] },
+      1: { label: 'Zo Customs', items: [{z:'Khuado (Communal Feast)',e:'Major village feast. Fires lit in fields on Meilah Satni to drive away evil.'},{z:'Khuai Aihna (Chicken Divination)',e:"Before important work, a chicken is sacrificed and its leg bones examined."},{z:'Innsung Phamawh (Kinship System)',e:'Detailed 12-role kinship system — Thalloh, Zinkhak, Pu, Tanupi and more.'}] },
+      2: { label: 'Cultural Vocabulary', items: [{z:'Khuazindo',e:'communal feast / village celebration'},{z:'Meilah satni',e:'fire-lighting day before a feast'},{z:'Khuai aihna',e:'chicken divination'},{z:'Pawi',e:'traditional feast/festival'},{z:'Thalloh',e:'primary kinship role (male line)'},{z:'Zinkhak',e:'secondary kinship role (male line)'},{z:'Sungpi',e:'kinship role (female line)'},{z:'Zawl',e:'close friend / best friend'}] },
+    },
+    4: {
+      0: { label: 'Active & Passive Voice', items: [{z:'Cingno in lengladei sung a phiat hi.',e:'Active: Cingno opens the window.'},{z:'Lengladei sung pen, Cingno in a phiat hi.',e:'Passive: The window is opened by Cingno.'},{z:'Lia in la khat a sa hi.',e:'Active: She sings a song.'},{z:'La khat pen, Lia in a sa hi.',e:'Passive: A song is sung by her.'}] },
+      1: { label: 'Direct & Indirect Speech', items: [{z:'Thangpi in, "Kei-in khual ka zin ding hi," a ci hi.',e:'Direct: Thangpi said, "I will travel."'},{z:'Thangpi in, amah khualzin ding, a gen hi.',e:'Indirect: Thangpi said that he would travel.'}] },
+      2: { label: 'Composition Practice', items: [{z:'Taang in ticket te a khawm hi.',e:'Passive: Ticket te pen, Taang in a khawm hi.'},{z:'Lia in la khat a sa ding hi.',e:'Passive: La khat pen, Lia in a sa ding hi.'}] },
+    },
+    5: {
+      0: { label: 'Grammar Terms', items: [{z:'Kammal zatte',e:'Vocabulary list'},{z:'Paunam khenna',e:'Grammar'},{z:'Kampau luanzia',e:'Composition'},{z:'Laigelhzia',e:'Orthography (correct writing)'},{z:'Laimal gawmzia',e:'Spelling'},{z:'Awsuah',e:'Pronunciation'},{z:'Lailepna',e:'Punctuation'},{z:'Genbanga Genna',e:'Direct Speech'},{z:'Gensawnna',e:'Indirect Speech'},{z:'A Sepna Thupisak',e:'Active Voice'},{z:'A Sep Thupisak',e:'Passive Voice'},{z:'Hun lahkhiatna',e:'Tense'}] },
+      1: { label: 'Advanced Vocabulary', items: [{z:'Angtang',e:'courage'},{z:'Cidamna',e:'health'},{z:'Dikna',e:'justice/righteousness'},{z:'Hansanna',e:'success'},{z:'Hauhna',e:'wealth'},{z:'Lungdamna',e:'happiness/joy'},{z:'Pilna',e:'wisdom/education'},{z:'Suahtakna',e:'independence/freedom'},{z:'Thukhunpi',e:'constitution/agreement'},{z:'Zomite',e:'the Zo people (collective)'}] },
+      2: { label: 'Free Writing Prompts', items: [{z:'Describe your family using Zolai pronouns and possessives.'},{z:'Write about what you did yesterday using Past tense.'},{z:'Use 3 proverbs in sentences that relate to modern life.'},{z:'Write a short letter (laikhak) to a friend inviting them to a feast.'},{z:'Describe the Zomite Pianna Thu (Zo history) in 5 sentences.'}] },
+    },
+  },
+};
+
 // ── STATE ──
 let adminData = {};
 let currentLevel = null;
 let currentLesson = null;
 let currentTab = 0;
 let pendingChanges = false;
+let currentContentRows = [];
 
 const DATA_KEY    = 'zolai_admin_data';
 const PW_KEY      = 'zolai_admin_pw';
@@ -973,6 +1119,7 @@ function selectLesson(lid, num) {
 function renderEditor() {
   const ls = structure[currentLevel].lessons[currentLesson];
   const td = getTabData(currentLevel, currentLesson, currentTab);
+  initContentRows(td);
 
   const tabBar = ls.tabs.map((t, i) =>
     `<button class="tab-pill${i===currentTab?' active':''}" onclick="switchTab(${i})">${t}</button>`
@@ -1034,9 +1181,11 @@ function renderEditor() {
     </div>`;
 
   const itemSection = getItemSection(td);
+  const contentSection = getContentSection();
 
   document.getElementById('adminContent').innerHTML = `
     <div class="tab-bar">${tabBar}</div>
+    ${contentSection}
     ${imgSection}
     ${audioSection}
     ${itemSection}
@@ -1078,6 +1227,118 @@ function getItemSection(td) {
       </div>
       <div class="item-grid">${cells}</div>
     </div>`;
+}
+
+// ── CONTENT ROW EDITOR ──
+function initContentRows(td) {
+  const saved = td.contentRows;
+  if (saved && saved.length > 0) {
+    currentContentRows = saved.map(r => ({ z: r.z || '', e: r.e || '' }));
+  } else {
+    const manifest = CONTENT_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+    currentContentRows = manifest ? manifest.items.map(item => ({ z: item.z || '', e: item.e || '' })) : [];
+  }
+}
+
+function renderContentRows() {
+  const container = document.getElementById('contentRowsList');
+  if (!container) return;
+  container.innerHTML = currentContentRows.map((_, i) => buildContentRow(i)).join('') ||
+    '<div style="color:var(--text-dim);font-size:12px;padding:8px 0">No rows — click + Add Row to begin</div>';
+}
+
+function buildContentRow(idx) {
+  const r = currentContentRows[idx];
+  return `<div class="content-row" data-idx="${idx}">
+    <div class="content-row-body">
+      <span class="content-row-z">${esc(r.z)}</span>
+      ${r.e ? `<span class="content-row-e">${esc(r.e)}</span>` : ''}
+    </div>
+    <div class="content-row-actions">
+      <button class="icon-btn" onclick="editContentRow(${idx})" title="Edit">&#9998;</button>
+      <button class="icon-btn del" onclick="deleteContentRow(${idx})" title="Delete">&#10005;</button>
+    </div>
+  </div>`;
+}
+
+function editContentRow(idx) {
+  const r = currentContentRows[idx];
+  const el = document.querySelector(`.content-row[data-idx="${idx}"]`);
+  if (!el) return;
+  el.outerHTML = `<div class="content-row editing" data-idx="${idx}">
+    <div class="content-row-body">
+      <input class="content-input-z" id="ciz-${idx}" value="${esc(r.z)}" placeholder="Zolai text"
+        onkeydown="if(event.key==='Enter')saveContentRow(${idx})">
+      <input class="content-input-e" id="cie-${idx}" value="${esc(r.e)}" placeholder="English (optional)"
+        onkeydown="if(event.key==='Enter')saveContentRow(${idx})">
+    </div>
+    <div class="content-row-actions">
+      <button class="icon-btn" onclick="saveContentRow(${idx})" title="Save">&#10003;</button>
+      <button class="icon-btn" onclick="cancelContentRow(${idx})" title="Cancel">&#10005;</button>
+    </div>
+  </div>`;
+  document.getElementById(`ciz-${idx}`)?.focus();
+  setPending();
+}
+
+function saveContentRow(idx) {
+  const z = document.getElementById(`ciz-${idx}`)?.value.trim() || '';
+  const e = document.getElementById(`cie-${idx}`)?.value.trim() || '';
+  currentContentRows[idx] = { z, e };
+  renderContentRows();
+}
+
+function cancelContentRow(idx) {
+  const el = document.querySelector(`.content-row[data-idx="${idx}"]`);
+  if (el) el.outerHTML = buildContentRow(idx);
+}
+
+function deleteContentRow(idx) {
+  currentContentRows.splice(idx, 1);
+  renderContentRows();
+  setPending();
+}
+
+function addContentRow() {
+  currentContentRows.push({ z: '', e: '' });
+  renderContentRows();
+  editContentRow(currentContentRows.length - 1);
+  setPending();
+}
+
+function getContentSection() {
+  const manifest = CONTENT_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+  const label = manifest?.label || 'Items';
+  const saved = getTabData(currentLevel, currentLesson, currentTab).contentRows;
+  const isOverridden = saved && saved.length > 0;
+  return `
+    <div class="section-card">
+      <div class="section-title">&#9998; Tab Content
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">
+          — ${esc(label)}${isOverridden ? ' &middot; <span style="color:var(--gold)">custom override active</span>' : ' &middot; showing defaults (edit to override)'}
+        </span>
+      </div>
+      <div class="content-rows-list" id="contentRowsList">
+        ${currentContentRows.map((_, i) => buildContentRow(i)).join('') ||
+          '<div style="color:var(--text-dim);font-size:12px;padding:8px 0">No rows — click + Add Row to begin</div>'}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-outline" onclick="addContentRow()" style="font-size:12px;padding:7px 16px">+ Add Row</button>
+        ${isOverridden ? `<button class="btn btn-outline" onclick="resetContentRows()" style="font-size:12px;padding:7px 16px;color:var(--text-dim)">↺ Reset to defaults</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function resetContentRows() {
+  if (!confirm('Reset to default content? This removes your override.')) return;
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  td.contentRows = [];
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData();
+  const manifest = CONTENT_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+  currentContentRows = manifest ? manifest.items.map(item => ({ z: item.z || '', e: item.e || '' })) : [];
+  renderEditor();
+  showToast('Content reset to defaults');
 }
 
 function buildVocabRow(i, z, e, audio) {
@@ -1216,7 +1477,8 @@ function collectEdits() {
     const e = document.getElementById(`ve-${i}`)?.value.trim() || '';
     if (z || e) vocab.push({ z, e, audio: td.vocab?.[i]?.audio || null });
   });
-  return { image: td.image, audio: td.audio, vocab, items: td.items || {} };
+  const contentRows = currentContentRows.filter(r => r.z.trim());
+  return { image: td.image, audio: td.audio, vocab, items: td.items || {}, contentRows };
 }
 
 function saveChanges() {

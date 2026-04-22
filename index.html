@@ -3381,9 +3381,33 @@ function trackVisit(level, lesson) {
   if (window.gtag) gtag('event', 'lesson_view', { level_name: level, lesson_num: lesson });
 }
 
+// ── CONTENT OVERRIDE (admin-editable rows) ──
+function getContentOverride(level, lesson, tabIdx) {
+  try {
+    const raw = localStorage.getItem('zolai_admin_data');
+    if (!raw) return null;
+    const rows = JSON.parse(raw)?.[level]?.[lesson]?.[tabIdx]?.contentRows;
+    return (rows && rows.length > 0) ? rows : null;
+  } catch(e) { return null; }
+}
+
+function renderOverrideContent(n, tabIdx, rows) {
+  const tabTitle = levelData[currentLevel]?.lessons[n]?.tabs?.[tabIdx] || '';
+  const items = rows.map(r =>
+    r.e
+      ? `<div class="vocab-row"><span class="vocab-zo">${r.z}</span><span class="vocab-en">${r.e}</span></div>`
+      : `<div class="vocab-row"><span class="vocab-zo">${r.z}</span></div>`
+  ).join('');
+  return `<div class="card">${tabTitle ? `<div class="card-title">${tabTitle}</div>` : ''}${items}</div>`;
+}
+
 // ── LEVEL LESSON CONTENT RENDERERS ──
 function renderLevelLessonTab(n, tabIdx) {
   if (!currentLevel) return '';
+  if (tabIdx !== 3) {
+    const override = getContentOverride(currentLevel, n, tabIdx);
+    if (override) return renderOverrideContent(n, tabIdx, override);
+  }
   if (currentLevel === 'beginner') return renderBeginnerTab(n, tabIdx);
   if (currentLevel === 'elementary') return renderElementaryTab(n, tabIdx);
   if (currentLevel === 'intermediate') return renderIntermediateTab(n, tabIdx);
