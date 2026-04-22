@@ -1,0 +1,1595 @@
+// ── LEVEL STRUCTURE ──
+const structure = {
+  beginner: { name: 'Beginner', icon: '🌱', lessons: {
+    1: { title: 'Alphabet & Sounds',    tabs: ['Consonants','Vowels','Practice','Flashcards'] },
+    2: { title: 'Syllable Patterns',    tabs: ['Simple','With -h','Practice','Flashcards'] },
+    3: { title: 'Greetings & Phrases',  tabs: ['Greetings','Phrases','Practice','Flashcards'] },
+    4: { title: 'Core 100 Words',       tabs: ['Nouns','Verbs','Particles','Flashcards'] },
+    5: { title: 'Numbers',              tabs: ['Cardinal','Ordinal','Days & Months','Flashcards'] },
+  }},
+  elementary: { name: 'Elementary', icon: '📖', lessons: {
+    1: { title: 'Basic Sentences',      tabs: ['Structure','Examples','Practice','Flashcards'] },
+    2: { title: 'Numbers & Counting',   tabs: ['Cardinal','Ordinal','In Sentences','Flashcards'] },
+    3: { title: 'Time Expressions',     tabs: ['Days','Months','Time of Day','Flashcards'] },
+    4: { title: 'Articles',             tabs: ['Indefinite','Definite','Practice','Flashcards'] },
+    5: { title: 'Simple Dialogues',     tabs: ['Greetings','Questions','Practice','Flashcards'] },
+  }},
+  intermediate: { name: 'Intermediate', icon: '⚗️', lessons: {
+    1: { title: 'Nouns (Minte)',            tabs: ['Types','Examples','Practice','Flashcards'] },
+    2: { title: 'Verbs (Sepna)',            tabs: ['Types','Examples','Practice','Flashcards'] },
+    3: { title: 'Adjectives (Pianzia)',     tabs: ['Types','Comparison','Practice','Flashcards'] },
+    4: { title: 'Pronouns (Mintaang)',      tabs: ['Personal','Possessive','Practice','Flashcards'] },
+    5: { title: 'Tense (Hun Lahkhiatna)',   tabs: ['Present','Past & Future','Practice','Flashcards'] },
+  }},
+  advanced: { name: 'Advanced', icon: '🏔️', lessons: {
+    1: { title: 'Punctuation (Lailepna)',         tabs: ['Marks','Rules','Practice','Flashcards'] },
+    2: { title: 'Proverbs (Paunak)',               tabs: ['Proverbs A-M','Proverbs N-Z','Practice','Flashcards'] },
+    3: { title: 'Cultural Texts',                  tabs: ['Zo History','Customs','Practice','Flashcards'] },
+    4: { title: 'Composition (Kampau Luanzia)',    tabs: ['Voice','Letter Writing','Practice','Flashcards'] },
+    5: { title: 'Free Writing',                    tabs: ['Word Lists','Vocabulary','Practice','Flashcards'] },
+  }},
+};
+
+// ── ITEM MANIFEST — defines addressable atoms per level/lesson/tab ──
+// keys must exactly match the .vocab-zo textContent or .syllable-cell textContent rendered in index.html
+const ITEM_MANIFEST = {
+  beginner: {
+    1: {
+      0: { label: 'Consonants', items: ['B','C','D','G','H','K','L','M','N','P','S','T','V','Z','Ng','Kh','Ph','Th'] },
+      1: { label: 'Vowels', items: ['a','e','i','o','u','aw'] },
+      2: { label: 'Practice Sentences', items: ['Alu a to hi.','Bi a po zo hi.','Be a su hi.','Ga a la hi.','Ni a sa hi.','Ka mo a gi hi.','Haza va la hi.','Tho a na hi.','Mawtaw ka mu hi.'] },
+    },
+    2: {
+      0: { label: 'Basic Syllables', items: ['Ba','Be','Bi','Bo','Bu','Baw','Ca','Ce','Ci','Co','Cu','Caw','Da','De','Di','Do','Du','Daw','Ka','Ke','Ki','Ko','Ku','Kaw','La','Le','Li','Lo','Lu','Law','Ma','Me','Mi','Mo','Mu','Maw','Na','Ne','Ni','No','Nu','Naw','Pa','Pe','Pi','Po','Pu','Paw','Sa','Se','Si','So','Su','Saw','Ta','Te','Ti','To','Tu','Taw'] },
+      1: { label: 'Syllables with -h', items: ['Bah','Beh','Bih','Boh','Buh','Bawh','Cah','Ceh','Cih','Coh','Cuh','Cawh','Dah','Deh','Dih','Doh','Duh','Dawh','Kah','Keh','Kih','Koh','Kuh','Kawh','Lah','Leh','Lih','Loh','Luh','Lawh','Mah','Meh','Mih','Moh','Muh','Mawh','Nah','Neh','Nih','Noh','Nuh','Nawh'] },
+      2: { label: 'Practice Sentences', items: ['Lo ah buhtuh a huh hi.','Zato ah zaa a nuh hi.','Gah leh teh kane hi.','A u buh tuh a huh hi.','A behpa a huh hi.','Sameh a ne hi.','A pi a dah mahmah hi.','Lo ahuh a, a zawh pih hi.'] },
+    },
+    3: {
+      0: { label: 'Greetings', items: ['Hallo / Dammaw','Na dam hiam?','Ka dam hi.','Lungdam mahmah hi.','Itna lianpi tawh kong zawn hi.','Hong phawk den.','Na lawm it.','Kong it pa/nu.'] },
+      1: { label: 'Common Phrases', items: ['Kei ka dam hi.','Nang na dam hiam?','Ka lungdam mahmah hi.','Ka siate nuam thei mahmah uh hi.','Ka nu leh innkuanpih teng zong ka phawk mahmah hi.','Ih kimuh lungdam un.'] },
+      2: { label: 'Practice (hover)', items: ['Hallo / Dammaw','Na dam hiam?','Ka dam hi.','Lungdam mahmah hi.','Itna lianpi tawh kong zawn hi.'] },
+    },
+    4: {
+      0: { label: 'Essential Nouns', items: ['mi','inn','lo','tui','ni','zan','lam','sang','gam','khua','nu','pa','ta','u','nau','laibu','sum','mawtaw','vanleng','an'] },
+      1: { label: 'Essential Verbs', items: ['pai','ciah','ne','dawn','om','tai','sim','gel','sa','mu','theih','it','dawng','ngaih','sep','pia','la','lam','tu','lum'] },
+      2: { label: 'Particles & Markers', items: ['hi','leh','in','a','tawh','ah','panin','nadingin','napi-in','zong','bek','mahmah','kei/lo','hiam','ding hi'] },
+    },
+    5: {
+      0: { label: 'Cardinal Numbers', items: ['bem','khat','nih','thum','li','nga','guk','sagih','giat','kua','sawmkhat','sawmnih','zakhat','tulkhat','thenkhat','awnkhat'] },
+      1: { label: 'Ordinal Numbers', items: ['a khatna','a nihna','a thumna','a lina','a ngana','a masa','a tawpna'] },
+      2: { label: 'Days & Months', items: ['Nipi','Pizang','Pithai','Nilai','Laizing','Laithai','Nino','Theinosihkha','Tunkha','Dota','Dopi','Zingkha','Gamkha','Tangsihkha','Tangkha'] },
+    },
+  },
+  elementary: {
+    1: {
+      1: { label: 'Example Sentences', items: ['Va-ak in moh a tuah hi.','Ka nu ka it hi.','Inn a hoih mahmah hi.','Huih a nung hi.','Sakol in, leng a kai hi.'] },
+      2: { label: 'Sentence Types', items: ['Kei in nasep ka hanciam hi.','Kei in nasep ka hanciam kei hi.','Kei in nasep ka hanciam hiam?'] },
+    },
+    2: {
+      0: { label: 'Full Number System', items: ['bem','khat','nih','thum','li','nga','guk','sagih','giat','kua','sawmkhat','sawmnih','sawmthum','sawmli','sawmnga','zakhat','zanga','tulkhat','thenkhat','sangkhat','awnkhat','makkhat'] },
+      1: { label: 'Ordinal & Counting', items: ['a khatna','a nihna','khatveina','nihveina','thumveina','sawmnih-sagih','zakhat-sawmnih'] },
+      2: { label: 'Numbers in Sentences', items: ['Ka sang uhah tukpeng kimawlna tualpi khat om hi.','Kum sawmnih a pha hi.','Khutme nga a nei hi.','Pak tampi a nei hi.'] },
+    },
+    3: {
+      0: { label: 'Days of the Week', items: ['Nipi','Pizang','Pithai','Nilai','Laizing','Laithai','Nino'] },
+      1: { label: 'Months (all 12)', items: ['Theinosihkha','Tunkha','Dota','Dopi','Zingkha','Gamkha','Tangsihkha','Tangkha','Phalkha','Khuadokha','Nokha','Kaukha'] },
+      2: { label: 'Time of Day', items: ['zingsang','nitak','zan','zingtunga','nai sagih','tu ni','zanin','taang','mai'] },
+    },
+    4: {
+      0: { label: 'Indefinite Article', items: ['sakol khat','laibu khat','mi citak khat','sikkeu khat'] },
+      1: { label: 'Definite Articles', items: ['Tua sakol pen','Tua sakol in','Tua laibu pen'] },
+      2: { label: 'Article Practice', items: ['Kumpipa in, sakol ___ tawh khual a zin hi.','___ sakol pen, a kaang ahi hi.','___ sakol in kumpipa a thei hi.'] },
+    },
+    5: {
+      0: { label: 'Greeting Dialogue', items: ['Na dam hiam?','Ka dam hi.','Na min bang ci hiam?','Ka min ___ ahi hi.','Koi pan hong pai na hia?','Zanin koi-ah om na hi vua?'] },
+      1: { label: 'Question Words', items: ['Kua?','Bang?','Koi?','Bang hunin?','Banghanghiam?','Bangci?','Bang zah?'] },
+      2: { label: 'Full Dialogue', items: ['A: Na dam hiam?','B: Ka dam hi, lungdam un. Nang zong na dam hiam?','A: Ka dam hi. Koi-ah na pai hiam?','B: Ka sang ah ka pai hi.'] },
+    },
+  },
+  intermediate: {
+    1: {
+      1: { label: 'Noun Examples', items: ['Ka gang a honghawh hi.','Utong a zempha mahmah hi.','Zato ah zatui kila hi.','Ka nu dikna in, genzawh lohin lian hi.'] },
+      2: { label: 'Identify Noun Type', items: ['Tedim','inn','cidamna','galkapte','Mang','lungdamna'] },
+    },
+    2: {
+      1: { label: 'Verb Examples', items: ['Bawng in lopa a ne hi.','Thangpu a tai hi.','Dimno a laam hi.','Naupangte a cidam hi.','Lianpi in kong a khak hi.','Mangno in naupang khat ahi hi.'] },
+      2: { label: 'Verb Types Practice', items: ['Kei-in laibu khat nei-ing.','Ni a taang hi.','Amah ka tanu ahi hi.'] },
+    },
+    3: {
+      1: { label: 'Adjective Comparison', items: ['hoih','hoihzaw','hoihpen','hat','hatzaw','hatpen','baih','baihzaw','baihpen'] },
+      2: { label: 'Adjective Practice', items: ['A mah in, inn hoih khat a nei hi.','Ciinno in, pak tampi a nei hi.','Hih tangvalpa in a thahat hi.','Mangpu sangin Thangpu a hatzaw hi.'] },
+    },
+    4: {
+      0: { label: 'Personal Pronouns', items: ['Kei','Nang','Taang','Lia','Amah','Eite','Note','Amaute'] },
+      1: { label: 'Possessive Pronouns', items: ['ka','na',"taang'","lia'",'ih',"amau'",'kei a','nang a'] },
+      2: { label: 'Pronoun Practice', items: ['Kei-in laibu khat nei-ing.','Hih in ka laibu ahi hi.','Hih laibu in kei a hi.','Nang mipil khat na hi hi.','Eite in inn khat nei hang.'] },
+    },
+    5: {
+      0: { label: 'Present Tense', items: ['Thangpu a tai hi.','Thangpu a tai laitak hi.','Ka na pai khinzo hi.','Ka na paipai khinzo hi.'] },
+      1: { label: 'Past & Future Tense', items: ['Thangpu a tai khin hi.','Thangpu a tai khit laitak hi.','Ka na pai khinzota hi.','Ka na paipai khinzota hi.','Thangpu a tai ding hi.','Thangpu a tai ding laitak hi.','Ka pai khinzo tading hi.'] },
+      2: { label: 'Tense Practice', items: ['Ka pai ding hi.','A tai khin hi.','Ka na paipai khinzo hi.','A om laitak hi.'] },
+    },
+  },
+  advanced: {
+    1: {
+      2: { label: 'Punctuation Practice', items: ['Lawm nang bang semsem na hia ___','Oh ___ Hong pai mahmah hi','Na hehnepnakammalte hangin ___ ka lungdam hi.'] },
+    },
+    2: {
+      2: { label: 'Proverb Quiz', items: ['Sial vom leh sial vom kiingai.','Suangpi suangneu in thek.','Zuau in a khap lawn.'] },
+    },
+    3: {
+      0: { label: 'Zo History Terms', items: ['Zomite','Zogam','Sengam','Khul'] },
+      2: { label: 'Cultural Vocabulary', items: ['Khuazindo','Meilah satni','Khuai aihna','Pawi','Thalloh','Zinkhak','Sungpi','Zawl'] },
+    },
+    4: {
+      0: { label: 'Active & Passive Voice', items: ['Cingno in lengladei sung a phiat hi.','Lengladei sung pen, Cingno in a phiat hi.','Lia in la khat a sa hi.','La khat pen, Lia in a sa hi.'] },
+      1: { label: 'Direct & Indirect Speech', items: ['Thangpi in, "Kei-in khual ka zin ding hi," a ci hi.','Thangpi in, amah khualzin ding, a gen hi.'] },
+      2: { label: 'Composition Practice', items: ['Taang in ticket te a khawm hi.','Lia in la khat a sa ding hi.'] },
+    },
+    5: {
+      0: { label: 'Grammar Terms', items: ['Kammal zatte','Paunam khenna','Kampau luanzia','Laigelhzia','Laimal gawmzia','Awsuah','Lailepna','Genbanga Genna','Gensawnna','A Sepna Thupisak','A Sep Thupisak','Hun lahkhiatna'] },
+      1: { label: 'Advanced Vocabulary', items: ['Angtang','Cidamna','Dikna','Hansanna','Hauhna','Lungdamna','Pilna','Suahtakna','Thukhunpi','Zomite'] },
+    },
+  },
+};
+
+// ── CONTENT MANIFEST — default {z,e} rows for every tab ──
+const CONTENT_MANIFEST = {
+  beginner: {
+    1: {
+      0: { label: 'Consonants', items: [{z:'B'},{z:'C'},{z:'D'},{z:'G'},{z:'H'},{z:'K'},{z:'L'},{z:'M'},{z:'N'},{z:'P'},{z:'S'},{z:'T'},{z:'V'},{z:'Z'},{z:'Ng'},{z:'Kh'},{z:'Ph'},{z:'Th'}] },
+      1: { label: 'Vowels', items: [{z:'a',e:'as in "father"'},{z:'e',e:'as in "bed"'},{z:'i',e:'as in "see"'},{z:'o',e:'as in "open"'},{z:'u',e:'as in "put"'},{z:'aw',e:'rounded back vowel'}] },
+      2: { label: 'Practice Reading', items: [{z:'Alu a to hi.'},{z:'Bi a po zo hi.'},{z:'Be a su hi.'},{z:'Ga a la hi.'},{z:'Ni a sa hi.'},{z:'Ka mo a gi hi.'},{z:'Haza va la hi.'},{z:'Tho a na hi.'},{z:'Mawtaw ka mu hi.'}] },
+    },
+    2: {
+      0: { label: 'Basic Syllables', items: ['Ba','Be','Bi','Bo','Bu','Baw','Ca','Ce','Ci','Co','Cu','Caw','Da','De','Di','Do','Du','Daw','Ka','Ke','Ki','Ko','Ku','Kaw','La','Le','Li','Lo','Lu','Law','Ma','Me','Mi','Mo','Mu','Maw','Na','Ne','Ni','No','Nu','Naw','Pa','Pe','Pi','Po','Pu','Paw','Sa','Se','Si','So','Su','Saw','Ta','Te','Ti','To','Tu','Taw'].map(z=>({z})) },
+      1: { label: 'Syllables with -h', items: ['Bah','Beh','Bih','Boh','Buh','Bawh','Cah','Ceh','Cih','Coh','Cuh','Cawh','Dah','Deh','Dih','Doh','Duh','Dawh','Kah','Keh','Kih','Koh','Kuh','Kawh','Lah','Leh','Lih','Loh','Luh','Lawh','Mah','Meh','Mih','Moh','Muh','Mawh','Nah','Neh','Nih','Noh','Nuh','Nawh'].map(z=>({z})) },
+      2: { label: 'Practice Sentences', items: [{z:'Lo ah buhtuh a huh hi.'},{z:'Zato ah zaa a nuh hi.'},{z:'Gah leh teh kane hi.'},{z:'A u buh tuh a huh hi.'},{z:'A behpa a huh hi.'},{z:'Sameh a ne hi.'},{z:'A pi a dah mahmah hi.'},{z:'Lo ahuh a, a zawh pih hi.'}] },
+    },
+    3: {
+      0: { label: 'Greetings', items: [{z:'Hallo / Dammaw',e:'Hello (greeting song)'},{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Lungdam mahmah hi.',e:'I am very glad.'},{z:'Itna lianpi tawh kong zawn hi.',e:'I invite you with great love.'},{z:'Hong phawk den.',e:'Please remember (me/us).'},{z:'Na lawm it.',e:'Your loving friend.'},{z:'Kong it pa/nu.',e:'Dear father/mother.'}] },
+      1: { label: 'Common Phrases', items: [{z:'Kei ka dam hi.',e:'I am well.'},{z:'Nang na dam hiam?',e:'Are you well?'},{z:'Ka lungdam mahmah hi.',e:'I am very glad.'},{z:'Ka siate nuam thei mahmah uh hi.',e:'They are also very well.'},{z:'Ka nu leh innkuanpih teng zong ka phawk mahmah hi.',e:'I also greatly remember my mother and family.'},{z:'Ih kimuh lungdam un.',e:'We are glad to meet you (all).'}] },
+      2: { label: 'Practice (hover reveal)', items: [{z:'Hallo / Dammaw',e:'Hello (greeting song)'},{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Lungdam mahmah hi.',e:'I am very glad.'},{z:'Itna lianpi tawh kong zawn hi.',e:'I invite you with great love.'}] },
+    },
+    4: {
+      0: { label: 'Essential Nouns', items: [{z:'mi',e:'person'},{z:'inn',e:'house'},{z:'lo',e:'field/farm'},{z:'tui',e:'water'},{z:'ni',e:'sun/day'},{z:'zan',e:'night'},{z:'lam',e:'road/way'},{z:'sang',e:'school'},{z:'gam',e:'country/land'},{z:'khua',e:'village/town'},{z:'nu',e:'mother'},{z:'pa',e:'father'},{z:'ta',e:'child'},{z:'u',e:'elder sibling'},{z:'nau',e:'younger sibling'},{z:'laibu',e:'book'},{z:'sum',e:'money'},{z:'mawtaw',e:'car'},{z:'vanleng',e:'airplane'},{z:'an',e:'food/rice'}] },
+      1: { label: 'Essential Verbs', items: [{z:'pai',e:'go'},{z:'ciah',e:'come/return'},{z:'ne',e:'eat'},{z:'dawn',e:'drink'},{z:'om',e:'be/stay'},{z:'tai',e:'run'},{z:'sim',e:'read/study'},{z:'gel',e:'write'},{z:'sa',e:'sing'},{z:'mu',e:'see'},{z:'theih',e:'know'},{z:'it',e:'love'},{z:'dawng',e:'hear'},{z:'ngaih',e:'think/remember'},{z:'sep',e:'work'},{z:'pia',e:'give'},{z:'la',e:'take'},{z:'lam',e:'walk'},{z:'tu',e:'stand'},{z:'lum',e:'sleep'}] },
+      2: { label: 'Particles & Markers', items: [{z:'hi',e:'sentence ending (affirmative)'},{z:'leh',e:'and'},{z:'in',e:'subject marker'},{z:'a',e:'subject marker (3rd person)'},{z:'tawh',e:'with'},{z:'ah',e:'at/in'},{z:'panin',e:'from'},{z:'nadingin',e:'for/in order to'},{z:'napi-in',e:'although/even though'},{z:'zong',e:'also/too'},{z:'bek',e:'only/just'},{z:'mahmah',e:'very/greatly'},{z:'kei/lo',e:'not (negation)'},{z:'hiam',e:'question marker'},{z:'ding hi',e:'will (future)'}] },
+    },
+    5: {
+      0: { label: 'Cardinal Numbers', items: [{z:'bem',e:'0'},{z:'khat',e:'1'},{z:'nih',e:'2'},{z:'thum',e:'3'},{z:'li',e:'4'},{z:'nga',e:'5'},{z:'guk',e:'6'},{z:'sagih',e:'7'},{z:'giat',e:'8'},{z:'kua',e:'9'},{z:'sawmkhat',e:'10'},{z:'sawmnih',e:'20'},{z:'zakhat',e:'100'},{z:'tulkhat',e:'1,000'},{z:'thenkhat',e:'10,000'},{z:'awnkhat',e:'1,000,000'}] },
+      1: { label: 'Ordinal Numbers', items: [{z:'a khatna',e:'1st'},{z:'a nihna',e:'2nd'},{z:'a thumna',e:'3rd'},{z:'a lina',e:'4th'},{z:'a ngana',e:'5th'},{z:'a masa',e:'first (the original)'},{z:'a tawpna',e:'last'}] },
+      2: { label: 'Days & Months', items: [{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'},{z:'Theinosihkha',e:'January'},{z:'Tunkha',e:'February'},{z:'Dota',e:'March'},{z:'Dopi',e:'April'},{z:'Zingkha',e:'May'},{z:'Gamkha',e:'June'},{z:'Tangsihkha',e:'July'},{z:'Tangkha',e:'August'}] },
+    },
+  },
+  elementary: {
+    1: {
+      0: { label: 'Sentence Patterns', items: [{z:'Subject + Verb + hi',e:'Taang a tai hi. — He runs.'},{z:'Subject + in + Object + Verb + hi',e:'Lianpi in kong a khak hi. — Lianpi knocked the door.'},{z:'Subject + Adjective + hi',e:'Inn a hoih mahmah hi. — The house is very beautiful.'},{z:'Question: ...hiam?',e:'Nang na dam hiam? — Are you well?'}] },
+      1: { label: 'Example Sentences', items: [{z:'Va-ak in moh a tuah hi.',e:'The crow played a trick.'},{z:'Ka nu ka it hi.',e:'I love my mother.'},{z:'Inn a hoih mahmah hi.',e:'The house is very beautiful.'},{z:'Huih a nung hi.',e:'The wind is blowing.'},{z:'Sakol in, leng a kai hi.',e:'The horse climbed the hill.'}] },
+      2: { label: 'Positive / Negative / Question', items: [{z:'Kei in nasep ka hanciam hi.',e:'I work hard. (positive)'},{z:'Kei in nasep ka hanciam kei hi.',e:'I do not work hard. (negative)'},{z:'Kei in nasep ka hanciam hiam?',e:'Do I work hard? (question)'}] },
+    },
+    2: {
+      0: { label: 'Full Number System', items: [{z:'bem',e:'0'},{z:'khat',e:'1'},{z:'nih',e:'2'},{z:'thum',e:'3'},{z:'li',e:'4'},{z:'nga',e:'5'},{z:'guk',e:'6'},{z:'sagih',e:'7'},{z:'giat',e:'8'},{z:'kua',e:'9'},{z:'sawmkhat',e:'10'},{z:'sawmnih',e:'20'},{z:'sawmthum',e:'30'},{z:'sawmli',e:'40'},{z:'sawmnga',e:'50'},{z:'zakhat',e:'100'},{z:'zanga',e:'500'},{z:'tulkhat',e:'1,000'},{z:'thenkhat',e:'10,000'},{z:'sangkhat',e:'100,000'},{z:'awnkhat',e:'1,000,000'},{z:'makkhat',e:'10,000,000'}] },
+      1: { label: 'Ordinal & Counting', items: [{z:'a khatna',e:'first'},{z:'a nihna',e:'second'},{z:'khatveina',e:'once'},{z:'nihveina',e:'twice'},{z:'thumveina',e:'three times'},{z:'sawmnih-sagih',e:'27 (twenty-seven)'},{z:'zakhat-sawmnih',e:'120 (one hundred twenty)'}] },
+      2: { label: 'Numbers in Sentences', items: [{z:'Ka sang uhah tukpeng kimawlna tualpi khat om hi.',e:'There is one big sports ground at our school.'},{z:'Kum sawmnih a pha hi.',e:'She is 20 years old.'},{z:'Khutme nga a nei hi.',e:'She has five fingers.'},{z:'Pak tampi a nei hi.',e:'He has many chickens.'}] },
+    },
+    3: {
+      0: { label: 'Days of the Week', items: [{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'}] },
+      1: { label: 'Months (all 12)', items: [{z:'Theinosihkha',e:'January'},{z:'Tunkha',e:'February'},{z:'Dota',e:'March'},{z:'Dopi',e:'April'},{z:'Zingkha',e:'May'},{z:'Gamkha',e:'June'},{z:'Tangsihkha',e:'July'},{z:'Tangkha',e:'August'},{z:'Phalkha',e:'September'},{z:'Khuadokha',e:'October'},{z:'Nokha',e:'November'},{z:'Kaukha',e:'December'}] },
+      2: { label: 'Time of Day', items: [{z:'zingsang',e:'morning'},{z:'nitak',e:'evening/afternoon'},{z:'zan',e:'night'},{z:'zingtunga',e:'early morning'},{z:'nai sagih',e:"7 o'clock"},{z:'tu ni',e:'today'},{z:'zanin',e:'yesterday/last night'},{z:'taang',e:'tomorrow'},{z:'mai',e:'soon/later'}] },
+    },
+    4: {
+      0: { label: 'Indefinite Article', items: [{z:'sakol khat',e:'a horse (indefinite)'},{z:'laibu khat',e:'a book'},{z:'mi citak khat',e:'a certain person'},{z:'sikkeu khat',e:'a cat'}] },
+      1: { label: 'Definite Articles', items: [{z:'Tua sakol pen',e:'the horse (subject/topic)'},{z:'Tua sakol in',e:'the horse (doing/agent)'},{z:'Tua laibu pen',e:'the book (subject)'}] },
+      2: { label: 'Article Practice', items: [{z:'Kumpipa in, sakol ___ tawh khual a zin hi.',e:'Answer: khat (a horse)'},{z:'___ sakol pen, a kaang ahi hi.',e:'Answer: Tua (the horse — topic)'},{z:'___ sakol in kumpipa a thei hi.',e:'Answer: Tua (the horse — doing)'}] },
+    },
+    5: {
+      0: { label: 'Greeting Dialogue', items: [{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Na min bang ci hiam?',e:'What is your name?'},{z:'Ka min ___ ahi hi.',e:'My name is ___.'},{z:'Koi pan hong pai na hia?',e:'Where are you coming from?'},{z:'Zanin koi-ah om na hi vua?',e:'Where were you last night?'}] },
+      1: { label: 'Question Words', items: [{z:'Kua?',e:'Who?'},{z:'Bang?',e:'What?'},{z:'Koi?',e:'Where?'},{z:'Bang hunin?',e:'When?'},{z:'Banghanghiam?',e:'Why?'},{z:'Bangci?',e:'How?'},{z:'Bang zah?',e:'How many?'}] },
+      2: { label: 'Full Dialogue', items: [{z:'A: Na dam hiam?',e:'Are you well?'},{z:'B: Ka dam hi, lungdam un. Nang zong na dam hiam?',e:'I am well, thank you. Are you also well?'},{z:'A: Ka dam hi. Koi-ah na pai hiam?',e:'I am well. Where are you going?'},{z:'B: Ka sang ah ka pai hi.',e:'I am going to school.'}] },
+    },
+  },
+  intermediate: {
+    1: {
+      0: { label: 'Four Types of Nouns', items: [{z:'Neihkhawm min (Common Noun)',e:'Names shared by all of a kind — mi (person), khua (village), laibu (book).'},{z:'Neihtuam min (Proper Noun)',e:'Unique names, always capitalised — Tedim, Mang, Cingno.'},{z:'Lawnmawh min (Abstract Noun)',e:'Invisible things felt or thought — cidamna, dikna, lungdamna.'},{z:'Honlawhna min (Collective Noun)',e:'Names for groups — galkapte (soldiers), naupangte (children).'}] },
+      1: { label: 'Noun Examples in Sentences', items: [{z:'Ka gang a honghawh hi.',e:'My friend came.'},{z:'Utong a zempha mahmah hi.',e:'The Utong bird is very beautiful.'},{z:'Zato ah zatui kila hi.',e:'There is medicine at the market.'},{z:'Ka nu dikna in, genzawh lohin lian hi.',e:"My mother's righteousness shines without ceasing."}] },
+      2: { label: 'Identify the Noun Type', items: [{z:'Tedim',e:'Proper Noun (city name)'},{z:'inn',e:'Common Noun (house)'},{z:'cidamna',e:'Abstract Noun (health)'},{z:'galkapte',e:'Collective Noun (soldiers)'},{z:'Mang',e:'Proper Noun (a name)'},{z:'lungdamna',e:'Abstract Noun (happiness)'}] },
+    },
+    2: {
+      0: { label: 'Three Types of Verbs', items: [{z:'A thuak kisam sepna (Transitive Verb)',e:'Requires an object — Bawng in lopa a ne hi. (The cow eats grass.)'},{z:'A thuak kullo sepna (Intransitive Verb)',e:'Complete without an object — Thangpu a tai hi. (Thangpu runs.)'},{z:'A cinglo sepna (Helping Verb)',e:'Needs a complement — Naupangte a cidam hi. (Children are healthy.)'}] },
+      1: { label: 'Verb Examples', items: [{z:'Bawng in lopa a ne hi.',e:'The cow eats grass. (transitive: ne = eat)'},{z:'Thangpu a tai hi.',e:'Thangpu runs. (intransitive: tai = run)'},{z:'Dimno a laam hi.',e:'Dimno dances. (intransitive: laam = dance)'},{z:'Naupangte a cidam hi.',e:'Children are healthy. (helping verb)'},{z:'Lianpi in kong a khak hi.',e:'Lianpi knocked the door. (transitive: khak = knock)'},{z:'Mangno in naupang khat ahi hi.',e:'Mangno is a child. (helping: ahi hi)'}] },
+      2: { label: 'Verb Types Practice', items: [{z:'Kei-in laibu khat nei-ing.',e:'Transitive (nei = have; object = laibu)'},{z:'Ni a taang hi.',e:'Intransitive (taang = shine; no object)'},{z:'Amah ka tanu ahi hi.',e:'Helping verb (ahi hi = is)'}] },
+    },
+    3: {
+      0: { label: 'Five Types of Adjectives', items: [{z:'Phacia lak pianzia (Quality)',e:'hoih (good), sau (tall), gol (round), thau (heavy).'},{z:'Phazah lak pianzia (Quantity)',e:'tampi (many), tawmkha (few), beek (all).'},{z:'Amalzah lak pianzia (Number)',e:'nga (five), sawmnih (twenty), giat (eight).'},{z:'Lahkhiatna lak pianzia (Demonstrative)',e:'hih (this), hua (that), tua (that).'},{z:'Dotna lak pianzia (Interrogative)',e:'bang ci (what kind), koi (which), bang zah (how many).'}] },
+      1: { label: 'Comparison of Adjectives', items: [{z:'hoih',e:'good'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},{z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},{z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'}] },
+      2: { label: 'Adjective Practice', items: [{z:'A mah in, inn hoih khat a nei hi.',e:'hoih = quality adjective (good house)'},{z:'Ciinno in, pak tampi a nei hi.',e:'tampi = quantity adjective (many chickens)'},{z:'Hih tangvalpa in a thahat hi.',e:'hih = demonstrative adjective (this young man)'},{z:'Mangpu sangin Thangpu a hatzaw hi.',e:'hatzaw = comparative (stronger than Mangpu)'}] },
+    },
+    4: {
+      0: { label: 'Personal Pronouns', items: [{z:'Kei',e:'I (1st person sg.)'},{z:'Nang',e:'You (2nd person sg.)'},{z:'Taang',e:'He (3rd person masc.)'},{z:'Lia',e:'She (3rd person fem.)'},{z:'Amah',e:'He/She/It (general)'},{z:'Eite',e:'We (1st person pl.)'},{z:'Note',e:'You (2nd person pl.)'},{z:'Amaute',e:'They (3rd person pl.)'}] },
+      1: { label: 'Possessive Pronouns', items: [{z:'ka',e:'my'},{z:'na',e:'your'},{z:"taang'",e:'his'},{z:"lia'",e:'her'},{z:'ih',e:'our'},{z:"amau'",e:'their'},{z:'kei a',e:'mine'},{z:'nang a',e:'yours'}] },
+      2: { label: 'Pronoun Practice', items: [{z:'Kei-in laibu khat nei-ing.',e:'I have a book. (Kei = I, subject)'},{z:'Hih in ka laibu ahi hi.',e:'This is my book. (ka = my)'},{z:'Hih laibu in kei a hi.',e:'This book is mine. (kei a = mine)'},{z:'Nang mipil khat na hi hi.',e:'You are a wise person. (Nang = you)'},{z:'Eite in inn khat nei hang.',e:'We have a house. (Eite = we)'}] },
+    },
+    5: {
+      0: { label: 'Present Tense', items: [{z:'Thangpu a tai hi.',e:'Thangpu runs. (Simple Present)'},{z:'Thangpu a tai laitak hi.',e:'Thangpu is running. (Present Continuous)'},{z:'Ka na pai khinzo hi.',e:'I have gone. (Present Perfect)'},{z:'Ka na paipai khinzo hi.',e:'I have been going. (Present Perfect Continuous)'}] },
+      1: { label: 'Past & Future Tense', items: [{z:'Thangpu a tai khin hi.',e:'Thangpu ran. (Simple Past)'},{z:'Thangpu a tai khit laitak hi.',e:'Thangpu was running. (Past Continuous)'},{z:'Ka na pai khinzota hi.',e:'I had gone. (Past Perfect)'},{z:'Ka na paipai khinzota hi.',e:'I had been going. (Past Perfect Continuous)'},{z:'Thangpu a tai ding hi.',e:'Thangpu will run. (Simple Future)'},{z:'Thangpu a tai ding laitak hi.',e:'Thangpu will be running. (Future Continuous)'},{z:'Ka pai khinzo tading hi.',e:'I will have gone. (Future Perfect)'}] },
+      2: { label: 'Tense Practice', items: [{z:'Ka pai ding hi.',e:'Simple Future (I will go)'},{z:'A tai khin hi.',e:'Simple Past (He ran)'},{z:'Ka na paipai khinzo hi.',e:'Present Perfect Continuous (I have been going)'},{z:'A om laitak hi.',e:'Present Continuous (He is staying)'}] },
+    },
+  },
+  advanced: {
+    1: {
+      0: { label: '12 Punctuation Marks', items: [{z:'Husanna',e:', comma — separates clause elements, lists.'},{z:'Ngaklang',e:'; semi-colon — longer pause; joins related independent clauses.'},{z:'Ngakna',e:': colon — introduces a list or explanation.'},{z:'Tawpna',e:'. full stop — ends a complete sentence.'},{z:'Dotna',e:'? question mark — ends a question sentence.'},{z:'Phawnna',e:'! exclamation mark — after exclamatory words.'},{z:'Kamhonna / Kamkhakna',e:'" " quotation mark — encloses direct speech.'},{z:"Neihsa lak / Tanglak",e:"' apostrophe — shows possession."},{z:'Thekna',e:'- hyphen — joins compound words.'},{z:'Git-phei',e:'_ dash — longer break or explanation mid-sentence.'},{z:'Git-awn',e:'/ slash — separates alternatives.'},{z:'Kual / Umtuam',e:'( ) brackets — encloses explanatory information.'}] },
+      1: { label: 'Punctuation Rules', items: [{z:'Kill him, not let him go.',e:'Comma changes meaning completely! Correct: "Kill him, not: let him go."'},{z:'Na hehnepnakammalte hangin, ka lungdam hi; a lungsim nuamsak hi.',e:'Semi-colons join related clauses.'},{z:"Taang'khedap",e:"Apostrophe shows possession: Taang's shoes."}] },
+      2: { label: 'Punctuation Practice', items: [{z:'Lawm nang bang semsem na hia ___',e:'? (question mark — Dotna)'},{z:'Oh ___ Hong pai mahmah hi',e:'! (exclamation — Phawnna)'},{z:'Na hehnepnakammalte hangin ___ ka lungdam hi.',e:', (comma — Husanna)'}] },
+    },
+    2: {
+      0: { label: 'Proverbs A–M', items: [{z:'Ak a pute in sangnaupang note a it hi.',e:'Like a mother hen loving her chicks (unconditional love).'},{z:'Beng zong kim citciat tangzang kiguang.',e:'Even a basket, when full, finds its place. (Wisdom gains recognition.)'},{z:'Kamsiam siallei sang, kamsia sial liau.',e:'A wise speaker gains a cow; a foolish one loses cattle.'},{z:'Kawl zong tuidamin kiho.',e:'Even a worm knows to swim in water.'},{z:'Kom Kim zong tapasal sagih neisa nawkik.',e:'The seemingly impossible can repeat.'},{z:'Lam nai tawn nuam behiang kum kua-a tung lo.',e:'A pleasant path not walked regularly takes years to reach.'},{z:'Leii leh ha zong kipet.',e:'Even iron and bone can break. (Even the strongest have limits.)'},{z:'Meima lo-ah tho, tu lo.',e:"Don't rise without fire, don't stand without reason."}] },
+      1: { label: 'Proverbs N–Z', items: [{z:'Mihing leh papo.',e:'A person and a pot (life is as fragile as pottery).'},{z:'Sial vom leh sial vom kiingai.',e:'Cattle of the same kind graze together. (Like attracts like.)'},{z:'Suangpi suangneu in thek.',e:'A great tree is felled by a small axe.'},{z:'Thupha in kongbiang kan lo, thusia in mual kua khum.',e:'Bad news spreads faster than good.'},{z:'Va-ak cingkam sakhau taw-ah kikuah lo.',e:'The crow on the strong branch does not fear the axe.'},{z:'Zawlthu kalah sial thawl.',e:"In a close friend's talk, great things become small."},{z:'Zawng nek ngau in thalpu.',e:'The dog that eats ends up being fined. (Actions have consequences.)'},{z:'Zuau in a khap lawn.',e:'A liar is caught eventually. (Truth always prevails.)'}] },
+      2: { label: 'Proverb Quiz', items: [{z:'Sial vom leh sial vom kiingai.',e:'Like attracts like.'},{z:'Suangpi suangneu in thek.',e:'Small things overcome great ones.'},{z:'Zuau in a khap lawn.',e:'Liars are always caught.'}] },
+    },
+    3: {
+      0: { label: 'Zo History', items: [{z:'Zomite',e:'Zo people (collective name)'},{z:'Zogam',e:'Zo homeland'},{z:'Sengam',e:'Mongolia (ancestral origin)'},{z:'Khul',e:'Cave shelter (ancient dwelling)'}] },
+      1: { label: 'Zo Customs', items: [{z:'Khuado (Communal Feast)',e:'Major village feast. Fires lit in fields on Meilah Satni to drive away evil.'},{z:'Khuai Aihna (Chicken Divination)',e:"Before important work, a chicken is sacrificed and its leg bones examined."},{z:'Innsung Phamawh (Kinship System)',e:'Detailed 12-role kinship system — Thalloh, Zinkhak, Pu, Tanupi and more.'}] },
+      2: { label: 'Cultural Vocabulary', items: [{z:'Khuazindo',e:'communal feast / village celebration'},{z:'Meilah satni',e:'fire-lighting day before a feast'},{z:'Khuai aihna',e:'chicken divination'},{z:'Pawi',e:'traditional feast/festival'},{z:'Thalloh',e:'primary kinship role (male line)'},{z:'Zinkhak',e:'secondary kinship role (male line)'},{z:'Sungpi',e:'kinship role (female line)'},{z:'Zawl',e:'close friend / best friend'}] },
+    },
+    4: {
+      0: { label: 'Active & Passive Voice', items: [{z:'Cingno in lengladei sung a phiat hi.',e:'Active: Cingno opens the window.'},{z:'Lengladei sung pen, Cingno in a phiat hi.',e:'Passive: The window is opened by Cingno.'},{z:'Lia in la khat a sa hi.',e:'Active: She sings a song.'},{z:'La khat pen, Lia in a sa hi.',e:'Passive: A song is sung by her.'}] },
+      1: { label: 'Direct & Indirect Speech', items: [{z:'Thangpi in, "Kei-in khual ka zin ding hi," a ci hi.',e:'Direct: Thangpi said, "I will travel."'},{z:'Thangpi in, amah khualzin ding, a gen hi.',e:'Indirect: Thangpi said that he would travel.'}] },
+      2: { label: 'Composition Practice', items: [{z:'Taang in ticket te a khawm hi.',e:'Passive: Ticket te pen, Taang in a khawm hi.'},{z:'Lia in la khat a sa ding hi.',e:'Passive: La khat pen, Lia in a sa ding hi.'}] },
+    },
+    5: {
+      0: { label: 'Grammar Terms', items: [{z:'Kammal zatte',e:'Vocabulary list'},{z:'Paunam khenna',e:'Grammar'},{z:'Kampau luanzia',e:'Composition'},{z:'Laigelhzia',e:'Orthography (correct writing)'},{z:'Laimal gawmzia',e:'Spelling'},{z:'Awsuah',e:'Pronunciation'},{z:'Lailepna',e:'Punctuation'},{z:'Genbanga Genna',e:'Direct Speech'},{z:'Gensawnna',e:'Indirect Speech'},{z:'A Sepna Thupisak',e:'Active Voice'},{z:'A Sep Thupisak',e:'Passive Voice'},{z:'Hun lahkhiatna',e:'Tense'}] },
+      1: { label: 'Advanced Vocabulary', items: [{z:'Angtang',e:'courage'},{z:'Cidamna',e:'health'},{z:'Dikna',e:'justice/righteousness'},{z:'Hansanna',e:'success'},{z:'Hauhna',e:'wealth'},{z:'Lungdamna',e:'happiness/joy'},{z:'Pilna',e:'wisdom/education'},{z:'Suahtakna',e:'independence/freedom'},{z:'Thukhunpi',e:'constitution/agreement'},{z:'Zomite',e:'the Zo people (collective)'}] },
+      2: { label: 'Free Writing Prompts', items: [{z:'Describe your family using Zolai pronouns and possessives.'},{z:'Write about what you did yesterday using Past tense.'},{z:'Use 3 proverbs in sentences that relate to modern life.'},{z:'Write a short letter (laikhak) to a friend inviting them to a feast.'},{z:'Describe the Zomite Pianna Thu (Zo history) in 5 sentences.'}] },
+    },
+  },
+};
+
+// ── STATE ──
+let adminData = {};
+let currentLevel = null;
+let currentLesson = null;
+let currentTab = 0;
+let pendingChanges = false;
+let currentContentRows = [];
+let currentTabItems = {};
+let customStructure = {}; // overrides stored in localStorage
+let runtimeStructure = {}; // merged: hardcoded structure + custom
+let activeSettingsTab = 'structure';
+
+const DATA_KEY      = 'zolai_admin_data';
+const STRUCTURE_KEY = 'zolai_structure';
+const PW_KEY        = 'zolai_admin_pw';
+const LOCKOUT_KEY = 'zolai_admin_lockout';
+const MAX_ATTEMPTS   = 5;
+const LOCKOUT_MS     = 10 * 60 * 1000; // 10 minutes
+
+// ── CRYPTO — SHA-256 via Web Crypto API ──
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function isPasswordSet() {
+  const h = localStorage.getItem(PW_KEY);
+  return !!(h && h.length === 64 && /^[0-9a-f]+$/.test(h));
+}
+
+// ── LOCKOUT ──
+function getLockout() {
+  try { return JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{"attempts":0,"until":0}'); }
+  catch { return { attempts: 0, until: 0 }; }
+}
+function setLockout(l) { localStorage.setItem(LOCKOUT_KEY, JSON.stringify(l)); }
+
+let _lockoutTimer = null;
+function refreshLockoutUI() {
+  const l = getLockout();
+  const msg = document.getElementById('lockoutMsg');
+  const btn = document.getElementById('loginBtn');
+  const inp = document.getElementById('pwInput');
+  if (!msg) return;
+  clearTimeout(_lockoutTimer);
+
+  if (l.until > Date.now()) {
+    const secs = Math.ceil((l.until - Date.now()) / 1000);
+    const m = Math.floor(secs / 60), s = secs % 60;
+    msg.textContent = `Too many attempts. Try again in ${m}:${String(s).padStart(2,'0')}`;
+    if (btn) btn.disabled = true;
+    if (inp) inp.disabled = true;
+    _lockoutTimer = setTimeout(refreshLockoutUI, 1000);
+  } else {
+    const remaining = MAX_ATTEMPTS - (l.attempts || 0);
+    msg.textContent = l.attempts > 0 ? `${remaining} attempt${remaining !== 1 ? 's' : ''} remaining` : '';
+    if (btn) btn.disabled = false;
+    if (inp) { inp.disabled = false; inp.focus(); }
+  }
+}
+
+// ── AUTH ──
+async function login() {
+  const l = getLockout();
+  if (l.until > Date.now()) { refreshLockoutUI(); return; }
+
+  const pw = document.getElementById('pwInput').value;
+  if (!pw) return;
+
+  const hash = await hashPw(pw);
+  if (hash === localStorage.getItem(PW_KEY)) {
+    setLockout({ attempts: 0, until: 0 });
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminMain').style.display = 'block';
+    loadData();
+    buildSidebar();
+  } else {
+    const l2 = getLockout();
+    l2.attempts = (l2.attempts || 0) + 1;
+    if (l2.attempts >= MAX_ATTEMPTS) {
+      l2.until = Date.now() + LOCKOUT_MS;
+    }
+    setLockout(l2);
+    document.getElementById('loginError').textContent = 'Incorrect password.';
+    document.getElementById('pwInput').value = '';
+    refreshLockoutUI();
+  }
+}
+
+async function setupPassword() {
+  const pw1 = document.getElementById('setupPw1').value;
+  const pw2 = document.getElementById('setupPw2').value;
+  const err = document.getElementById('setupError');
+  if (pw1.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+  if (pw1 !== pw2)    { err.textContent = 'Passwords do not match.'; return; }
+  const hash = await hashPw(pw1);
+  localStorage.setItem(PW_KEY, hash);
+  setLockout({ attempts: 0, until: 0 });
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('adminMain').style.display = 'block';
+  loadData();
+  buildSidebar();
+}
+
+function logout() {
+  document.getElementById('adminMain').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('loginError').textContent = '';
+  refreshLockoutUI();
+}
+
+async function changePassword() {
+  const current = prompt('Enter your current password:');
+  if (!current) return;
+  const currentHash = await hashPw(current);
+  if (currentHash !== localStorage.getItem(PW_KEY)) {
+    alert('Incorrect current password.');
+    return;
+  }
+  const np = prompt('New password (min 8 characters):');
+  if (!np) return;
+  if (np.length < 8) { alert('Password must be at least 8 characters.'); return; }
+  const np2 = prompt('Confirm new password:');
+  if (np !== np2) { alert('Passwords do not match.'); return; }
+  const hash = await hashPw(np);
+  localStorage.setItem(PW_KEY, hash);
+  showToast('Password updated ✓');
+}
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  if (!isPasswordSet()) {
+    document.getElementById('setupScreen').style.display = 'flex';
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    refreshLockoutUI();
+  }
+});
+
+// ── DATA ──
+function loadData() {
+  try { adminData = JSON.parse(localStorage.getItem(DATA_KEY) || '{}'); }
+  catch { adminData = {}; }
+  loadCustomStructure();
+}
+
+function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(adminData)); }
+
+// ── STRUCTURE (runtime merge of hardcoded defaults + custom overrides) ──
+function loadCustomStructure() {
+  try { customStructure = JSON.parse(localStorage.getItem(STRUCTURE_KEY) || '{}'); }
+  catch { customStructure = {}; }
+  buildRuntimeStructure();
+}
+
+function saveCustomStructure() {
+  localStorage.setItem(STRUCTURE_KEY, JSON.stringify(customStructure));
+  buildRuntimeStructure();
+}
+
+function buildRuntimeStructure() {
+  runtimeStructure = JSON.parse(JSON.stringify(structure)); // deep clone defaults
+  const deleted = customStructure._deletedLevels || [];
+  for (const lid of deleted) delete runtimeStructure[lid];
+  for (const [lid, lvl] of Object.entries(customStructure)) {
+    if (lid === '_deletedLevels') continue;
+    if (!runtimeStructure[lid]) {
+      runtimeStructure[lid] = { name: lvl.name || lid, icon: lvl.icon || '📚',
+        color: lvl.color || '#7a8aa0', zolai: lvl.zolai || '', _custom: true, lessons: {} };
+    } else {
+      if (lvl.name)  runtimeStructure[lid].name  = lvl.name;
+      if (lvl.icon)  runtimeStructure[lid].icon  = lvl.icon;
+      if (lvl.color) runtimeStructure[lid].color = lvl.color;
+      if (lvl.zolai !== undefined) runtimeStructure[lid].zolai = lvl.zolai;
+    }
+    for (const [num, ls] of Object.entries(lvl.lessons || {})) {
+      if (!runtimeStructure[lid].lessons[num]) {
+        runtimeStructure[lid].lessons[num] = { title: ls.title || `Lesson ${num}`, tabs: ls.tabs || ['Content','Flashcards'] };
+      } else {
+        if (ls.title) runtimeStructure[lid].lessons[num].title = ls.title;
+        if (ls.tabs)  runtimeStructure[lid].lessons[num].tabs  = ls.tabs;
+      }
+    }
+    for (const num of (lvl._deletedLessons || [])) delete runtimeStructure[lid].lessons[num];
+  }
+}
+
+function getTabData(lvl, lsn, tab) {
+  return adminData?.[lvl]?.[lsn]?.[tab] || { image: null, audio: null, vocab: [], items: {} };
+}
+
+function setTabData(lvl, lsn, tab, data) {
+  if (!adminData[lvl])         adminData[lvl] = {};
+  if (!adminData[lvl][lsn])    adminData[lvl][lsn] = {};
+  adminData[lvl][lsn][tab] = data;
+}
+
+// ── NAV STATE HELPERS ──
+function clearBottomNav() {
+  document.querySelectorAll('.analytics-nav-btn,.str-nav-btn').forEach(b => b.classList.remove('active'));
+}
+function clearAllNav() {
+  document.querySelectorAll('.lesson-nav').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
+  clearBottomNav();
+}
+
+// ── SIDEBAR ──
+function buildSidebar() {
+  let html = '';
+  for (const [lid, lvl] of Object.entries(runtimeStructure)) {
+    const lessonNums = Object.keys(lvl.lessons).sort((a,b) => a-b);
+    html += `<button class="level-btn" id="lvl-${lid}" onclick="toggleLevel('${lid}')">
+      <span>${lvl.icon}</span><span>${lvl.name}</span>
+    </button>
+    <div class="lesson-nav" id="lessons-${lid}" style="display:none">`;
+    for (const num of lessonNums) {
+      const ls = lvl.lessons[num];
+      html += `<button class="lesson-btn" id="lsn-${lid}-${num}"
+        onclick="selectLesson('${lid}',${num})">${num}. ${ls.title}</button>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('levelNav').innerHTML = html;
+}
+
+function toggleLevel(lid) {
+  const nav = document.getElementById(`lessons-${lid}`);
+  const isOpen = nav.style.display !== 'none';
+  document.querySelectorAll('.lesson-nav').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  if (!isOpen) {
+    nav.style.display = 'block';
+    document.getElementById(`lvl-${lid}`).classList.add('active');
+  }
+}
+
+function selectLesson(lid, num) {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = lid;
+  currentLesson = num;
+  currentTab = 0;
+
+  clearBottomNav();
+  document.querySelectorAll('.lesson-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`lsn-${lid}-${num}`)?.classList.add('active');
+
+  const ls = runtimeStructure[lid].lessons[num];
+  document.getElementById('topCrumb').textContent =
+    `${runtimeStructure[lid].name} › Lesson ${num} · ${ls.title}`;
+
+  renderEditor();
+}
+
+// ── EDITOR ──
+function renderEditor() {
+  const ls = runtimeStructure[currentLevel].lessons[currentLesson];
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  initContentRows(td);
+
+  const tabBar = ls.tabs.map((t, i) =>
+    `<button class="tab-pill${i===currentTab?' active':''}" onclick="switchTab(${i})">${t}</button>`
+  ).join('');
+
+  const imgSection = `
+    <div class="section-card">
+      <div class="section-title">📷 Tab Image</div>
+      <div class="upload-area${td.image?' has-file':''}" id="imgArea">
+        <input type="file" accept="image/*" onchange="handleImageUpload(this)">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-label">${td.image ? 'Image uploaded — click to replace' : 'Click to upload an image'}</div>
+        <div class="upload-sub">JPG, PNG, WebP, GIF · max 2 MB</div>
+        ${td.image ? `<div class="upload-preview"><img src="${td.image}" alt="preview"></div>` : ''}
+      </div>
+      ${td.image ? `<button class="clear-btn" onclick="clearMedia('image')">✕ Remove image</button>` : ''}
+    </div>`;
+
+  const audioSection = `
+    <div class="section-card">
+      <div class="section-title">🔊 Tab Audio</div>
+      <div class="upload-area${td.audio?' has-file':''}" id="audioArea">
+        <input type="file" accept="audio/*" onchange="handleTabAudio(this)">
+        <div class="upload-icon">🎵</div>
+        <div class="upload-label">${td.audio ? 'Audio uploaded — click to replace' : 'Click to upload audio'}</div>
+        <div class="upload-sub">MP3, OGG, WAV · max 5 MB · plays at top of tab in app</div>
+        ${td.audio ? `<audio class="tab-audio" controls src="${td.audio}"></audio>` : ''}
+      </div>
+      ${td.audio ? `<button class="clear-btn" onclick="clearMedia('audio')">✕ Remove audio</button>` : ''}
+    </div>`;
+
+  const contentSection = getContentSection();
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="tab-bar">${tabBar}</div>
+    ${contentSection}
+    ${imgSection}
+    ${audioSection}
+  `;
+  document.getElementById('saveBar').style.display = 'flex';
+}
+
+function getItemSection(td) {
+  const manifest = ITEM_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+  if (!manifest) return '';
+  const savedItems = td.items || {};
+
+  const cells = manifest.items.map(key => {
+    const hasAudio = !!savedItems[key]?.audio;
+    const safeKey = key.replace(/[^a-zA-Z0-9]/g, '_');
+    return `<div class="item-cell${hasAudio ? ' has-audio' : ''}" id="icell-${safeKey}">
+      <div class="item-cell-label">${key}</div>
+      <div class="item-cell-dot"></div>
+      ${hasAudio ? `<audio id="ia-${safeKey}" src="${savedItems[key].audio}" style="display:none"></audio>` : ''}
+      <div class="item-cell-actions">
+        ${hasAudio
+          ? `<button class="icon-btn" onclick="playItemKeyAudio('${safeKey}')" title="Play">&#9654;</button>`
+          : ''}
+        <label class="icon-btn" title="${hasAudio ? 'Replace' : 'Upload'}" style="cursor:pointer">
+          🎵<input type="file" accept="audio/*" onchange="handleItemKeyAudio(this,'${key}','${safeKey}')">
+        </label>
+        ${hasAudio
+          ? `<button class="icon-btn del" onclick="clearItemKeyAudio('${key}','${safeKey}')" title="Remove">&#10005;</button>`
+          : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="section-card">
+      <div class="section-title">&#128308; Item Audio
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— ${manifest.label} &middot; add pronunciation to each item</span>
+      </div>
+      <div class="item-grid">${cells}</div>
+    </div>`;
+}
+
+// ── CONTENT ROW EDITOR ──
+function initContentRows(td) {
+  const saved = td.contentRows;
+  if (saved && saved.length > 0) {
+    currentContentRows = saved.map(r => ({ z: r.z || '', e: r.e || '' }));
+  } else {
+    const manifest = CONTENT_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+    currentContentRows = manifest ? manifest.items.map(item => ({ z: item.z || '', e: item.e || '' })) : [];
+  }
+  currentTabItems = td.items || {};
+}
+
+function renderContentRows() {
+  const container = document.getElementById('contentRowsList');
+  if (!container) return;
+  container.innerHTML = currentContentRows.map((_, i) => buildContentRow(i)).join('') ||
+    '<div style="color:var(--text-dim);font-size:12px;padding:8px 0">No rows — click + Add Row to begin</div>';
+}
+
+function buildContentRow(idx) {
+  const r = currentContentRows[idx];
+  const key = r.z;
+  const hasAudio = !!(key && currentTabItems[key]?.audio);
+  return `<div class="content-row" data-idx="${idx}">
+    ${hasAudio ? `<audio id="cra-${idx}" src="${currentTabItems[key].audio}" style="display:none"></audio>` : ''}
+    <div class="content-row-body">
+      <span class="content-row-z">${esc(r.z)}</span>
+      ${r.e ? `<span class="content-row-e">${esc(r.e)}</span>` : ''}
+    </div>
+    <div class="content-row-dot${hasAudio ? ' has-audio' : ''}"></div>
+    <div class="content-row-actions">
+      <button class="icon-btn" onclick="editContentRow(${idx})" title="Edit text">&#9998;</button>
+      <label class="icon-btn" title="${hasAudio ? 'Replace audio' : 'Upload audio'}" style="cursor:pointer">
+        &#127925;<input type="file" accept="audio/*" onchange="handleContentRowAudio(this,${idx})">
+      </label>
+      ${hasAudio
+        ? `<button class="icon-btn" onclick="playContentRowAudio(${idx})" title="Play">&#9654;</button>
+           <button class="icon-btn del" onclick="clearContentRowAudio(${idx})" title="Remove audio">&#8960;</button>`
+        : ''}
+      <button class="icon-btn del" onclick="deleteContentRow(${idx})" title="Delete row">&#128465;</button>
+    </div>
+  </div>`;
+}
+
+function handleContentRowAudio(input, idx) {
+  const file = input.files[0]; if (!file) return;
+  const key = currentContentRows[idx]?.z;
+  if (!key?.trim()) return;
+  readFile(file, 2, data => {
+    const td = collectEdits();
+    if (!td.items) td.items = {};
+    if (!td.items[key]) td.items[key] = {};
+    td.items[key].audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData();
+    currentTabItems = td.items;
+    renderContentRows();
+    showToast(`Audio added for "${key}"`);
+  });
+}
+
+function playContentRowAudio(idx) { document.getElementById(`cra-${idx}`)?.play(); }
+
+function clearContentRowAudio(idx) {
+  const key = currentContentRows[idx]?.z;
+  if (!key) return;
+  const td = collectEdits();
+  if (td.items?.[key]) delete td.items[key];
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData();
+  currentTabItems = td.items || {};
+  renderContentRows();
+  showToast(`Audio removed from "${key}"`);
+}
+
+function editContentRow(idx) {
+  const r = currentContentRows[idx];
+  const el = document.querySelector(`.content-row[data-idx="${idx}"]`);
+  if (!el) return;
+  el.outerHTML = `<div class="content-row editing" data-idx="${idx}">
+    <div class="content-row-body">
+      <input class="content-input-z" id="ciz-${idx}" value="${esc(r.z)}" placeholder="Zolai text"
+        onkeydown="if(event.key==='Enter')saveContentRow(${idx})">
+      <input class="content-input-e" id="cie-${idx}" value="${esc(r.e)}" placeholder="English (optional)"
+        onkeydown="if(event.key==='Enter')saveContentRow(${idx})">
+    </div>
+    <div class="content-row-actions">
+      <button class="icon-btn" onclick="saveContentRow(${idx})" title="Save">&#10003;</button>
+      <button class="icon-btn" onclick="cancelContentRow(${idx})" title="Cancel">&#10005;</button>
+    </div>
+  </div>`;
+  document.getElementById(`ciz-${idx}`)?.focus();
+  setPending();
+}
+
+function saveContentRow(idx) {
+  const z = document.getElementById(`ciz-${idx}`)?.value.trim() || '';
+  const e = document.getElementById(`cie-${idx}`)?.value.trim() || '';
+  currentContentRows[idx] = { z, e };
+  renderContentRows();
+}
+
+function cancelContentRow(idx) {
+  const el = document.querySelector(`.content-row[data-idx="${idx}"]`);
+  if (el) el.outerHTML = buildContentRow(idx);
+}
+
+function deleteContentRow(idx) {
+  currentContentRows.splice(idx, 1);
+  renderContentRows();
+  setPending();
+}
+
+function addContentRow() {
+  currentContentRows.push({ z: '', e: '' });
+  renderContentRows();
+  editContentRow(currentContentRows.length - 1);
+  setPending();
+}
+
+function getContentSection() {
+  const manifest = CONTENT_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+  const label = manifest?.label || 'Items';
+  const saved = getTabData(currentLevel, currentLesson, currentTab).contentRows;
+  const isOverridden = saved && saved.length > 0;
+  return `
+    <div class="section-card">
+      <div class="section-title">&#9998; Tab Content
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">
+          — ${esc(label)}${isOverridden ? ' &middot; <span style="color:var(--gold)">custom override active</span>' : ' &middot; showing defaults'} &middot; hover row to edit or add audio
+        </span>
+      </div>
+      <div class="content-rows-list" id="contentRowsList">
+        ${currentContentRows.map((_, i) => buildContentRow(i)).join('') ||
+          '<div style="color:var(--text-dim);font-size:12px;padding:8px 0">No rows — click + Add Row to begin</div>'}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-outline" onclick="addContentRow()" style="font-size:12px;padding:7px 16px">+ Add Row</button>
+        ${isOverridden ? `<button class="btn btn-outline" onclick="resetContentRows()" style="font-size:12px;padding:7px 16px;color:var(--text-dim)">↺ Reset to defaults</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function resetContentRows() {
+  if (!confirm('Reset to default content? This removes your override.')) return;
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  td.contentRows = [];
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData();
+  const manifest = CONTENT_MANIFEST[currentLevel]?.[currentLesson]?.[currentTab];
+  currentContentRows = manifest ? manifest.items.map(item => ({ z: item.z || '', e: item.e || '' })) : [];
+  renderEditor();
+  showToast('Content reset to defaults');
+}
+
+function buildVocabRow(i, z, e, audio) {
+  return `<tr class="vocab-row-edit" id="vrow-${i}">
+    <td><input class="vocab-input" id="vz-${i}" type="text" value="${esc(z)}" placeholder="Zolai text" oninput="setPending()"></td>
+    <td><input class="vocab-input en" id="ve-${i}" type="text" value="${esc(e)}" placeholder="English meaning" oninput="setPending()"></td>
+    <td>
+      <div class="audio-cell">
+        ${audio ? `<button class="icon-btn" onclick="playItemAudio(${i})" title="Play">▶</button>
+                   <audio id="va-${i}" src="${audio}" style="display:none"></audio>` : ''}
+        <label class="icon-btn" title="Upload audio" style="cursor:pointer">
+          🎵<input type="file" accept="audio/*" onchange="handleItemAudio(this,${i})">
+        </label>
+        ${audio ? `<button class="icon-btn del" onclick="clearItemAudio(${i})" title="Remove audio">✕</button>` : ''}
+      </div>
+    </td>
+    <td><button class="icon-btn del" onclick="deleteRow(${i})" title="Delete">🗑</button></td>
+  </tr>`;
+}
+
+function switchTab(idx) {
+  if (pendingChanges && !confirm('Switch tab? Unsaved changes will be lost.')) return;
+  pendingChanges = false;
+  currentTab = idx;
+  renderEditor();
+}
+
+function addVocabRow() {
+  const tbody = document.getElementById('vocabBody');
+  // Remove empty placeholder row if present
+  const placeholder = tbody.querySelector('tr:not(.vocab-row-edit)');
+  if (placeholder) placeholder.remove();
+  const i = tbody.querySelectorAll('.vocab-row-edit').length;
+  tbody.insertAdjacentHTML('beforeend', buildVocabRow(i, '', '', null));
+  setPending();
+}
+
+function deleteRow(i) {
+  document.getElementById(`vrow-${i}`)?.remove();
+  // Re-index remaining rows
+  document.querySelectorAll('.vocab-row-edit').forEach((row, idx) => {
+    row.id = `vrow-${idx}`;
+    row.querySelector('[id^="vz-"]').id = `vz-${idx}`;
+    row.querySelector('[id^="ve-"]').id = `ve-${idx}`;
+  });
+  setPending();
+}
+
+// ── MEDIA HANDLERS ──
+function readFile(file, maxMB, callback) {
+  if (file.size > maxMB * 1024 * 1024) {
+    alert(`File too large. Max ${maxMB} MB allowed.`);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => callback(e.target.result);
+  reader.readAsDataURL(file);
+}
+
+function handleImageUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 2, data => {
+    const td = getTabData(currentLevel, currentLesson, currentTab);
+    td.image = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast('Image uploaded');
+  });
+}
+
+function handleTabAudio(input) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 5, data => {
+    const td = getTabData(currentLevel, currentLesson, currentTab);
+    td.audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast('Audio uploaded');
+  });
+}
+
+function handleItemAudio(input, i) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 2, data => {
+    const td = collectEdits();
+    if (!td.vocab[i]) td.vocab[i] = { z: '', e: '' };
+    td.vocab[i].audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast('Item audio uploaded');
+  });
+}
+
+function clearMedia(type) {
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  td[type] = null;
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData(); renderEditor();
+  showToast(`${type === 'image' ? 'Image' : 'Audio'} removed`);
+}
+
+function clearItemAudio(i) {
+  const td = collectEdits();
+  if (td.vocab[i]) td.vocab[i].audio = null;
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData(); renderEditor(); showToast('Item audio removed');
+}
+
+function playItemAudio(i) { document.getElementById(`va-${i}`)?.play(); }
+
+function handleItemKeyAudio(input, key, safeKey) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 2, data => {
+    const td = getTabData(currentLevel, currentLesson, currentTab);
+    if (!td.items) td.items = {};
+    if (!td.items[key]) td.items[key] = {};
+    td.items[key].audio = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast(`Audio added for "${key}"`);
+  });
+}
+
+function clearItemKeyAudio(key, safeKey) {
+  const td = collectEdits();
+  if (td.items?.[key]) { td.items[key].audio = null; delete td.items[key]; }
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData(); renderEditor(); showToast(`Audio removed from "${key}"`);
+}
+
+function playItemKeyAudio(safeKey) { document.getElementById(`ia-${safeKey}`)?.play(); }
+
+// ── SAVE / DISCARD ──
+function collectEdits() {
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  const rows = document.querySelectorAll('.vocab-row-edit');
+  const vocab = [];
+  rows.forEach((_, i) => {
+    const z = document.getElementById(`vz-${i}`)?.value.trim() || '';
+    const e = document.getElementById(`ve-${i}`)?.value.trim() || '';
+    if (z || e) vocab.push({ z, e, audio: td.vocab?.[i]?.audio || null });
+  });
+  const contentRows = currentContentRows.filter(r => r.z.trim());
+  return { image: td.image, audio: td.audio, vocab, items: td.items || {}, contentRows };
+}
+
+function saveChanges() {
+  const td = collectEdits();
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData();
+  pendingChanges = false;
+  showToast('Saved successfully ✓');
+  renderEditor();
+}
+
+function discardChanges() {
+  if (!confirm('Discard all unsaved changes for this tab?')) return;
+  pendingChanges = false;
+  renderEditor();
+}
+
+function setPending() { pendingChanges = true; }
+
+// ── EXPORT / IMPORT ──
+function exportData() {
+  const blob = new Blob([JSON.stringify(adminData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zolai-admin-data.json';
+  a.click();
+  showToast('Data exported');
+}
+
+function importData(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      adminData = JSON.parse(e.target.result);
+      saveData();
+      showToast('Data imported successfully');
+      if (currentLevel && currentLesson !== null) renderEditor();
+    } catch { alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ── STRUCTURE EDITOR ──
+function showSettings(tab) {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = null; currentLesson = null;
+  clearAllNav();
+  activeSettingsTab = tab || activeSettingsTab || 'structure';
+  document.getElementById('settingsNavBtn').classList.add('active');
+  document.getElementById('saveBar').style.display = 'none';
+  document.getElementById('topCrumb').textContent = 'Settings';
+  if (activeSettingsTab === 'structure') renderStructureEditor();
+  else renderFeatureControls();
+}
+
+function settingsTabBar() {
+  return `<div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px">
+    <button onclick="showSettings('structure')" style="padding:5px 16px;border-radius:16px;font-size:12px;cursor:pointer;border:1px solid ${activeSettingsTab==='structure'?'var(--gold)':'transparent'};background:${activeSettingsTab==='structure'?'rgba(201,168,76,0.1)':'transparent'};color:${activeSettingsTab==='structure'?'var(--gold)':'var(--text-muted)'}">🗂 Structure</button>
+    <button onclick="showSettings('features')" style="padding:5px 16px;border-radius:16px;font-size:12px;cursor:pointer;border:1px solid ${activeSettingsTab==='features'?'var(--gold)':'transparent'};background:${activeSettingsTab==='features'?'rgba(201,168,76,0.1)':'transparent'};color:${activeSettingsTab==='features'?'var(--gold)':'var(--text-muted)'}">⚙ Features</button>
+  </div>`;
+}
+
+function renderStructureEditor() {
+  activeSettingsTab = 'structure';
+  let html = '';
+  for (const [lid, lvl] of Object.entries(runtimeStructure)) html += buildStrLevelBlock(lid, lvl);
+  document.getElementById('adminContent').innerHTML = settingsTabBar() + `
+    <div class="section-card">
+      <div class="section-title" style="justify-content:space-between">
+        <span>🗂 Level &amp; Lesson Structure</span>
+        <button class="btn btn-gold" onclick="addLevelForm()" style="font-size:12px;padding:6px 14px">+ New Level</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">
+        Add or edit levels, lessons, and tabs. Changes save immediately and appear in the app.
+      </div>
+      <div id="strLevelList">${html}</div>
+    </div>`;
+}
+
+function buildStrLevelBlock(lid, lvl) {
+  const isCustom = !structure[lid];
+  const lessonNums = Object.keys(lvl.lessons).sort((a,b) => a-b);
+  const lessonsHtml = lessonNums.length ? lessonNums.map(num => {
+    const ls = lvl.lessons[num];
+    const tabChips = (ls.tabs||[]).map((t,ti) =>
+      `<span class="str-tab-chip">${esc(t)}<button class="str-tab-del" onclick="deleteTab('${lid}',${num},${ti})" title="Remove tab">×</button></span>`
+    ).join('');
+    return `<div class="str-lesson-row" id="str-ls-${lid}-${num}">
+      <div class="str-lesson-header">
+        <span class="str-lesson-num">${num}</span>
+        <span class="str-lesson-title">${esc(ls.title)}</span>
+        <div class="str-lesson-actions">
+          <button class="str-btn" onclick="editLessonForm('${lid}',${num})">✏ Edit</button>
+          <button class="str-btn danger" onclick="deleteLesson('${lid}',${num})">✕</button>
+        </div>
+      </div>
+      <div class="str-tabs-row" id="str-tabs-${lid}-${num}">
+        ${tabChips}
+        <button class="str-tab-add" onclick="addTabForm('${lid}',${num})">+ tab</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:var(--text-dim);font-size:12px;padding:6px 0">No lessons yet — add one below.</div>';
+  return `<div class="str-level-block" id="str-lvl-${lid}">
+    <div class="str-level-header" id="str-lhdr-${lid}">
+      <span class="str-level-icon">${esc(lvl.icon)}</span>
+      <span class="str-level-name">${esc(lvl.name)}</span>
+      <div class="str-level-actions">
+        <button class="str-btn" onclick="editLevelForm('${lid}')">✏ Edit</button>
+        ${isCustom ? `<button class="str-btn danger" onclick="deleteLevel('${lid}')">✕ Delete</button>` : ''}
+      </div>
+    </div>
+    <div class="str-level-body">
+      ${lessonsHtml}
+      <div id="str-add-ls-${lid}" style="margin-top:8px">
+        <button class="str-btn add" onclick="showAddLessonForm('${lid}')">+ Add Lesson</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Level edit ──
+function editLevelForm(lid) {
+  const lvl = runtimeStructure[lid];
+  document.getElementById(`str-lhdr-${lid}`).innerHTML = `
+    <input class="str-input" id="el-icon-${lid}" value="${esc(lvl.icon)}" placeholder="Icon" style="width:54px;text-align:center">
+    <input class="str-input" id="el-name-${lid}" value="${esc(lvl.name)}" placeholder="Level name" style="flex:1">
+    <input class="str-input" id="el-zolai-${lid}" value="${esc(lvl.zolai||'')}" placeholder="Subtitle (optional)" style="flex:1">
+    <button class="str-btn add" onclick="saveLevelEdit('${lid}')">Save</button>
+    <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>`;
+  document.getElementById(`el-name-${lid}`)?.focus();
+}
+
+function saveLevelEdit(lid) {
+  const icon  = document.getElementById(`el-icon-${lid}`)?.value.trim()  || runtimeStructure[lid].icon;
+  const name  = document.getElementById(`el-name-${lid}`)?.value.trim();
+  const zolai = document.getElementById(`el-zolai-${lid}`)?.value.trim() || '';
+  if (!name) { showToast('Enter a level name'); return; }
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  customStructure[lid].name  = name;
+  customStructure[lid].icon  = icon;
+  customStructure[lid].zolai = zolai;
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Level updated');
+}
+
+// ── New level ──
+function addLevelForm() {
+  const list = document.getElementById('strLevelList');
+  const div = document.createElement('div');
+  div.className = 'str-level-block';
+  div.id = 'str-new-lvl-form';
+  div.innerHTML = `
+    <div class="str-level-header" style="background:var(--surface3)">
+      <span style="font-size:13px;font-weight:600;color:var(--gold-light)">New Level</span>
+    </div>
+    <div class="str-level-body">
+      <div class="str-form-row">
+        <input class="str-input" id="nlvl-id"    placeholder="Level ID — letters/numbers only (e.g. advanced2)" style="flex:1.5;min-width:140px">
+        <input class="str-input" id="nlvl-icon"  placeholder="Icon" value="📚" style="width:60px;text-align:center">
+        <input class="str-input" id="nlvl-name"  placeholder="Display name" style="flex:1;min-width:100px">
+        <input class="str-input" id="nlvl-zolai" placeholder="Subtitle (optional)" style="flex:1;min-width:100px">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="str-btn add" onclick="saveNewLevel()">Create Level</button>
+        <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>
+      </div>
+    </div>`;
+  list.prepend(div);
+  document.getElementById('nlvl-id')?.focus();
+}
+
+function saveNewLevel() {
+  const raw   = document.getElementById('nlvl-id')?.value.trim() || '';
+  const id    = raw.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  const icon  = document.getElementById('nlvl-icon')?.value.trim()  || '📚';
+  const name  = document.getElementById('nlvl-name')?.value.trim();
+  const zolai = document.getElementById('nlvl-zolai')?.value.trim() || '';
+  if (!id)   { showToast('Enter a level ID'); return; }
+  if (!name) { showToast('Enter a level name'); return; }
+  if (runtimeStructure[id]) { showToast('Level ID already exists'); return; }
+  customStructure[id] = { _custom: true, name, icon, zolai, color: '#7a8aa0', lessons: {} };
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast(`Level "${name}" created`);
+}
+
+function deleteLevel(lid) {
+  if (!confirm(`Delete level "${runtimeStructure[lid]?.name}"? All its lessons will be removed.`)) return;
+  if (!customStructure._deletedLevels) customStructure._deletedLevels = [];
+  customStructure._deletedLevels.push(lid);
+  delete customStructure[lid];
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Level deleted');
+}
+
+// ── Lesson edit ──
+function showAddLessonForm(lid) {
+  document.getElementById(`str-add-ls-${lid}`).innerHTML = `
+    <div class="str-form-row" style="margin-top:4px">
+      <input class="str-input" id="nls-title-${lid}" placeholder="Lesson title" style="flex:2;min-width:120px">
+      <input class="str-input" id="nls-tabs-${lid}"  placeholder="Tabs (comma-separated, e.g. Vocab, Practice, Flashcards)" style="flex:3;min-width:160px">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="str-btn add" onclick="saveNewLesson('${lid}')">Add Lesson</button>
+      <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>
+    </div>`;
+  document.getElementById(`nls-title-${lid}`)?.focus();
+}
+
+function saveNewLesson(lid) {
+  const title   = document.getElementById(`nls-title-${lid}`)?.value.trim();
+  const tabsRaw = document.getElementById(`nls-tabs-${lid}`)?.value.trim();
+  if (!title) { showToast('Enter a lesson title'); return; }
+  const tabs = tabsRaw ? tabsRaw.split(',').map(t => t.trim()).filter(Boolean) : ['Content','Flashcards'];
+  const existingNums = Object.keys(runtimeStructure[lid].lessons).map(Number);
+  const nextNum = existingNums.length ? Math.max(...existingNums) + 1 : 1;
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  customStructure[lid].lessons[nextNum] = { title, tabs };
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast(`Lesson ${nextNum} added`);
+}
+
+function editLessonForm(lid, num) {
+  const ls = runtimeStructure[lid].lessons[num];
+  const el = document.getElementById(`str-ls-${lid}-${num}`);
+  if (!el) return;
+  el.innerHTML = `
+    <div class="str-form-row">
+      <input class="str-input" id="els-title-${lid}-${num}" value="${esc(ls.title)}" placeholder="Lesson title" style="flex:2;min-width:120px">
+      <input class="str-input" id="els-tabs-${lid}-${num}"  value="${esc((ls.tabs||[]).join(', '))}" placeholder="Tabs (comma-separated)" style="flex:3;min-width:160px">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="str-btn add" onclick="saveLessonEdit('${lid}',${num})">Save</button>
+      <button class="str-btn" onclick="renderStructureEditor()">Cancel</button>
+    </div>`;
+  document.getElementById(`els-title-${lid}-${num}`)?.focus();
+}
+
+function saveLessonEdit(lid, num) {
+  const title   = document.getElementById(`els-title-${lid}-${num}`)?.value.trim();
+  const tabsRaw = document.getElementById(`els-tabs-${lid}-${num}`)?.value.trim();
+  if (!title) { showToast('Enter a title'); return; }
+  const tabs = tabsRaw ? tabsRaw.split(',').map(t => t.trim()).filter(Boolean) : ['Content'];
+  if (!tabs.length) { showToast('Add at least one tab'); return; }
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  customStructure[lid].lessons[num] = { ...customStructure[lid].lessons[num], title, tabs };
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Lesson updated');
+}
+
+function deleteLesson(lid, num) {
+  if (!confirm(`Delete Lesson ${num}: "${runtimeStructure[lid].lessons[num]?.title}"?`)) return;
+  if (!customStructure[lid]) customStructure[lid] = {};
+  if (!customStructure[lid]._deletedLessons) customStructure[lid]._deletedLessons = [];
+  if (!customStructure[lid]._deletedLessons.includes(+num)) customStructure[lid]._deletedLessons.push(+num);
+  if (customStructure[lid].lessons?.[num]) delete customStructure[lid].lessons[num];
+  saveCustomStructure(); buildSidebar(); renderStructureEditor();
+  showToast('Lesson deleted');
+}
+
+// ── Tab edit ──
+function addTabForm(lid, num) {
+  const row = document.getElementById(`str-tabs-${lid}-${num}`);
+  if (!row) return;
+  const addBtn = row.querySelector('.str-tab-add');
+  if (addBtn) addBtn.style.display = 'none';
+  const inp = document.createElement('input');
+  inp.className = 'str-input'; inp.placeholder = 'Tab name';
+  inp.style.cssText = 'width:120px;display:inline-block';
+  inp.onkeydown = e => { if (e.key==='Enter') saveNewTab(lid,num,inp.value); if (e.key==='Escape') renderStructureEditor(); };
+  const btn = document.createElement('button');
+  btn.className = 'str-btn add'; btn.textContent = 'Add';
+  btn.onclick = () => saveNewTab(lid, num, inp.value);
+  row.appendChild(inp); row.appendChild(btn); inp.focus();
+}
+
+function saveNewTab(lid, num, tabName) {
+  const name = (tabName||'').trim();
+  if (!name) { showToast('Enter a tab name'); return; }
+  const tabs = [...(runtimeStructure[lid].lessons[num].tabs||[]), name];
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  if (!customStructure[lid].lessons[num]) customStructure[lid].lessons[num] = { title: runtimeStructure[lid].lessons[num].title };
+  customStructure[lid].lessons[num].tabs = tabs;
+  saveCustomStructure(); renderStructureEditor();
+  showToast('Tab added');
+}
+
+function deleteTab(lid, num, tabIdx) {
+  const tabs = [...(runtimeStructure[lid].lessons[num].tabs||[])];
+  if (tabs.length <= 1) { showToast('Cannot remove the only tab'); return; }
+  if (!confirm(`Remove tab "${tabs[tabIdx]}"?`)) return;
+  tabs.splice(tabIdx, 1);
+  if (!customStructure[lid]) customStructure[lid] = { lessons: {} };
+  if (!customStructure[lid].lessons) customStructure[lid].lessons = {};
+  if (!customStructure[lid].lessons[num]) customStructure[lid].lessons[num] = { title: runtimeStructure[lid].lessons[num].title };
+  customStructure[lid].lessons[num].tabs = tabs;
+  saveCustomStructure(); renderStructureEditor();
+  showToast('Tab removed');
+}
+
+// ── FEATURE FLAGS ──
+const FLAGS_KEY = 'zolai_features';
+
+function getFlags() {
+  try { return JSON.parse(localStorage.getItem(FLAGS_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveFlags(flags) {
+  localStorage.setItem(FLAGS_KEY, JSON.stringify(flags));
+}
+
+function renderFeatureControls() {
+  activeSettingsTab = 'features';
+  const flags = getFlags();
+
+  const globalDefs = [
+    { key: 'quiz',        label: 'Quiz Mode',        icon: '✦', hint: 'Allow students to take level quizzes' },
+    { key: 'vocabulary',  label: 'Vocabulary',        icon: '◈', hint: 'Show the vocabulary browser page' },
+    { key: 'leaderboard', label: 'Leaderboard',       icon: '🏆', hint: 'Show the global score leaderboard' },
+    { key: 'reference',   label: 'Grammar Reference', icon: '≡', hint: 'Show the grammar reference page' },
+  ];
+
+  const globalRows = globalDefs.map(f => {
+    const on = flags.global?.[f.key] !== false;
+    return `<div class="control-row">
+      <div>
+        <div class="control-row-label">
+          <span class="control-icon">${f.icon}</span>
+          <span>${f.label}</span>
+        </div>
+        <div class="control-hint" style="padding-left:32px">${f.hint}</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" ${on?'checked':''} onchange="toggleGlobal('${f.key}',this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    </div>`;
+  }).join('');
+
+  let levelHtml = '';
+  for (const [lid, lvl] of Object.entries(runtimeStructure)) {
+    let lessonRows = '';
+    for (const [num, ls] of Object.entries(lvl.lessons)) {
+      const lessonOn = flags.levels?.[lid]?.[num]?.enabled !== false;
+      const tabToggles = ls.tabs.map((tab, ti) => {
+        const tabOn = flags.levels?.[lid]?.[num]?.tabs?.[ti] !== false;
+        return `<div class="tab-ctrl-item ${tabOn?'':'tab-off'}">
+          <span>${tab}</span>
+          <label class="toggle-switch" style="width:28px;height:16px">
+            <input type="checkbox" ${tabOn?'checked':''} ${!lessonOn?'disabled':''}
+              onchange="toggleTab('${lid}',${num},${ti},this.checked)">
+            <span class="toggle-track" style="border-radius:16px"></span>
+          </label>
+        </div>`;
+      }).join('');
+      lessonRows += `
+        <div class="lesson-ctrl-row">
+          <div class="lesson-ctrl-header">
+            <label class="toggle-switch">
+              <input type="checkbox" ${lessonOn?'checked':''} onchange="toggleLesson('${lid}',${num},this.checked)">
+              <span class="toggle-track"></span>
+            </label>
+            <span class="lesson-ctrl-title ${lessonOn?'':'dimmed'}">${num}. ${ls.title}</span>
+          </div>
+          <div class="tab-ctrl-row">${tabToggles}</div>
+        </div>`;
+    }
+    levelHtml += `
+      <div class="level-ctrl-section" style="margin-bottom:8px">
+        <div class="level-ctrl-header" onclick="toggleCtrlSection('${lid}')">
+          <span>${lvl.icon} ${lvl.name}</span>
+          <span id="ctrl-arrow-${lid}" style="color:var(--text-dim);font-size:12px">▾</span>
+        </div>
+        <div class="level-ctrl-body" id="ctrl-body-${lid}">
+          ${lessonRows}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('adminContent').innerHTML = settingsTabBar() + `
+    <div class="section-card">
+      <div class="section-title">Global Features
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— changes apply immediately for all users</span>
+      </div>
+      <div>${globalRows}</div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">Level &amp; Tab Controls
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— hide lessons or individual tabs per level</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px">
+        Disabling a lesson removes it from the student sidebar. Disabling a tab hides that tab inside the lesson.
+      </div>
+      <div>${levelHtml}</div>
+      <button onclick="resetAllFlags()"
+        style="margin-top:14px;font-size:11px;color:var(--text-dim);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer">
+        Reset all to default (enable everything)
+      </button>
+    </div>
+  `;
+  const firstLid = Object.keys(runtimeStructure)[0];
+  if (firstLid) toggleCtrlSection(firstLid);
+}
+
+function toggleCtrlSection(lid) {
+  const body = document.getElementById(`ctrl-body-${lid}`);
+  const arrow = document.getElementById(`ctrl-arrow-${lid}`);
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  if (arrow) arrow.textContent = open ? '▾' : '▸';
+}
+
+function toggleGlobal(feature, enabled) {
+  const flags = getFlags();
+  if (!flags.global) flags.global = {};
+  flags.global[feature] = enabled;
+  saveFlags(flags);
+  showToast(`${feature} ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+function toggleLesson(level, lesson, enabled) {
+  const flags = getFlags();
+  if (!flags.levels) flags.levels = {};
+  if (!flags.levels[level]) flags.levels[level] = {};
+  if (!flags.levels[level][lesson]) flags.levels[level][lesson] = {};
+  flags.levels[level][lesson].enabled = enabled;
+  saveFlags(flags);
+  renderFeatureControls();
+  // Re-open the level that was just changed
+  toggleCtrlSection(level);
+  showToast(`Lesson ${lesson} ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+function toggleTab(level, lesson, tabIdx, enabled) {
+  const flags = getFlags();
+  if (!flags.levels) flags.levels = {};
+  if (!flags.levels[level]) flags.levels[level] = {};
+  if (!flags.levels[level][lesson]) flags.levels[level][lesson] = {};
+  if (!flags.levels[level][lesson].tabs) flags.levels[level][lesson].tabs = {};
+  flags.levels[level][lesson].tabs[tabIdx] = enabled;
+  saveFlags(flags);
+  // Update just this tab item visually (no full re-render)
+  const checkbox = event.target;
+  const item = checkbox.closest('.tab-ctrl-item');
+  if (item) item.classList.toggle('tab-off', !enabled);
+  showToast(`Tab ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+function resetAllFlags() {
+  if (!confirm('Reset all feature controls to default (everything enabled)?')) return;
+  localStorage.removeItem(FLAGS_KEY);
+  renderFeatureControls();
+  showToast('All controls reset to default');
+}
+
+// ── FIREBASE ──
+function saveFbUrl() {
+  const url = (document.getElementById('fbUrlInput').value || '').trim().replace(/\/$/, '');
+  if (url && !url.startsWith('https://')) {
+    alert('URL must start with https://');
+    return;
+  }
+  if (url) localStorage.setItem('zolai_firebase_url', url);
+  else localStorage.removeItem('zolai_firebase_url');
+  showToast(url ? 'Firebase URL saved' : 'Firebase URL cleared');
+  showAnalytics();
+}
+
+function saveGaId() {
+  const id = (document.getElementById('gaIdInput').value || '').trim();
+  if (id && !/^G-[A-Z0-9]+$/.test(id)) {
+    alert('Invalid format. GA4 Measurement IDs look like: G-ABCD1234');
+    return;
+  }
+  if (id) localStorage.setItem('zolai_ga_id', id);
+  else localStorage.removeItem('zolai_ga_id');
+  showToast(id ? `GA4 configured: ${id}` : 'GA4 ID cleared');
+  showAnalytics();
+}
+
+// ── ADMIN LEADERBOARD ──
+function showAdminLeaderboard() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = null; currentLesson = null;
+  clearAllNav();
+  document.getElementById('leaderboardNavBtn').classList.add('active');
+  document.getElementById('saveBar').style.display = 'none';
+  document.getElementById('topCrumb').textContent = 'Leaderboard';
+
+  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  if (!fbUrl) {
+    document.getElementById('adminContent').innerHTML = `
+      <div class="section-card" style="text-align:center;padding:48px">
+        <div style="font-size:36px;margin-bottom:16px">🏆</div>
+        <div style="font-size:15px;font-weight:500;margin-bottom:8px">Firebase not configured</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">
+          Set up a Firebase Realtime Database URL in the Analytics panel first.
+        </div>
+        <button class="btn btn-gold" onclick="showAnalytics()" style="font-size:13px">Go to Analytics &#8594;</button>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>&#127942; Leaderboard — All Submissions</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" onclick="showAdminLeaderboard()" style="font-size:12px;padding:6px 12px">&#8635; Refresh</button>
+          <button class="btn btn-red" onclick="clearAllScores()" style="font-size:12px;padding:6px 12px">Clear All</button>
+        </div>
+      </div>
+      <div id="adminLbBody" style="margin-top:16px">
+        <div style="text-align:center;padding:32px;color:var(--text-dim)">Loading...</div>
+      </div>
+    </div>`;
+
+  fetch(fbUrl + '/scores.json')
+    .then(r => r.json())
+    .then(data => {
+      if (!data) { document.getElementById('adminLbBody').innerHTML = `<div style="color:var(--text-dim);padding:20px;text-align:center">No scores yet.</div>`; return; }
+      const entries = Object.entries(data).map(([k,v]) => ({...v, _key: k}));
+      entries.sort((a,b) => b.xp - a.xp);
+      const rows = entries.map((s, i) => `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px;color:var(--text-dim);text-align:center">#${i+1}</td>
+          <td style="padding:10px;font-weight:500">${esc(s.name)}</td>
+          <td style="padding:10px;font-size:11px;color:var(--text-muted)">${esc(s.level||'')}</td>
+          <td style="padding:10px;font-family:'DM Mono',monospace;color:var(--gold-light)">${s.xp||0} XP</td>
+          <td style="padding:10px;color:var(--text-muted)">${s.quizScore||0}/${s.quizTotal||0} (${s.quizPct||0}%)</td>
+          <td style="padding:10px;color:var(--text-dim);font-size:12px">${esc(s.date||'')}</td>
+          <td style="padding:10px;text-align:center">
+            <button class="icon-btn del" onclick="deleteScore('${esc(s._key)}')" title="Delete">&#128465;</button>
+          </td>
+        </tr>`).join('');
+      document.getElementById('adminLbBody').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:center">Rank</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Name</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Level</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">XP</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Quiz</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:left">Date</th>
+            <th style="padding:8px;color:var(--text-dim);font-weight:400;font-size:11px;text-align:center">Del</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-dim)">${entries.length} submission${entries.length!==1?'s':''}</div>`;
+    })
+    .catch(() => {
+      document.getElementById('adminLbBody').innerHTML = `<div style="color:var(--text-muted);padding:20px;text-align:center">Failed to load. Check Firebase URL in Analytics.</div>`;
+    });
+}
+
+function deleteScore(key) {
+  if (!confirm('Delete this score entry?')) return;
+  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  fetch(`${fbUrl}/scores/${key}.json`, { method: 'DELETE' })
+    .then(() => { showToast('Score deleted'); showAdminLeaderboard(); })
+    .catch(() => alert('Failed to delete. Check Firebase URL and rules.'));
+}
+
+function clearAllScores() {
+  if (!confirm('Delete ALL scores? This cannot be undone.')) return;
+  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  fetch(`${fbUrl}/scores.json`, { method: 'DELETE' })
+    .then(() => { showToast('All scores cleared'); showAdminLeaderboard(); })
+    .catch(() => alert('Failed to clear scores.'));
+}
+
+// ── ANALYTICS ──
+function showAnalytics() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  currentLevel = null; currentLesson = null;
+  clearAllNav();
+  document.getElementById('analyticsNavBtn').classList.add('active');
+  document.getElementById('saveBar').style.display = 'none';
+
+  const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
+  const gaId = localStorage.getItem('zolai_ga_id') || '';
+
+  // Aggregate by level+lesson
+  const counts = {};
+  let total = 0;
+  log.forEach(e => {
+    const k = `${e.level}.${e.lesson}`;
+    counts[k] = (counts[k] || 0) + 1;
+    total++;
+  });
+  const maxCount = Math.max(1, ...Object.values(counts));
+
+  const rows = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => {
+      const [lvl, lsn] = k.split('.');
+      const title = runtimeStructure[lvl]?.lessons[lsn]?.title || lsn;
+      const lvlName = runtimeStructure[lvl]?.name || lvl;
+      const pct = Math.round((n / maxCount) * 100);
+      return `<tr>
+        <td><span style="font-size:11px;color:var(--text-dim)">${lvlName}</span></td>
+        <td>${title}</td>
+        <td style="width:120px">
+          <div>${n} visit${n!==1?'s':''}</div>
+          <div class="stat-bar" style="width:${pct}%"></div>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="3" style="padding:20px;color:var(--text-dim);text-align:center;font-size:13px">No visits recorded yet — open the app and browse lessons.</td></tr>`;
+
+  // Level breakdown
+  const levelCounts = {};
+  log.forEach(e => { levelCounts[e.level] = (levelCounts[e.level] || 0) + 1; });
+  const levelRows = Object.entries(levelCounts).map(([lvl, n]) =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px">
+      ${runtimeStructure[lvl]?.icon || ''} ${runtimeStructure[lvl]?.name || lvl} <strong style="color:var(--gold)">${n}</strong>
+    </span>`
+  ).join('') || `<span style="font-size:12px;color:var(--text-dim)">—</span>`;
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">&#128202; Site Analytics</div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:1;min-width:120px">
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Total Visits (this device)</div>
+          <div style="font-size:28px;font-weight:600;color:var(--gold-light)">${total}</div>
+        </div>
+        <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:2;min-width:200px">
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">By Level</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${levelRows}</div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Lesson Visit Breakdown</div>
+      <table class="analytics-table">
+        <thead><tr><th>Level</th><th>Lesson</th><th>Visits</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <button onclick="clearVisitLog()"
+        style="margin-top:10px;font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:4px 12px;cursor:pointer">
+        Clear visit log
+      </button>
+
+      <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Firebase Realtime Database — Leaderboard Backend</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
+          The leaderboard needs a free Firebase Realtime Database to store scores across devices.<br>
+          1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--gold)">console.firebase.google.com</a> → Create project → Build → Realtime Database.<br>
+          2. Start in <strong>test mode</strong> (open read/write rules).<br>
+          3. Copy the database URL (e.g. <code style="color:var(--gold-light)">https://yourapp-default-rtdb.firebaseio.com</code>) and paste below.
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="fbUrlInput" value="${esc(localStorage.getItem('zolai_firebase_url')||'')}"
+            placeholder="https://your-project-default-rtdb.firebaseio.com"
+            style="flex:1;min-width:200px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none">
+          <button class="btn btn-gold" onclick="saveFbUrl()" style="font-size:12px;padding:9px 16px">Save</button>
+        </div>
+        ${localStorage.getItem('zolai_firebase_url')
+          ? `<div style="margin-top:8px;font-size:12px;color:var(--green)">&#10003; Active — <a href="${esc(localStorage.getItem('zolai_firebase_url'))}/scores.json" target="_blank" style="color:var(--gold)">view raw data &#8599;</a></div>`
+          : ''}
+      </div>
+
+      <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Google Analytics 4 — Age, Gender &amp; Country</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
+          The visit log above only captures <em>this device</em>. To see <strong>all users</strong> —
+          including their country, device, and estimated age/gender — connect Google Analytics 4 (free).<br>
+          1. Go to <a href="https://analytics.google.com" target="_blank" style="color:var(--gold)">analytics.google.com</a>,
+          create a Web property, and copy your <strong>Measurement ID</strong> (format: <code style="color:var(--gold-light)">G-XXXXXXXX</code>).<br>
+          2. Paste it below. The app will automatically send lesson-view events to GA4.
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="gaIdInput" value="${esc(gaId)}" placeholder="G-XXXXXXXXXX"
+            style="flex:1;min-width:160px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none">
+          <button class="btn btn-gold" onclick="saveGaId()" style="font-size:12px;padding:9px 16px">Save</button>
+          ${gaId ? `<a href="https://analytics.google.com" target="_blank" class="btn btn-outline" style="font-size:12px;padding:9px 16px;text-decoration:none">Open GA4 Dashboard &#8599;</a>` : ''}
+        </div>
+        ${gaId ? `<div style="margin-top:8px;font-size:12px;color:var(--green)">&#10003; Active — tracking events with ID: <strong>${esc(gaId)}</strong></div>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('topCrumb').textContent = 'Analytics';
+}
+
+function clearVisitLog() {
+  if (!confirm('Clear all visit history on this device?')) return;
+  localStorage.removeItem('zolai_visit_log');
+  showAnalytics();
+  showToast('Visit log cleared');
+}
+
+// ── UTILS ──
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// Warn on page leave with unsaved changes
+window.addEventListener('beforeunload', e => {
+  if (pendingChanges) { e.preventDefault(); e.returnValue = ''; }
+});
