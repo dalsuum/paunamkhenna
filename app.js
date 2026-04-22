@@ -1234,7 +1234,7 @@ const levelData = {
       },
       3: {
         title: "Adjectives (Pianzia)",
-        subtitle: "Five kinds of adjectives — quality, quantity, number, demonstrative, and interrogative.",
+        subtitle: "Six kinds of adjectives — quality, quantity, number, demonstrative, interrogative, and possessive.",
         badge: "Lesson 3 · Adjectives",
         tabs: ['Types', 'Comparison', 'Practice', 'Flashcards'],
       },
@@ -1557,14 +1557,13 @@ let currentLevel = null;
 
 function selectLevel(levelId) {
   try {
-    currentLevel = levelId;
-    localStorage.setItem('zolai_selected_level', levelId);
     const ld = levelData[levelId];
-    
     if (!ld) {
-      console.error('Level data not found for:', levelId);
+      localStorage.removeItem('zolai_selected_level');
       return;
     }
+    currentLevel = levelId;
+    localStorage.setItem('zolai_selected_level', levelId);
 
     // Apply theme
     document.body.setAttribute('data-level', levelId);
@@ -1987,6 +1986,7 @@ function renderIntermediateFlashcards(n) {
       {z:'Phacia lak pianzia',e:'Quality Adjective'},{z:'Phazah lak pianzia',e:'Quantity Adjective'},
       {z:'Amalzah lak pianzia',e:'Number Adjective'},{z:'Lahkhiatna lak pianzia',e:'Demonstrative Adjective'},
       {z:'Dotna lak pianzia',e:'Interrogative Adjective'},
+      {z:'Neihna lak pianzia',e:'Possessive Adjective'},
       {z:'hoih',e:'good/beautiful'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},
       {z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},
       {z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'},
@@ -2472,7 +2472,7 @@ function renderLevelQuizQuestion() {
   c.innerHTML = `
     <div class="quiz-container">
       <div class="quiz-progress">
-        <div class="quiz-progress-fill" style="width:${(idx/bank.length)*100}%"></div>
+        ${Array.from({length:bank.length},(_,i)=>`<div class="qp-dot${i<idx?' done':i===idx?' current':''}"></div>`).join('')}
       </div>
       <div class="quiz-question-num">Question ${idx+1} of ${bank.length}</div>
       <div class="quiz-question">${q.q}</div>
