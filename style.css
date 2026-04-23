@@ -868,6 +868,13 @@
 
   .mlp-btn:hover, .mlp-btn.active { border-color: var(--gold-dim); color: var(--gold-light); }
 
+  .mlp-change-level {
+    color: var(--gold);
+    border-color: var(--gold-dim);
+    font-size: 11px;
+    letter-spacing: 0.03em;
+  }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 768px) {
     .sidebar { display: none; }

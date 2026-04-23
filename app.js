@@ -1646,7 +1646,7 @@ function renderSidebarLessons(levelId) {
   if (isGlobalEnabled('vocabulary')) {
     mlpHtml += `<button class="mlp-btn" onclick="showView('vocabulary'); closeLessonPicker()">◈ Vocabulary</button>`;
   }
-  mlp.innerHTML = mlpHtml;
+  mlp.innerHTML = `<button class="mlp-btn mlp-change-level" onclick="goLevelSelector(); closeLessonPicker()">← Change Level</button>` + mlpHtml;
   state.totalLessons = enabledCount || sortedNums.length;
   applyFeatureFlags();
 }
@@ -2116,8 +2116,8 @@ function renderBeginnerTab(n, tabIdx) {
       ${phrases.map(g=>`<div class="vocab-row"><span class="vocab-zo">${g.z}</span><span class="vocab-en">${g.e}</span></div>`).join('')}</div>`;
     return `<div class="card"><div class="card-title">Practice — Match the meaning</div>
       <div class="info-box">Translate these greetings into English in your head, then check below.</div>
-      ${greetings.slice(0,5).map(g=>`<div class="vocab-row"><span class="vocab-zo">${g.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">${g.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:16px">Hover over the right side to reveal the meaning.</div></div>`;
+      ${greetings.slice(0,5).map(g=>`<div class="vocab-row"><span class="vocab-zo">${g.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${g.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:16px">Tap the right side to reveal the meaning.</div></div>`;
   }
   if (n === 4) {
     const nouns = [{z:'mi',e:'person'},{z:'inn',e:'house'},{z:'lo',e:'field/farm'},{z:'tui',e:'water'},{z:'ni',e:'sun/day'},{z:'zan',e:'night'},{z:'lam',e:'road/way'},{z:'sang',e:'school'},{z:'gam',e:'country/land'},{z:'khua',e:'village/town'},{z:'nu',e:'mother'},{z:'pa',e:'father'},{z:'ta',e:'child'},{z:'u',e:'elder sibling'},{z:'nau',e:'younger sibling'},{z:'laibu',e:'book'},{z:'sum',e:'money'},{z:'mawtaw',e:'car'},{z:'vanleng',e:'airplane'},{z:'an',e:'food/rice'}];
@@ -2210,8 +2210,8 @@ function renderElementaryTab(n, tabIdx) {
       <div class="info-box" style="margin-top:12px">Zolai has <strong>3 articles</strong> total: khat, tua...pen, tua...in. (English has 2: a/an, the.)</div></div>`;
     return `<div class="card"><div class="card-title">Article Practice</div>
       <div class="info-box">Fill in the article in your mind, then check the answer.</div>
-      ${[{z:'Kumpipa in, sakol ___ tawh khual a zin hi.',e:'khat (a horse)'},{z:'___ sakol pen, a kaang ahi hi.',e:'Tua (the horse — topic)'},{z:'___ sakol in kumpipa a thei hi.',e:'Tua (the horse — doing)'}].map(w=>`<div class="vocab-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="vocab-zo">${w.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">Answer: ${w.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Hover to reveal the answer.</div></div>`;
+      ${[{z:'Kumpipa in, sakol ___ tawh khual a zin hi.',e:'khat (a horse)'},{z:'___ sakol pen, a kaang ahi hi.',e:'Tua (the horse — topic)'},{z:'___ sakol in kumpipa a thei hi.',e:'Tua (the horse — doing)'}].map(w=>`<div class="vocab-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="vocab-zo">${w.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">Answer: ${w.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:12px">Tap to reveal the answer.</div></div>`;
   }
   if (n === 5) {
     const greet = [{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Na min bang ci hiam?',e:'What is your name?'},{z:'Ka min ___ ahi hi.',e:'My name is ___.'},{z:'Koi pan hong pai na hia?',e:'Where are you coming from?'},{z:'Zanin koi-ah om na hi vua?',e:'Where were you last night?'}];
@@ -2241,8 +2241,8 @@ function renderIntermediateTab(n, tabIdx) {
       ${examples.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
     return `<div class="card"><div class="card-title">Identify the Noun Type</div>
       <div class="info-box">For each Zolai word, identify whether it's Common, Proper, Abstract, or Collective.</div>
-      ${[{z:'Tedim',e:'Proper Noun (city name)'},{z:'inn',e:'Common Noun (house)'},{z:'cidamna',e:'Abstract Noun (health)'},{z:'galkapte',e:'Collective Noun (soldiers)'},{z:'Mang',e:'Proper Noun (a name)'},{z:'lungdamna',e:'Abstract Noun (happiness)'}].map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">${w.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Hover to reveal the answer.</div></div>`;
+      ${[{z:'Tedim',e:'Proper Noun (city name)'},{z:'inn',e:'Common Noun (house)'},{z:'cidamna',e:'Abstract Noun (health)'},{z:'galkapte',e:'Collective Noun (soldiers)'},{z:'Mang',e:'Proper Noun (a name)'},{z:'lungdamna',e:'Abstract Noun (happiness)'}].map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${w.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:12px">Tap to reveal the answer.</div></div>`;
   }
   if (n === 2) {
     const types = [{name:'A thuak kisam sepna',en:'Transitive Verb',desc:'Requires an object to complete meaning. "Bawng in lopa a ne hi" — the cow eats grass.'},{name:'A thuak kullo sepna',en:'Intransitive Verb',desc:'Complete without an object. "Thangpu a tai hi" — Thangpu runs.'},{name:'A cinglo / ahuh sepna',en:'Incomplete / Helping Verb',desc:'Needs a complement. "Naupangte a cidam hi" — Children are healthy.'}];
@@ -2251,8 +2251,8 @@ function renderIntermediateTab(n, tabIdx) {
     if (tabIdx === 1) return `<div class="card"><div class="card-title">Verb Examples</div>
       ${[{z:'Bawng in lopa a ne hi.',e:'The cow eats grass. (transitive: ne = eat)'},{z:'Thangpu a tai hi.',e:'Thangpu runs. (intransitive: tai = run)'},{z:'Dimno a laam hi.',e:'Dimno dances. (intransitive: laam = dance)'},{z:'Naupangte a cidam hi.',e:'Children are healthy. (helping verb)'},{z:'Lianpi in kong a khak hi.',e:'Lianpi knocked the door. (transitive: khak = knock)'},{z:'Mangno in naupang khat ahi hi.',e:'Mangno is a child. (helping: ahi hi)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
     return `<div class="card"><div class="card-title">Practice — Verb Types</div>
-      ${[{z:'Kei-in laibu khat nei-ing.',e:'Transitive (nei = have; object = laibu)'},{z:'Ni a taang hi.',e:'Intransitive (taang = shine; no object)'},{z:'Amah ka tanu ahi hi.',e:'Helping verb (ahi hi = is)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Hover to reveal.</div></div>`;
+      ${[{z:'Kei-in laibu khat nei-ing.',e:'Transitive (nei = have; object = laibu)'},{z:'Ni a taang hi.',e:'Intransitive (taang = shine; no object)'},{z:'Amah ka tanu ahi hi.',e:'Helping verb (ahi hi = is)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
   }
   if (n === 3) {
     const types = [{name:'Phacia lak pianzia',en:'Quality Adjective',desc:'Describes qualities: hoih (good), sau (tall), gol (round), thau (heavy).'},{name:'Phazah lak pianzia',en:'Quantity Adjective',desc:'Describes amounts: tampi (many), tawmkha (few), beek (all).'},{name:'Amalzah lak pianzia',en:'Number Adjective',desc:'Specific numbers: nga (five), sawmnih (twenty), giat (eight).'},{name:'Lahkhiatna lak pianzia',en:'Demonstrative Adjective',desc:'Points to specific things: hih (this), hua (that), tua (that).'},{name:'Dotna lak pianzia',en:'Interrogative Adjective',desc:'Asks about things: bang ci (what kind), koi (which), bang zah (how many).'},{name:'Neihna lak pianzia',en:'Possessive Adjective',desc:"Shows ownership: ka (my), na (your), taang' (his), lia' (her), ih (our), amau' (their)."}];
@@ -2292,8 +2292,8 @@ function renderIntermediateTab(n, tabIdx) {
       ${future.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
     return `<div class="card"><div class="card-title">Tense Practice</div>
       <div class="info-box">Identify the tense of each sentence.</div>
-      ${[{z:'Ka pai ding hi.',e:'Simple Future (I will go)'},{z:'A tai khin hi.',e:'Simple Past (He ran)'},{z:'Ka na paipai khinzo hi.',e:'Present Perfect Continuous (I have been going)'},{z:'A om laitak hi.',e:'Present Continuous (He is staying)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Hover to reveal.</div></div>`;
+      ${[{z:'Ka pai ding hi.',e:'Simple Future (I will go)'},{z:'A tai khin hi.',e:'Simple Past (He ran)'},{z:'Ka na paipai khinzo hi.',e:'Present Perfect Continuous (I have been going)'},{z:'A om laitak hi.',e:'Present Continuous (He is staying)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
   }
   return '<div class="card"><div class="card-title">Coming soon</div></div>';
 }
@@ -2324,9 +2324,9 @@ function renderAdvancedTab(n, tabIdx) {
       ${rules.map(r=>`<div style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--text);margin-bottom:6px">${r.z}</div><div style="font-size:12.5px;color:var(--text-muted)">${r.e}</div></div>`).join('')}
       <div class="info-box">The apostrophe (neihsa lak) shows possession: <strong>Taang'khedap</strong> = Taang's shoes.</div></div>`;
     return `<div class="card"><div class="card-title">Practice — Add the Punctuation</div>
-      <div class="info-box">What punctuation is missing? Hover to check.</div>
-      ${[{z:'Lawm nang bang semsem na hia ___',e:'? (question mark — Dotna)'},{z:'Oh ___ Hong pai mahmah hi',e:'! (exclamation — Phawnna)'},{z:'Na hehnepnakammalte hangin ___ ka lungdam hi.',e:', (comma — Husanna)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Hover to reveal.</div></div>`;
+      <div class="info-box">What punctuation is missing? Tap to reveal.</div>
+      ${[{z:'Lawm nang bang semsem na hia ___',e:'? (question mark — Dotna)'},{z:'Oh ___ Hong pai mahmah hi',e:'! (exclamation — Phawnna)'},{z:'Na hehnepnakammalte hangin ___ ka lungdam hi.',e:', (comma — Husanna)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
   }
   if (n === 2) {
     const provsAM = [
@@ -2354,9 +2354,9 @@ function renderAdvancedTab(n, tabIdx) {
     if (tabIdx === 1) return `<div class="card"><div class="card-title">Paunak — Proverbs (N–Z)</div>
       ${provsNZ.map(p=>`<div style="margin-bottom:14px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:6px;font-size:14px">${p.z}</div><div style="font-size:12.5px;color:var(--text-muted)">${p.e}</div></div>`).join('')}</div>`;
     return `<div class="card"><div class="card-title">Proverb Quiz</div>
-      <div class="info-box">Match the proverb to its lesson. Hover to check.</div>
-      ${[{z:'Sial vom leh sial vom kiingai.',e:'Like attracts like.'},{z:'Suangpi suangneu in thek.',e:'Small things overcome great ones.'},{z:'Zuau in a khap lawn.',e:'Liars are always caught.'}].map(p=>`<div class="vocab-row"><span class="vocab-zo">${p.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">${p.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Hover to reveal.</div></div>`;
+      <div class="info-box">Match the proverb to its lesson. Tap to reveal.</div>
+      ${[{z:'Sial vom leh sial vom kiingai.',e:'Like attracts like.'},{z:'Suangpi suangneu in thek.',e:'Small things overcome great ones.'},{z:'Zuau in a khap lawn.',e:'Liars are always caught.'}].map(p=>`<div class="vocab-row"><span class="vocab-zo">${p.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${p.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
   }
   if (n === 3) {
     const hist = `<div class="card"><div class="card-title">Zomite Pianna Thu — Zo History</div>
@@ -2387,9 +2387,9 @@ function renderAdvancedTab(n, tabIdx) {
       ${speech.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}
       <div class="info-box" style="margin-top:12px">Letter writing (Laikhak gelhzia): Start with date, then salutation (Kong it pa/nu), body, and closing (Hong phawk den).</div></div>`;
     return `<div class="card"><div class="card-title">Composition Practice</div>
-      <div class="info-box">Convert to passive voice. Hover to check.</div>
-      ${[{z:'Taang in ticket te a khawm hi.',e:'Passive: Ticket te pen, Taang in a khawm hi.'},{z:'Lia in la khat a sa ding hi.',e:'Passive: La khat pen, Lia in a sa ding hi.'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Hover to reveal.</div></div>`;
+      <div class="info-box">Convert to passive voice. Tap to reveal.</div>
+      ${[{z:'Taang in ticket te a khawm hi.',e:'Passive: Ticket te pen, Taang in a khawm hi.'},{z:'Lia in la khat a sa ding hi.',e:'Passive: La khat pen, Lia in a sa ding hi.'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
+      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
   }
   if (n === 5) {
     const wordlist = [{z:'Kammal zatte',e:'Vocabulary list'},{z:'Paunam khenna',e:'Grammar'},{z:'Kampau luanzia',e:'Composition'},{z:'Laigelhzia',e:'Orthography (correct writing)'},{z:'Laimal gawmzia',e:'Spelling'},{z:'Awsuah',e:'Pronunciation'},{z:'Lailepna',e:'Punctuation'},{z:'Genbanga Genna',e:'Direct Speech'},{z:'Gensawnna',e:'Indirect Speech'},{z:'A Sepna Thupisak',e:'Active Voice'},{z:'A Sep Thupisak',e:'Passive Voice'},{z:'Hun lahkhiatna',e:'Tense'}];
