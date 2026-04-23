@@ -544,6 +544,16 @@ audio.tab-audio { width: 100%; height: 36px; margin-top: 8px; display: block; }
 .analytics-nav-btn:hover { color: var(--text); }
 .analytics-nav-btn.active { color: var(--gold); }
 
+.section-nav-btn {
+  color: var(--gold-dim) !important;
+  font-size: 11px !important;
+  padding-left: 18px !important;
+  border-top: none;
+  margin-top: 2px;
+}
+.section-nav-btn:hover { color: var(--gold-light) !important; }
+.section-nav-btn.active { color: var(--gold) !important; background: rgba(201,168,76,0.1) !important; }
+
 @media (max-width: 640px) {
   .admin-sidebar { width: 200px; }
   .admin-content { padding: 16px; }

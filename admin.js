@@ -256,6 +256,12 @@ let currentTabItems = {};
 let customStructure = {}; // overrides stored in localStorage
 let runtimeStructure = {}; // merged: hardcoded structure + custom
 let activeSettingsTab = 'structure';
+let currentVocabLevel = null;
+let currentVocabData  = [];
+let currentQuizLevel  = null;
+let currentQuizData   = [];
+let currentRefData    = [];
+let adminMode = 'lesson'; // 'lesson' | 'vocab' | 'quiz' | 'reference'
 
 const DATA_KEY      = 'zolai_admin_data';
 const STRUCTURE_KEY = 'zolai_structure';
@@ -450,6 +456,7 @@ function clearBottomNav() {
 function clearAllNav() {
   document.querySelectorAll('.lesson-nav').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#referenceNavBtn').forEach(b => b.classList.remove('active'));
   clearBottomNav();
 }
 
@@ -467,6 +474,8 @@ function buildSidebar() {
       html += `<button class="lesson-btn" id="lsn-${lid}-${num}"
         onclick="selectLesson('${lid}',${num})">${num}. ${ls.title}</button>`;
     }
+    html += `<button class="lesson-btn section-nav-btn" id="vocab-${lid}" onclick="showVocabAdmin('${lid}')">📚 Vocabulary</button>`;
+    html += `<button class="lesson-btn section-nav-btn" id="quiz-${lid}" onclick="showQuizAdmin('${lid}')">✦ Quiz Bank</button>`;
     html += '</div>';
   }
   document.getElementById('levelNav').innerHTML = html;
@@ -486,6 +495,7 @@ function toggleLevel(lid) {
 function selectLesson(lid, num) {
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
+  adminMode = 'lesson';
   currentLevel = lid;
   currentLesson = num;
   currentTab = 0;
@@ -890,6 +900,9 @@ function collectEdits() {
 }
 
 function saveChanges() {
+  if (adminMode === 'vocab')     return saveVocabChanges();
+  if (adminMode === 'quiz')      return saveQuizChanges();
+  if (adminMode === 'reference') return saveReferenceChanges();
   const td = collectEdits();
   setTabData(currentLevel, currentLesson, currentTab, td);
   saveData();
@@ -899,6 +912,9 @@ function saveChanges() {
 }
 
 function discardChanges() {
+  if (adminMode === 'vocab')     return discardVocabChanges();
+  if (adminMode === 'quiz')      return discardQuizChanges();
+  if (adminMode === 'reference') return discardReferenceChanges();
   if (!confirm('Discard all unsaved changes for this tab?')) return;
   pendingChanges = false;
   renderEditor();
@@ -953,6 +969,7 @@ function importData(input) {
 
 // ── STRUCTURE EDITOR ──
 function showSettings(tab) {
+  adminMode = 'lesson';
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
   currentLevel = null; currentLesson = null;
@@ -1612,6 +1629,395 @@ function clearVisitLog() {
   localStorage.removeItem('zolai_visit_log');
   showAnalytics();
   showToast('Visit log cleared');
+}
+
+// ── VOCABULARY ADMIN ──
+function showVocabAdmin(lid) {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  adminMode = 'vocab';
+  currentVocabLevel = lid;
+  currentLevel = lid; currentLesson = null; currentTab = 0;
+  clearAllNav();
+  const nav = document.getElementById(`lessons-${lid}`);
+  if (nav) nav.style.display = 'block';
+  document.getElementById(`lvl-${lid}`)?.classList.add('active');
+  document.getElementById(`vocab-${lid}`)?.classList.add('active');
+  const saved = adminData[lid]?.['_vocab'];
+  currentVocabData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  document.getElementById('topCrumb').textContent = `${runtimeStructure[lid]?.name} › Vocabulary`;
+  document.getElementById('saveBar').style.display = 'flex';
+  renderVocabEditor();
+}
+
+function renderVocabEditor() {
+  const totalWords = currentVocabData.reduce((n, c) => n + c.words.length, 0);
+  const catHtml = currentVocabData.map((cat, ci) => {
+    const rows = cat.words.map((w, wi) =>
+      `<div class="content-row" id="vw-${ci}-${wi}">
+        <div class="content-row-body">
+          <span class="content-row-z">${esc(w.z)}</span>
+          <span class="content-row-e">${esc(w.e)}</span>
+        </div>
+        <div class="content-row-actions">
+          <button class="icon-btn" onclick="editVocabWord(${ci},${wi})" title="Edit">&#9998;</button>
+          <button class="icon-btn del" onclick="deleteVocabWord(${ci},${wi})" title="Delete">&#128465;</button>
+        </div>
+      </div>`
+    ).join('');
+    return `<div class="section-card" style="margin-bottom:10px" id="vcat-${ci}">
+      <div class="section-title" style="justify-content:space-between">
+        <span>📂 ${esc(cat.category)} <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${cat.words.length} words)</span></span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline" onclick="renameVocabCategory(${ci})" style="font-size:11px;padding:3px 10px">Rename</button>
+          <button class="btn btn-outline" onclick="deleteVocabCategory(${ci})" style="font-size:11px;padding:3px 10px;color:var(--red)">✕ Delete</button>
+        </div>
+      </div>
+      <div id="vwords-${ci}">${rows || '<div style="color:var(--text-dim);font-size:12px;padding:6px 0">No words yet.</div>'}</div>
+      <button class="btn btn-outline" onclick="addVocabWord(${ci})" style="font-size:12px;margin-top:8px">+ Add Word</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">📚 Vocabulary Override
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— ${totalWords} words in ${currentVocabData.length} categories</span>
+      </div>
+      <div class="info-box" style="margin-bottom:12px">
+        Add vocabulary categories and words here. When saved, this replaces the built-in vocabulary browser for this level.
+        <br>Leave empty to keep the app's built-in vocabulary.
+      </div>
+      ${catHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No categories yet — click + Add Category to start.</div>'}
+      <button class="btn btn-outline" onclick="addVocabCategory()" style="font-size:12px;margin-top:10px">+ Add Category</button>
+    </div>`;
+}
+
+function addVocabCategory() {
+  const name = prompt('Category name (e.g. "Core Nouns"):');
+  if (!name?.trim()) return;
+  currentVocabData.push({ category: name.trim(), words: [] });
+  setPending(); renderVocabEditor();
+}
+
+function renameVocabCategory(ci) {
+  const name = prompt('New category name:', currentVocabData[ci]?.category || '');
+  if (!name?.trim()) return;
+  currentVocabData[ci].category = name.trim();
+  setPending(); renderVocabEditor();
+}
+
+function deleteVocabCategory(ci) {
+  if (!confirm(`Delete category "${currentVocabData[ci]?.category}" and all its words?`)) return;
+  currentVocabData.splice(ci, 1);
+  setPending(); renderVocabEditor();
+}
+
+function addVocabWord(ci) {
+  currentVocabData[ci].words.push({ z: '', e: '' });
+  setPending();
+  renderVocabEditor();
+  editVocabWord(ci, currentVocabData[ci].words.length - 1);
+}
+
+function editVocabWord(ci, wi) {
+  const w = currentVocabData[ci]?.words[wi];
+  if (!w) return;
+  const el = document.getElementById(`vw-${ci}-${wi}`);
+  if (!el) return;
+  el.outerHTML = `<div class="content-row editing" id="vw-${ci}-${wi}">
+    <div class="content-row-body">
+      <input class="content-input-z" id="viz-${ci}-${wi}" value="${esc(w.z)}" placeholder="Zolai word"
+        onkeydown="if(event.key==='Enter')saveVocabWord(${ci},${wi})">
+      <input class="content-input-e" id="vie-${ci}-${wi}" value="${esc(w.e)}" placeholder="English meaning"
+        onkeydown="if(event.key==='Enter')saveVocabWord(${ci},${wi})">
+    </div>
+    <div class="content-row-actions">
+      <button class="icon-btn" onclick="saveVocabWord(${ci},${wi})" title="Save">&#10003;</button>
+      <button class="icon-btn" onclick="renderVocabEditor()" title="Cancel">&#10005;</button>
+    </div>
+  </div>`;
+  document.getElementById(`viz-${ci}-${wi}`)?.focus();
+}
+
+function saveVocabWord(ci, wi) {
+  const z = document.getElementById(`viz-${ci}-${wi}`)?.value.trim() || '';
+  const e = document.getElementById(`vie-${ci}-${wi}`)?.value.trim() || '';
+  if (!z) { deleteVocabWord(ci, wi); return; }
+  currentVocabData[ci].words[wi] = { z, e };
+  setPending(); renderVocabEditor();
+}
+
+function deleteVocabWord(ci, wi) {
+  currentVocabData[ci].words.splice(wi, 1);
+  setPending(); renderVocabEditor();
+}
+
+function saveVocabChanges() {
+  if (!adminData[currentVocabLevel]) adminData[currentVocabLevel] = {};
+  adminData[currentVocabLevel]['_vocab'] = JSON.parse(JSON.stringify(currentVocabData));
+  saveData(); pendingChanges = false;
+  showToast('Vocabulary saved ✓');
+  renderVocabEditor();
+}
+
+function discardVocabChanges() {
+  if (!confirm('Discard all unsaved changes?')) return;
+  pendingChanges = false;
+  const saved = adminData[currentVocabLevel]?.['_vocab'];
+  currentVocabData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  renderVocabEditor();
+}
+
+// ── QUIZ ADMIN ──
+function showQuizAdmin(lid) {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  adminMode = 'quiz';
+  currentQuizLevel = lid;
+  currentLevel = lid; currentLesson = null; currentTab = 0;
+  clearAllNav();
+  const nav = document.getElementById(`lessons-${lid}`);
+  if (nav) nav.style.display = 'block';
+  document.getElementById(`lvl-${lid}`)?.classList.add('active');
+  document.getElementById(`quiz-${lid}`)?.classList.add('active');
+  const saved = adminData[lid]?.['_quiz'];
+  currentQuizData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  document.getElementById('topCrumb').textContent = `${runtimeStructure[lid]?.name} › Quiz Bank`;
+  document.getElementById('saveBar').style.display = 'flex';
+  renderQuizEditor();
+}
+
+function renderQuizEditor() {
+  const qHtml = currentQuizData.map((q, qi) => {
+    const optsHtml = (q.opts || []).map((o, oi) =>
+      `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0;padding:3px 8px;border-radius:6px;font-size:12px;background:${oi===q.ans?'rgba(201,168,76,0.15)':'var(--surface2)'};border:1px solid ${oi===q.ans?'var(--gold-dim)':'var(--border)'}">
+        ${oi===q.ans?'<span style="color:var(--gold);font-size:10px">✓</span>':''}
+        <span style="color:var(--text-dim);font-size:10px">${String.fromCharCode(65+oi)}.</span>
+        ${esc(o)}
+      </span>`
+    ).join('');
+    return `<div class="content-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:12px" id="qq-${qi}">
+      <div style="display:flex;width:100%;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div style="font-size:11px;color:var(--gold);margin-bottom:4px">Q${qi+1}</div>
+          <div style="font-size:13px;color:var(--text)">${esc(q.q)}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="icon-btn" onclick="editQuizQuestion(${qi})" title="Edit">&#9998;</button>
+          <button class="icon-btn del" onclick="deleteQuizQuestion(${qi})" title="Delete">&#128465;</button>
+        </div>
+      </div>
+      <div>${optsHtml}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">✦ Quiz Bank
+        <span style="font-size:11px;font-weight:400;color:var(--text-dim)">— ${currentQuizData.length} questions</span>
+      </div>
+      <div class="info-box" style="margin-bottom:12px">
+        Each question needs a prompt, 4 options (A–D), and the correct answer marked.
+        When saved, this replaces the built-in quiz bank for this level.
+      </div>
+      <div id="quizList">${qHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No questions yet — click + Add Question to start.</div>'}</div>
+      <button class="btn btn-outline" onclick="addQuizQuestion()" style="font-size:12px;margin-top:10px">+ Add Question</button>
+    </div>`;
+}
+
+function addQuizQuestion() {
+  currentQuizData.push({ q: '', opts: ['', '', '', ''], ans: 0 });
+  setPending();
+  renderQuizEditor();
+  editQuizQuestion(currentQuizData.length - 1);
+}
+
+function editQuizQuestion(qi) {
+  const q = currentQuizData[qi];
+  if (!q) return;
+  const el = document.getElementById(`qq-${qi}`);
+  if (!el) return;
+  const optsInputs = (q.opts || ['','','','']).map((o, oi) =>
+    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-dim);min-width:20px">
+        <input type="radio" name="qans-${qi}" value="${oi}" ${oi===q.ans?'checked':''} onchange="currentQuizData[${qi}].ans=${oi}">
+        ${String.fromCharCode(65+oi)}
+      </label>
+      <input class="content-input-e" style="flex:1" id="qopt-${qi}-${oi}" value="${esc(o)}" placeholder="Option ${String.fromCharCode(65+oi)}">
+    </div>`
+  ).join('');
+  el.outerHTML = `<div class="content-row editing" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px" id="qq-${qi}">
+    <div style="font-size:11px;color:var(--gold);margin-bottom:2px">Q${qi+1}</div>
+    <input class="content-input-z" id="qq-prompt-${qi}" value="${esc(q.q)}" placeholder="Question text" style="width:100%;margin-bottom:8px">
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Options — select the radio button for the correct answer:</div>
+    ${optsInputs}
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="icon-btn" onclick="saveQuizQuestion(${qi})" title="Save">&#10003; Save</button>
+      <button class="icon-btn" onclick="renderQuizEditor()" title="Cancel">&#10005; Cancel</button>
+    </div>
+  </div>`;
+  document.getElementById(`qq-prompt-${qi}`)?.focus();
+}
+
+function saveQuizQuestion(qi) {
+  const q = document.getElementById(`qq-prompt-${qi}`)?.value.trim() || '';
+  const opts = [0,1,2,3].map(oi => document.getElementById(`qopt-${qi}-${oi}`)?.value.trim() || '');
+  const ans = currentQuizData[qi]?.ans ?? 0;
+  if (!q) { deleteQuizQuestion(qi); return; }
+  currentQuizData[qi] = { q, opts, ans };
+  setPending(); renderQuizEditor();
+}
+
+function deleteQuizQuestion(qi) {
+  if (!confirm('Delete this question?')) return;
+  currentQuizData.splice(qi, 1);
+  setPending(); renderQuizEditor();
+}
+
+function saveQuizChanges() {
+  if (!adminData[currentQuizLevel]) adminData[currentQuizLevel] = {};
+  adminData[currentQuizLevel]['_quiz'] = JSON.parse(JSON.stringify(currentQuizData));
+  saveData(); pendingChanges = false;
+  showToast('Quiz bank saved ✓');
+  renderQuizEditor();
+}
+
+function discardQuizChanges() {
+  if (!confirm('Discard all unsaved changes?')) return;
+  pendingChanges = false;
+  const saved = adminData[currentQuizLevel]?.['_quiz'];
+  currentQuizData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  renderQuizEditor();
+}
+
+// ── REFERENCE ADMIN ──
+function showReferenceAdmin() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  adminMode = 'reference';
+  currentLevel = null; currentLesson = null;
+  clearAllNav();
+  document.getElementById('referenceNavBtn')?.classList.add('active');
+  const saved = adminData['_reference'];
+  currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  document.getElementById('topCrumb').textContent = 'Grammar Reference';
+  document.getElementById('saveBar').style.display = 'flex';
+  renderReferenceEditor();
+}
+
+function renderReferenceEditor() {
+  const secHtml = currentRefData.map((sec, si) => {
+    const rows = sec.rows.map((r, ri) =>
+      `<div class="content-row" id="rr-${si}-${ri}">
+        <div class="content-row-body">
+          <span class="content-row-z">${esc(r.z)}</span>
+          <span class="content-row-e">${esc(r.e)}</span>
+        </div>
+        <div class="content-row-actions">
+          <button class="icon-btn" onclick="editRefRow(${si},${ri})" title="Edit">&#9998;</button>
+          <button class="icon-btn del" onclick="deleteRefRow(${si},${ri})" title="Delete">&#128465;</button>
+        </div>
+      </div>`
+    ).join('');
+    return `<div class="section-card" style="margin-bottom:10px" id="rsec-${si}">
+      <div class="section-title" style="justify-content:space-between">
+        <span>§ ${esc(sec.title)} <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.rows.length} rows)</span></span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline" onclick="renameRefSection(${si})" style="font-size:11px;padding:3px 10px">Rename</button>
+          <button class="btn btn-outline" onclick="deleteRefSection(${si})" style="font-size:11px;padding:3px 10px;color:var(--red)">✕ Delete</button>
+        </div>
+      </div>
+      <div id="rrows-${si}">${rows || '<div style="color:var(--text-dim);font-size:12px;padding:6px 0">No rows yet.</div>'}</div>
+      <button class="btn btn-outline" onclick="addRefRow(${si})" style="font-size:12px;margin-top:8px">+ Add Row</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">≡ Grammar Reference Editor</div>
+      <div class="info-box" style="margin-bottom:12px">
+        Add sections and Zolai → English rows. When saved, this replaces the built-in Grammar Reference page.
+        Leave empty to keep the app's built-in reference.
+      </div>
+      ${secHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No sections yet — click + Add Section to start.</div>'}
+      <button class="btn btn-outline" onclick="addRefSection()" style="font-size:12px;margin-top:10px">+ Add Section</button>
+    </div>`;
+}
+
+function addRefSection() {
+  const title = prompt('Section title (e.g. "Parts of Speech"):');
+  if (!title?.trim()) return;
+  currentRefData.push({ title: title.trim(), rows: [] });
+  setPending(); renderReferenceEditor();
+}
+
+function renameRefSection(si) {
+  const title = prompt('New section title:', currentRefData[si]?.title || '');
+  if (!title?.trim()) return;
+  currentRefData[si].title = title.trim();
+  setPending(); renderReferenceEditor();
+}
+
+function deleteRefSection(si) {
+  if (!confirm(`Delete section "${currentRefData[si]?.title}"?`)) return;
+  currentRefData.splice(si, 1);
+  setPending(); renderReferenceEditor();
+}
+
+function addRefRow(si) {
+  currentRefData[si].rows.push({ z: '', e: '' });
+  setPending();
+  renderReferenceEditor();
+  editRefRow(si, currentRefData[si].rows.length - 1);
+}
+
+function editRefRow(si, ri) {
+  const r = currentRefData[si]?.rows[ri];
+  if (!r) return;
+  const el = document.getElementById(`rr-${si}-${ri}`);
+  if (!el) return;
+  el.outerHTML = `<div class="content-row editing" id="rr-${si}-${ri}">
+    <div class="content-row-body">
+      <input class="content-input-z" id="rriz-${si}-${ri}" value="${esc(r.z)}" placeholder="Zolai term"
+        onkeydown="if(event.key==='Enter')saveRefRow(${si},${ri})">
+      <input class="content-input-e" id="rrie-${si}-${ri}" value="${esc(r.e)}" placeholder="English meaning"
+        onkeydown="if(event.key==='Enter')saveRefRow(${si},${ri})">
+    </div>
+    <div class="content-row-actions">
+      <button class="icon-btn" onclick="saveRefRow(${si},${ri})" title="Save">&#10003;</button>
+      <button class="icon-btn" onclick="renderReferenceEditor()" title="Cancel">&#10005;</button>
+    </div>
+  </div>`;
+  document.getElementById(`rriz-${si}-${ri}`)?.focus();
+}
+
+function saveRefRow(si, ri) {
+  const z = document.getElementById(`rriz-${si}-${ri}`)?.value.trim() || '';
+  const e = document.getElementById(`rrie-${si}-${ri}`)?.value.trim() || '';
+  if (!z) { deleteRefRow(si, ri); return; }
+  currentRefData[si].rows[ri] = { z, e };
+  setPending(); renderReferenceEditor();
+}
+
+function deleteRefRow(si, ri) {
+  currentRefData[si].rows.splice(ri, 1);
+  setPending(); renderReferenceEditor();
+}
+
+function saveReferenceChanges() {
+  if (!adminData['_reference']) adminData['_reference'] = [];
+  adminData['_reference'] = JSON.parse(JSON.stringify(currentRefData));
+  saveData(); pendingChanges = false;
+  showToast('Reference saved ✓');
+  renderReferenceEditor();
+}
+
+function discardReferenceChanges() {
+  if (!confirm('Discard all unsaved changes?')) return;
+  pendingChanges = false;
+  const saved = adminData['_reference'];
+  currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  renderReferenceEditor();
 }
 
 // ── UTILS ──

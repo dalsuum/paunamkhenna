@@ -7,6 +7,15 @@ function isGlobalEnabled(f) { return getFeatureFlags().global?.[f] !== false; }
 function isLessonEnabled(lvl, n) { return getFeatureFlags().levels?.[lvl]?.[n]?.enabled !== false; }
 function isTabEnabled(lvl, n, i) { return getFeatureFlags().levels?.[lvl]?.[n]?.tabs?.[i] !== false; }
 
+function getAdminSection(key) {
+  try {
+    const raw = localStorage.getItem('zolai_admin_data');
+    if (!raw) return null;
+    const data = JSON.parse(raw)?.[key];
+    return (data && data.length > 0) ? data : null;
+  } catch(e) { return null; }
+}
+
 function applyFeatureFlags() {
   const pairs = { quiz: 'nav-quiz', leaderboard: 'nav-leaderboard', reference: 'nav-reference' };
   for (const [f, id] of Object.entries(pairs)) {
@@ -867,6 +876,31 @@ function renderResults(c) {
 
 // ── REFERENCE ──
 function renderReference(c) {
+  const adminRef = (function() {
+    try {
+      const raw = localStorage.getItem('zolai_admin_data');
+      if (!raw) return null;
+      const d = JSON.parse(raw)?.['_reference'];
+      return (d && d.length > 0) ? d : null;
+    } catch(e) { return null; }
+  })();
+  if (adminRef) {
+    c.innerHTML = `
+      <div class="lesson-header">
+        <div class="lesson-badge">Quick Reference</div>
+        <div class="lesson-title">Grammar Reference</div>
+        <div class="lesson-subtitle">A condensed reference sheet covering key Zolai grammar terms.</div>
+      </div>
+      ${adminRef.map(sec => `
+        <div class="card">
+          <div class="card-title">${sec.title}</div>
+          <table class="grammar-table">
+            <tr><th>Zolai</th><th>English</th></tr>
+            ${sec.rows.map(r=>`<tr><td class="z">${r.z}</td><td class="e">${r.e}</td></tr>`).join('')}
+          </table>
+        </div>`).join('')}`;
+    return;
+  }
   c.innerHTML = `
     <div class="lesson-header">
       <div class="lesson-badge">Quick Reference</div>
@@ -1488,10 +1522,20 @@ renderLevelSelector();
 
 // ── VOCABULARY VIEW ──
 function renderVocabulary(c) {
-  if (!currentLevel || !levelData[currentLevel].vocabData) return;
+  if (!currentLevel) return;
   const ld = levelData[currentLevel];
-  const cats = ld.vocabData.map(d => d.category);
-  const totalWords = ld.vocabData.reduce((n, d) => n + d.words.length, 0);
+  const adminVocab = (function() {
+    try {
+      const raw = localStorage.getItem('zolai_admin_data');
+      if (!raw) return null;
+      const d = JSON.parse(raw)?.[currentLevel]?.['_vocab'];
+      return (d && d.length > 0) ? d : null;
+    } catch(e) { return null; }
+  })();
+  const vocabData = adminVocab || ld.vocabData;
+  if (!vocabData || !vocabData.length) return;
+  const cats = vocabData.map(d => d.category);
+  const totalWords = vocabData.reduce((n, d) => n + d.words.length, 0);
 
   c.innerHTML = `
     <div class="lesson-header">
@@ -1504,13 +1548,13 @@ function renderVocabulary(c) {
       <div class="vocab-cat-bar">
         <button class="vocab-cat-btn active" onclick="setVocabCat(this,'All')">All (${totalWords})</button>
         ${cats.map(cat => {
-          const cnt = ld.vocabData.find(d => d.category === cat).words.length;
+          const cnt = vocabData.find(d => d.category === cat).words.length;
           return `<button class="vocab-cat-btn" onclick="setVocabCat(this,'${cat}')">${cat} (${cnt})</button>`;
         }).join('')}
       </div>
     </div>
     <div id="vocabSections">
-      ${ld.vocabData.map(section => `
+      ${vocabData.map(section => `
         <div class="vocab-section" data-cat="${section.category}">
           <div class="card">
             <div class="card-title">${section.category}</div>
@@ -1652,7 +1696,15 @@ function renderSidebarLessons(levelId) {
 }
 
 function updateQuizBank(levelId) {
-  state.currentQuizBank = levelData[levelId].quizBank.slice();
+  const adminQuiz = (function() {
+    try {
+      const raw = localStorage.getItem('zolai_admin_data');
+      if (!raw) return null;
+      const d = JSON.parse(raw)?.[levelId]?.['_quiz'];
+      return (d && d.length > 0) ? d : null;
+    } catch(e) { return null; }
+  })();
+  state.currentQuizBank = (adminQuiz || levelData[levelId].quizBank).slice();
 }
 
 function getLevelLessons() {
