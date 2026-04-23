@@ -546,10 +546,10 @@ let currentResData = [];
 let _resFileData = null;  // base64 data URL for pending resource file attachment
 let _resFileName = null;
 
-const DATA_KEY      = 'zolai_admin_data';
-const STRUCTURE_KEY = 'zolai_structure';
-const PW_KEY        = 'zolai_admin_pw';
-const LOCKOUT_KEY = 'zolai_admin_lockout';
+const DATA_KEY      = KEYS.adminData;
+const STRUCTURE_KEY = KEYS.structure;
+const PW_KEY        = KEYS.adminPw;
+const LOCKOUT_KEY   = KEYS.lockout;
 const MAX_ATTEMPTS   = 5;
 const LOCKOUT_MS     = 10 * 60 * 1000; // 10 minutes
 
@@ -1184,11 +1184,11 @@ function collectEdits() {
   return { image: td.image, audio: td.audio, vocab, items: td.items || {}, contentRows };
 }
 
+const ADMIN_SAVE    = { vocab: saveVocabChanges, quiz: saveQuizChanges, reference: saveReferenceChanges, resources: saveResourcesChanges };
+const ADMIN_DISCARD = { vocab: discardVocabChanges, quiz: discardQuizChanges, reference: discardReferenceChanges, resources: discardResourcesChanges };
+
 function saveChanges() {
-  if (adminMode === 'vocab')      return saveVocabChanges();
-  if (adminMode === 'quiz')       return saveQuizChanges();
-  if (adminMode === 'reference')  return saveReferenceChanges();
-  if (adminMode === 'resources')  return saveResourcesChanges();
+  if (ADMIN_SAVE[adminMode]) return ADMIN_SAVE[adminMode]();
   const td = collectEdits();
   setTabData(currentLevel, currentLesson, currentTab, td);
   saveData();
@@ -1198,10 +1198,7 @@ function saveChanges() {
 }
 
 function discardChanges() {
-  if (adminMode === 'vocab')      return discardVocabChanges();
-  if (adminMode === 'quiz')       return discardQuizChanges();
-  if (adminMode === 'reference')  return discardReferenceChanges();
-  if (adminMode === 'resources')  return discardResourcesChanges();
+  if (ADMIN_DISCARD[adminMode]) return ADMIN_DISCARD[adminMode]();
   if (!confirm('Discard all unsaved changes for this tab?')) return;
   pendingChanges = false;
   renderEditor();
@@ -1517,7 +1514,7 @@ function deleteTab(lid, num, tabIdx) {
 }
 
 // ── FEATURE FLAGS ──
-const FLAGS_KEY = 'zolai_features';
+const FLAGS_KEY = KEYS.features;
 
 function getFlags() {
   try { return JSON.parse(localStorage.getItem(FLAGS_KEY) || '{}'); }
@@ -1706,10 +1703,10 @@ function applyAdminLabels() {
   const labels = flags.labels || {};
   const global = flags.global || {};
   const map = {
-    analyticsNavBtn:  { label: labels.analytics  || 'Analytics',      show: global.analytics  !== false },
-    leaderboardNavBtn:{ label: labels.leaderboard || 'Leaderboard',    show: true },
-    referenceNavBtn:  { label: labels.reference   || 'Gram. Reference',show: true },
-    resourcesNavBtn:  { label: labels.resources   || 'Resources',      show: true },
+    analyticsNavBtn:  { label: labels.analytics  || 'Analytics',        show: global.analytics  !== false },
+    leaderboardNavBtn:{ label: labels.leaderboard || 'Leaderboard',      show: true },
+    referenceNavBtn:  { label: labels.reference   || 'Gram. Reference',  show: true },
+    resourcesNavBtn:  { label: labels.resources   || 'Resources',        show: true },
   };
   for (const [id, cfg] of Object.entries(map)) {
     const btn = document.getElementById(id);
@@ -1727,8 +1724,8 @@ function saveFbUrl() {
     alert('URL must start with https://');
     return;
   }
-  if (url) localStorage.setItem('zolai_firebase_url', url);
-  else localStorage.removeItem('zolai_firebase_url');
+  if (url) localStorage.setItem(KEYS.firebaseUrl, url);
+  else localStorage.removeItem(KEYS.firebaseUrl);
   showToast(url ? 'Firebase URL saved' : 'Firebase URL cleared');
   showAnalytics();
 }
@@ -1739,8 +1736,8 @@ function saveGaId() {
     alert('Invalid format. GA4 Measurement IDs look like: G-ABCD1234');
     return;
   }
-  if (id) localStorage.setItem('zolai_ga_id', id);
-  else localStorage.removeItem('zolai_ga_id');
+  if (id) localStorage.setItem(KEYS.gaId, id);
+  else localStorage.removeItem(KEYS.gaId);
   showToast(id ? `GA4 configured: ${id}` : 'GA4 ID cleared');
   showAnalytics();
 }
@@ -1755,7 +1752,7 @@ function showAdminLeaderboard() {
   document.getElementById('saveBar').style.display = 'none';
   document.getElementById('topCrumb').textContent = 'Leaderboard';
 
-  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  const fbUrl = localStorage.getItem(KEYS.firebaseUrl);
   if (!fbUrl) {
     document.getElementById('adminContent').innerHTML = `
       <div class="section-card" style="text-align:center;padding:48px">
@@ -1823,7 +1820,7 @@ function showAdminLeaderboard() {
 
 function deleteScore(key) {
   if (!confirm('Delete this score entry?')) return;
-  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  const fbUrl = localStorage.getItem(KEYS.firebaseUrl);
   fetch(`${fbUrl}/scores/${key}.json`, { method: 'DELETE' })
     .then(() => { showToast('Score deleted'); showAdminLeaderboard(); })
     .catch(() => alert('Failed to delete. Check Firebase URL and rules.'));
@@ -1831,7 +1828,7 @@ function deleteScore(key) {
 
 function clearAllScores() {
   if (!confirm('Delete ALL scores? This cannot be undone.')) return;
-  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  const fbUrl = localStorage.getItem(KEYS.firebaseUrl);
   fetch(`${fbUrl}/scores.json`, { method: 'DELETE' })
     .then(() => { showToast('All scores cleared'); showAdminLeaderboard(); })
     .catch(() => alert('Failed to clear scores.'));
@@ -1846,8 +1843,8 @@ function showAnalytics() {
   document.getElementById('analyticsNavBtn').classList.add('active');
   document.getElementById('saveBar').style.display = 'none';
 
-  const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
-  const gaId = localStorage.getItem('zolai_ga_id') || '';
+  const log = JSON.parse(localStorage.getItem(KEYS.visitLog) || '[]');
+  const gaId = localStorage.getItem(KEYS.gaId) || '';
 
   const sessions = log.filter(e => e.type === 'session').length;
   const lessonLog = log.filter(e => !e.type || e.type === 'lesson');
@@ -1927,13 +1924,13 @@ function showAnalytics() {
           3. Copy the database URL (e.g. <code style="color:var(--gold-light)">https://yourapp-default-rtdb.firebaseio.com</code>) and paste below.
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input type="text" id="fbUrlInput" value="${esc(localStorage.getItem('zolai_firebase_url')||'')}"
+          <input type="text" id="fbUrlInput" value="${esc(localStorage.getItem(KEYS.firebaseUrl)||'')}"
             placeholder="https://your-project-default-rtdb.firebaseio.com"
             style="flex:1;min-width:200px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none">
           <button class="btn btn-gold" onclick="saveFbUrl()" style="font-size:12px;padding:9px 16px">Save</button>
         </div>
-        ${localStorage.getItem('zolai_firebase_url')
-          ? `<div style="margin-top:8px;font-size:12px;color:var(--green)">&#10003; Active — <a href="${esc(localStorage.getItem('zolai_firebase_url'))}/scores.json" target="_blank" style="color:var(--gold)">view raw data &#8599;</a></div>`
+        ${localStorage.getItem(KEYS.firebaseUrl)
+          ? `<div style="margin-top:8px;font-size:12px;color:var(--green)">&#10003; Active — <a href="${esc(localStorage.getItem(KEYS.firebaseUrl))}/scores.json" target="_blank" style="color:var(--gold)">view raw data &#8599;</a></div>`
           : ''}
       </div>
 
@@ -1961,7 +1958,7 @@ function showAnalytics() {
 
 function clearVisitLog() {
   if (!confirm('Clear all visit history on this device?')) return;
-  localStorage.removeItem('zolai_visit_log');
+  localStorage.removeItem(KEYS.visitLog);
   showAnalytics();
   showToast('Visit log cleared');
 }
@@ -2569,3 +2566,12 @@ function showToast(msg) {
 window.addEventListener('beforeunload', e => {
   if (pendingChanges) { e.preventDefault(); e.returnValue = ''; }
 });
+
+// ── BRANDING INIT ──
+function initAdminBranding() {
+  document.title = `Admin — ${BRAND.appName}`;
+  const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  set('adminSidebarLogo', BRAND.appName);
+  set('adminLoginSub',    `${BRAND.appName} — Content Editor`);
+}
+initAdminBranding();

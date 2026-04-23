@@ -6,7 +6,7 @@ function esc(str) {
 
 // ── FEATURE FLAGS ──
 function getFeatureFlags() {
-  try { return JSON.parse(localStorage.getItem('zolai_features') || '{}'); }
+  try { return JSON.parse(localStorage.getItem(KEYS.features) || '{}'); }
   catch { return {}; }
 }
 function isGlobalEnabled(f) { return getFeatureFlags().global?.[f] !== false; }
@@ -15,47 +15,43 @@ function isTabEnabled(lvl, n, i) { return getFeatureFlags().levels?.[lvl]?.[n]?.
 
 function getAdminSection(key) {
   try {
-    const raw = localStorage.getItem('zolai_admin_data');
+    const raw = localStorage.getItem(KEYS.adminData);
     if (!raw) return null;
     const data = JSON.parse(raw)?.[key];
     return (data && data.length > 0) ? data : null;
   } catch(e) { return null; }
 }
 
+// ── SECTION REGISTRY — single source of truth for all navigable sections ──
+const SECTIONS = {
+  quiz:        { navId: 'nav-quiz',        mnavId: 'mnav-quiz',       defaultLabel: 'Quiz Mode',         render: (c) => renderQuizStart(c) },
+  reference:   { navId: 'nav-reference',   mnavId: 'mnav-ref',        defaultLabel: 'Grammar Reference', render: (c) => renderReference(c) },
+  resources:   { navId: 'nav-resources',   mnavId: 'mnav-resources',  defaultLabel: 'Resources',         render: (c) => renderResources(c) },
+  vocabulary:  { navId: 'nav-vocab',       mnavId: null,              defaultLabel: 'Vocabulary',        render: (c) => renderVocabulary(c) },
+  leaderboard: { navId: 'nav-leaderboard', mnavId: null,              defaultLabel: 'Leaderboard',       render: (c) => renderLeaderboard(c) },
+};
+
 function applyFeatureFlags() {
   const flags = getFeatureFlags();
   const labels = flags.labels || {};
-
-  // sidebar nav id → mobile nav id → feature key
-  const pairs = [
-    { key: 'quiz',        sid: 'nav-quiz',        mid: 'mnav-quiz' },
-    { key: 'leaderboard', sid: 'nav-leaderboard',  mid: null },
-    { key: 'reference',   sid: 'nav-reference',    mid: 'mnav-ref' },
-    { key: 'resources',   sid: 'nav-resources',    mid: 'mnav-resources' },
-    { key: 'vocabulary',  sid: 'nav-vocab',        mid: null },
-  ];
-
-  for (const { key, sid, mid } of pairs) {
+  for (const [key, sec] of Object.entries(SECTIONS)) {
     const enabled = flags.global?.[key] !== false;
-    const display = enabled ? '' : 'none';
-    const el = document.getElementById(sid);
+    const el = document.getElementById(sec.navId);
     if (el) {
-      el.style.display = display;
-      if (labels[key]) {
-        const lbl = el.querySelector('.nav-label');
-        if (lbl) lbl.textContent = labels[key];
-      }
+      el.style.display = enabled ? '' : 'none';
+      const lbl = el.querySelector('.nav-label');
+      if (lbl) lbl.textContent = labels[key] || sec.defaultLabel;
     }
-    if (mid) {
-      const mel = document.getElementById(mid);
-      if (mel) mel.style.display = display;
+    if (sec.mnavId) {
+      const mel = document.getElementById(sec.mnavId);
+      if (mel) mel.style.display = enabled ? '' : 'none';
     }
   }
 }
 
 // ── GOOGLE ANALYTICS 4 — loaded dynamically if admin configured an ID ──
 (function() {
-  const gaId = localStorage.getItem('zolai_ga_id');
+  const gaId = localStorage.getItem(KEYS.gaId);
   if (!gaId) return;
   const s = document.createElement('script');
   s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
@@ -402,13 +398,28 @@ function markLessonComplete(n) {
 
 // ── VIEWS ──
 function showView(view) {
-  state.activeView = view;
+  const sec = SECTIONS[view];
+  if (sec) {
+    if (!isGlobalEnabled(view)) return showView('home');
+    state.activeView = view;
+    const c = document.getElementById('mainContent');
+    c.className = 'content fade-in';
+    setNav(sec.navId);
+    setBreadcrumb(getFeatureFlags().labels?.[view] || sec.defaultLabel);
+    if (sec.mnavId) setMobileNav(sec.mnavId);
+    sec.render(c);
+    closeLessonPicker();
+    return;
+  }
+  // home
+  state.activeView = 'home';
   const c = document.getElementById('mainContent');
   c.className = 'content fade-in';
-
-  if (view === 'home') { setNav('nav-home'); setBreadcrumb('Home'); renderHome(c); }
-  else if (view === 'quiz') { setNav('nav-quiz'); setBreadcrumb('Quiz Mode'); renderQuizStart(c); }
-  else if (view === 'reference') { setNav('nav-reference'); setBreadcrumb(getFeatureFlags().labels?.reference || 'Grammar Reference'); renderReference(c); }
+  setNav('nav-home');
+  setBreadcrumb('Home');
+  renderHome(c);
+  setMobileNav('mnav-home');
+  closeLessonPicker();
 }
 
 function showLesson(n) {
@@ -426,9 +437,9 @@ function renderHome(c) {
   const done = state.completedLessons.size;
   c.innerHTML = `
     <div class="home-hero">
-      <div class="lesson-badge">Paunam Khenna Leh Kampau Luanzia</div>
-      <div class="home-hero-title">Learn <em>Zolai</em><br>with Purpose.</div>
-      <div class="home-hero-sub">A structured learning path drawn from the classic Zolai grammar text. Reconnect with the language of the Zo people through lessons, exercises, and quizzes.</div>
+      <div class="lesson-badge">${BRAND.heroBadge}</div>
+      <div class="home-hero-title">${BRAND.heroTitle}</div>
+      <div class="home-hero-sub">${BRAND.heroSubtitle}</div>
       <button class="btn btn-primary" onclick="showLesson(${done < 6 ? done + 1 : 1})">
         ${done === 0 ? '→ Begin Learning' : done < 6 ? '→ Continue Lesson ' + (done+1) : '→ Review Lessons'}
       </button>
@@ -458,7 +469,7 @@ function renderHome(c) {
     <div class="card">
       <div class="card-title">About This Text</div>
       <div class="info-box">
-        <strong>Paunam Khenna Leh Kampau Luanzia</strong> is a comprehensive Zolai language and composition guide authored by Sia Cin Sian Pau. It covers the full grammar of the Zo language — from alphabet and phonetics through to tense, voice, punctuation, and Zomi cultural vocabulary. The lessons in this app are drawn directly from this foundational text.
+        ${BRAND.aboutText}
       </div>
     </div>
   `;
@@ -769,10 +780,11 @@ function renderLessonTab(n, tabIdx) {
 let quizQuestions = [];
 
 function renderQuizStart(c) {
+  const quizLabel = getFeatureFlags().labels?.quiz || SECTIONS.quiz.defaultLabel;
   c.innerHTML = `
     <div class="lesson-header">
       <div class="lesson-badge">Practice · All Lessons</div>
-      <div class="lesson-title">Quiz Mode</div>
+      <div class="lesson-title">${quizLabel}</div>
       <div class="lesson-subtitle">Test your knowledge across all six lessons. Each session draws 10 questions from the full question bank.</div>
     </div>
     <div class="card" style="max-width:540px">
@@ -1071,61 +1083,6 @@ function setMobileNav(id) {
   if (el) el.classList.add('active');
 }
 
-// Patch showView to also update mobile nav
-const _origShowView = showView;
-showView = function(view) {
-  // Guard disabled global features
-  if (view === 'quiz'       && !isGlobalEnabled('quiz'))       return showView('home');
-  if (view === 'reference'  && !isGlobalEnabled('reference'))  return showView('home');
-  if (view === 'leaderboard'&& !isGlobalEnabled('leaderboard'))return showView('home');
-  if (view === 'vocabulary' && !isGlobalEnabled('vocabulary')) return showView('home');
-  if (view === 'resources'  && !isGlobalEnabled('resources'))  return showView('home');
-
-  if (view === 'vocabulary') {
-    state.activeView = 'vocabulary';
-    const c = document.getElementById('mainContent');
-    c.className = 'content fade-in';
-    setNav('nav-vocab');
-    setBreadcrumb('Vocabulary');
-    renderVocabulary(c);
-    closeLessonPicker();
-    return;
-  }
-  if (view === 'leaderboard') {
-    state.activeView = 'leaderboard';
-    const c = document.getElementById('mainContent');
-    c.className = 'content fade-in';
-    setNav('nav-leaderboard');
-    setBreadcrumb('Leaderboard');
-    renderLeaderboard(c);
-    closeLessonPicker();
-    return;
-  }
-  if (view === 'resources') {
-    state.activeView = 'resources';
-    const c = document.getElementById('mainContent');
-    c.className = 'content fade-in';
-    setNav('nav-resources');
-    const resLabel = getFeatureFlags().labels?.resources || 'Resources';
-    setBreadcrumb(resLabel);
-    renderResources(c);
-    closeLessonPicker();
-    return;
-  }
-  _origShowView(view);
-  closeLessonPicker();
-  if (view === 'home') setMobileNav('mnav-home');
-  else if (view === 'quiz') setMobileNav('mnav-quiz');
-  else if (view === 'reference') setMobileNav('mnav-ref');
-  else if (view === 'resources') setMobileNav('mnav-resources');
-};
-
-const _origShowLesson = showLesson;
-showLesson = function(n) {
-  _origShowLesson(n);
-  closeLessonPicker();
-  setMobileNav('mnav-lessons');
-};
 
 // Global delegated click handler for syllable cells
 document.addEventListener('click', function(e) {
@@ -1151,31 +1108,92 @@ const levelData = {
         title: "Alphabet & Sounds",
         subtitle: "The Zolai alphabet — consonants (Laimungte) and vowels (Awsuaksak). Learn to recognise and pronounce every letter.",
         badge: "Lesson 1 · Phonetics",
-        tabs: ['Consonants', 'Vowels', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Consonants', type: 'grid', title: 'Laimungte — Consonants',
+            info: 'Zolai uses 18 consonants. Special digraphs Ng, Kh, Ph, Th each represent one single sound. Letters F, J, Q, R, X, Y appear only in borrowed words.',
+            items: ['B','C','D','G','H','K','L','M','N','P','S','T','V','Z','Ng','Kh','Ph','Th'], toggleable: true },
+          { name: 'Vowels', type: 'grid', title: 'Awsuaksak — Vowels',
+            info: 'Zolai has <strong>6 core vowel sounds</strong>. The vowel \'aw\' is a unique rounded back vowel.',
+            items: [{s:'a',n:'as in "father"'},{s:'e',n:'as in "bed"'},{s:'i',n:'as in "see"'},{s:'o',n:'as in "open"'},{s:'u',n:'as in "put"'},{s:'aw',n:'rounded back vowel'}], columns: 3 },
+          { name: 'Practice', type: 'sentences', title: 'Practice Reading',
+            info: 'Read these sentences aloud. Each one is from the original Paunam Khenna text.',
+            items: ['Alu a to hi.','Bi a po zo hi.','Be a su hi.','Ga a la hi.','Ni a sa hi.','Ka mo a gi hi.','Haza va la hi.','Tho a na hi.','Mawtaw ka mu hi.'] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Alphabet & Sounds',
+            items: [{z:'a',e:'as in "father"'},{z:'e',e:'as in "bed"'},{z:'i',e:'as in "see"'},{z:'o',e:'as in "open"'},{z:'u',e:'as in "put"'},{z:'aw',e:'rounded back vowel'},{z:'Ng',e:'"ng" as in "sing"'},{z:'Kh',e:'aspirated K'},{z:'Ph',e:'aspirated P'},{z:'Th',e:'aspirated T'},{z:'B',e:'consonant B'},{z:'C',e:'consonant C'},{z:'D',e:'consonant D'},{z:'G',e:'consonant G'},{z:'H',e:'consonant H'},{z:'K',e:'consonant K'},{z:'L',e:'consonant L'},{z:'M',e:'consonant M'},{z:'N',e:'consonant N'},{z:'P',e:'consonant P'},{z:'S',e:'consonant S'},{z:'T',e:'consonant T'},{z:'V',e:'consonant V'},{z:'Z',e:'consonant Z'}] },
+        ],
       },
       2: {
         title: "Syllable Patterns",
         subtitle: "How consonants and vowels combine to form syllables. From simple Ba/Be/Bi to complex endings.",
         badge: "Lesson 2 · Syllables",
-        tabs: ['Simple', 'With -h', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Simple', type: 'grid', title: 'Sinna II — Basic Syllables',
+            info: 'Consonant + Vowel combinations. These form the basic building blocks of Zolai words.',
+            items: ['Ba','Be','Bi','Bo','Bu','Baw','Ca','Ce','Ci','Co','Cu','Caw','Da','De','Di','Do','Du','Daw','Ka','Ke','Ki','Ko','Ku','Kaw','La','Le','Li','Lo','Lu','Law','Ma','Me','Mi','Mo','Mu','Maw','Na','Ne','Ni','No','Nu','Naw','Pa','Pe','Pi','Po','Pu','Paw','Sa','Se','Si','So','Su','Saw','Ta','Te','Ti','To','Tu','Taw'] },
+          { name: 'With -h', type: 'grid', title: 'Sinna III — Syllables with -h (breathy)',
+            info: 'Adding <strong>-h</strong> to a vowel creates a breathy, aspirated sound. This is a key feature of Zolai phonology.',
+            items: ['Bah','Beh','Bih','Boh','Buh','Bawh','Cah','Ceh','Cih','Coh','Cuh','Cawh','Dah','Deh','Dih','Doh','Duh','Dawh','Kah','Keh','Kih','Koh','Kuh','Kawh','Lah','Leh','Lih','Loh','Luh','Lawh','Mah','Meh','Mih','Moh','Muh','Mawh','Nah','Neh','Nih','Noh','Nuh','Nawh'], highlight: true },
+          { name: 'Practice', type: 'sentences', title: 'Practice Sentences',
+            items: ['Lo ah buhtuh a huh hi.','Zato ah zaa a nuh hi.','Gah leh teh kane hi.','A u buh tuh a huh hi.','A behpa a huh hi.','Sameh a ne hi.','A pi a dah mahmah hi.','Lo ahuh a, a zawh pih hi.'] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Syllable Patterns',
+            items: [{z:'Ba / Be / Bi',e:'B + vowel (open syllables)'},{z:'Ka / Ke / Ki',e:'K + vowel combinations'},{z:'La / Le / Li',e:'L + vowel combinations'},{z:'Ma / Me / Mi',e:'M + vowel combinations'},{z:'Na / Ne / Ni',e:'N + vowel combinations'},{z:'Sa / Se / Si',e:'S + vowel combinations'},{z:'Bah / Beh / Bih',e:'B + vowel + h (breathy)'},{z:'Kah / Keh / Kih',e:'K + vowel + h (breathy)'},{z:'Lah / Leh / Lih',e:'L + vowel + h (breathy)'},{z:'Lo ah buhtuh a huh hi.',e:'There is food in the field.'},{z:'Sameh a ne hi.',e:'Sameh is eating.'},{z:'A behpa a huh hi.',e:'His father is there.'},{z:'A pi a dah mahmah hi.',e:'His grandmother is very sad.'},{z:'Gah leh teh kane hi.',e:'Here and there is scattered.'}] },
+        ],
       },
       3: {
         title: "Greetings & Phrases",
         subtitle: "Essential Zolai greetings and everyday phrases to start speaking from day one.",
         badge: "Lesson 3 · Greetings",
-        tabs: ['Greetings', 'Phrases', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Greetings', type: 'vocab-list', title: 'Kihopihnala — Greetings',
+            info: 'These are foundational Zolai greetings used in daily life and in the Paunam Khenna text.',
+            items: [{z:'Hallo / Dammaw',e:'Hello (greeting)'},{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Lungdam mahmah hi.',e:'I am very glad.'},{z:'Itna lianpi tawh kong zawn hi.',e:'I invite you with great love.'},{z:'Hong phawk den.',e:'Please remember (me/us).'},{z:'Na lawm it.',e:'Your loving friend.'},{z:'Kong it pa/nu.',e:'Dear father/mother.'}] },
+          { name: 'Phrases', type: 'vocab-list', title: 'Common Phrases',
+            items: [{z:'Kei ka dam hi.',e:'I am well.'},{z:'Nang na dam hiam?',e:'Are you well?'},{z:'Ka lungdam mahmah hi.',e:'I am very glad.'},{z:'Ka siate nuam thei mahmah uh hi.',e:'They are also very well.'},{z:'Ka nu leh innkuanpih teng zong ka phawk mahmah hi.',e:'I also greatly remember my mother and family.'},{z:'Ih kimuh lungdam un.',e:'We are glad to meet you (all).'}] },
+          { name: 'Practice', type: 'practice', title: 'Practice — Match the meaning',
+            info: 'Translate these greetings into English in your head, then tap to reveal.',
+            items: [{z:'Hallo / Dammaw',e:'Hello (greeting)'},{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Lungdam mahmah hi.',e:'I am very glad.'},{z:'Hong phawk den.',e:'Please remember (me/us).'}] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Greetings',
+            items: [{z:'Hallo / Dammaw',e:'Hello (greeting)'},{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Lungdam mahmah hi.',e:'I am very glad.'},{z:'Hong phawk den.',e:'Please remember us.'},{z:'Kei ka dam hi.',e:'I am well.'},{z:'Nang na dam hiam?',e:'Are you well?'},{z:'Ka lungdam mahmah hi.',e:'I am very glad.'},{z:'Ka siate nuam thei mahmah uh hi.',e:'They are also very well.'},{z:'Ih kimuh lungdam un.',e:'We are glad to meet you.'},{z:'Na lawm it.',e:'Your loving friend.'},{z:'Kong it pa/nu.',e:'Dear father/mother.'}] },
+        ],
       },
       4: {
         title: "Core 100 Words",
         subtitle: "The 100 most essential Zolai words — nouns, verbs, and particles you'll use every day.",
         badge: "Lesson 4 · Vocabulary",
-        tabs: ['Nouns', 'Verbs', 'Particles', 'Flashcards'],
+        tabs: [
+          { name: 'Nouns', type: 'vocab-list', title: 'Essential Nouns',
+            info: 'Learn these <strong>20 core Zolai nouns</strong> first — they appear in almost every conversation.',
+            items: [{z:'mi',e:'person'},{z:'inn',e:'house'},{z:'lo',e:'field/farm'},{z:'tui',e:'water'},{z:'ni',e:'sun/day'},{z:'zan',e:'night'},{z:'lam',e:'road/way'},{z:'sang',e:'school'},{z:'gam',e:'country/land'},{z:'khua',e:'village/town'},{z:'nu',e:'mother'},{z:'pa',e:'father'},{z:'ta',e:'child'},{z:'u',e:'elder sibling'},{z:'nau',e:'younger sibling'},{z:'laibu',e:'book'},{z:'sum',e:'money'},{z:'mawtaw',e:'car'},{z:'vanleng',e:'airplane'},{z:'an',e:'food/rice'}] },
+          { name: 'Verbs', type: 'vocab-list', title: 'Essential Verbs',
+            info: 'These <strong>20 core Zolai verbs</strong> form the backbone of everyday speech.',
+            items: [{z:'pai',e:'go'},{z:'ciah',e:'come/return'},{z:'ne',e:'eat'},{z:'dawn',e:'drink'},{z:'om',e:'be/stay'},{z:'tai',e:'run'},{z:'sim',e:'read/study'},{z:'gel',e:'write'},{z:'sa',e:'sing'},{z:'mu',e:'see'},{z:'theih',e:'know'},{z:'it',e:'love'},{z:'dawng',e:'hear'},{z:'ngaih',e:'think/remember'},{z:'sep',e:'work'},{z:'pia',e:'give'},{z:'la',e:'take'},{z:'lam',e:'walk'},{z:'tu',e:'stand'},{z:'lum',e:'sleep'}] },
+          { name: 'Particles', type: 'vocab-list', title: 'Particles & Markers',
+            info: 'These small words are essential — they mark grammar roles and modify meaning.',
+            items: [{z:'hi',e:'is/am/are (affirmative ending)'},{z:'leh',e:'and'},{z:'in',e:'subject marker'},{z:'a',e:'3rd person subject marker'},{z:'tawh',e:'with'},{z:'ah',e:'at/in'},{z:'panin',e:'from'},{z:'nadingin',e:'for/in order to'},{z:'napi-in',e:'although/even though'},{z:'zong',e:'also/too'},{z:'bek',e:'only/just'},{z:'mahmah',e:'very/greatly'},{z:'kei/lo',e:'not (negation)'},{z:'hiam',e:'question marker'},{z:'ding hi',e:'will (future)'}] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Core Words',
+            items: [{z:'mi',e:'person'},{z:'inn',e:'house'},{z:'laibu',e:'book'},{z:'mawtaw',e:'car'},{z:'an',e:'food/rice'},{z:'pai',e:'go'},{z:'ciah',e:'come/return'},{z:'ne',e:'eat'},{z:'om',e:'be/stay'},{z:'sim',e:'read/study'},{z:'mu',e:'see'},{z:'it',e:'love'},{z:'hi',e:'is/am/are'},{z:'leh',e:'and'},{z:'in',e:'subject marker'},{z:'tawh',e:'with'},{z:'mahmah',e:'very/greatly'},{z:'hiam',e:'question marker'},{z:'ding hi',e:'will (future)'}] },
+        ],
       },
       5: {
         title: "Numbers",
         subtitle: "Counting in Zolai from zero to one million. Ordinal numbers, days, and months.",
         badge: "Lesson 5 · Numbers",
-        tabs: ['Cardinal', 'Ordinal', 'Days & Months', 'Flashcards'],
+        tabs: [
+          { name: 'Cardinal', type: 'vocab-list', title: 'Zo Nambatte — Numbers',
+            info: 'Zolai has its own number system. Larger numbers are built by combining smaller units.',
+            items: [{z:'bem',e:'0'},{z:'khat',e:'1'},{z:'nih',e:'2'},{z:'thum',e:'3'},{z:'li',e:'4'},{z:'nga',e:'5'},{z:'guk',e:'6'},{z:'sagih',e:'7'},{z:'giat',e:'8'},{z:'kua',e:'9'},{z:'sawmkhat',e:'10'},{z:'sawmnih',e:'20'},{z:'zakhat',e:'100'},{z:'tulkhat',e:'1,000'},{z:'thenkhat',e:'10,000'},{z:'awnkhat',e:'1,000,000'}] },
+          { name: 'Ordinal', type: 'vocab-list', title: 'Ordinal Numbers',
+            info: 'Add <strong>-na</strong> after a cardinal number to make it ordinal (1st, 2nd, 3rd...).',
+            items: [{z:'a khatna',e:'1st'},{z:'a nihna',e:'2nd'},{z:'a thumna',e:'3rd'},{z:'a lina',e:'4th'},{z:'a ngana',e:'5th'},{z:'a masa',e:'first (the original)'},{z:'a tawpna',e:'last'}] },
+          { name: 'Days & Months', type: 'multi-section', title: 'Days & Months',
+            info: 'Days of the week (Nipikal minte) and months (Kraminte) in Zolai.',
+            sections: [
+              { heading: 'Days of the Week', items: [{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'}] },
+              { heading: 'Months', items: [{z:'Theinosihkha',e:'January'},{z:'Tunkha',e:'February'},{z:'Dota',e:'March'},{z:'Dopi',e:'April'},{z:'Zingkha',e:'May'},{z:'Gamkha',e:'June'},{z:'Tangsihkha',e:'July'},{z:'Tangkha',e:'August'},{z:'Phalkha',e:'September'},{z:'Khuadokha',e:'October'},{z:'Nokha',e:'November'},{z:'Kaukha',e:'December'}] },
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Numbers',
+            items: [{z:'bem',e:'0 (zero)'},{z:'khat',e:'1 (one)'},{z:'nih',e:'2 (two)'},{z:'thum',e:'3 (three)'},{z:'li',e:'4 (four)'},{z:'nga',e:'5 (five)'},{z:'guk',e:'6 (six)'},{z:'sagih',e:'7 (seven)'},{z:'giat',e:'8 (eight)'},{z:'kua',e:'9 (nine)'},{z:'sawmkhat',e:'10 (ten)'},{z:'sawmnih',e:'20 (twenty)'},{z:'zakhat',e:'100 (hundred)'},{z:'tulkhat',e:'1,000 (thousand)'},{z:'awnkhat',e:'1,000,000 (million)'},{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'}] },
+        ],
       },
     },
     vocabData: [
@@ -1250,31 +1268,91 @@ const levelData = {
         title: "Basic Sentences",
         subtitle: "How Zolai sentences are structured. Subject, predicate, and basic sentence patterns.",
         badge: "Lesson 1 · Sentences",
-        tabs: ['Structure', 'Examples', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Structure', type: 'type-cards', title: 'Laigual — Sentence Structure',
+            items: [
+              {name:'Subject + Verb + hi', en:'Taang a tai hi.', desc:'He runs. (most basic pattern)'},
+              {name:'Subject + in + Object + Verb + hi', en:'Lianpi in kong a khak hi.', desc:'Lianpi knocked the door.'},
+              {name:'Subject + Adjective + hi', en:'Inn a hoih mahmah hi.', desc:'The house is very beautiful.'},
+              {name:'Question: ...hiam?', en:'Nang na dam hiam?', desc:'Are you well?'},
+            ] },
+          { name: 'Examples', type: 'vocab-list', title: 'Example Sentences',
+            info: 'Read these sentences. Notice how \'a\' appears before many verbs and \'hi\' ends most statements.',
+            items: [{z:'Va-ak in moh a tuah hi.',e:'The crow played a trick.'},{z:'Ka nu ka it hi.',e:'I love my mother.'},{z:'Inn a hoih mahmah hi.',e:'The house is very beautiful.'},{z:'Huih a nung hi.',e:'The wind is blowing.'},{z:'Sakol in, leng a kai hi.',e:'The horse climbed the hill.'}] },
+          { name: 'Practice', type: 'vocab-list', title: 'Positive, Negative, Question',
+            info: 'Add <strong>kei/lo</strong> for negative, and <strong>hiam/hia/maw</strong> for questions.',
+            items: [{z:'Kei in nasep ka hanciam hi.',e:'I work hard. (positive)'},{z:'Kei in nasep ka hanciam kei hi.',e:'I do not work hard. (negative)'},{z:'Kei in nasep ka hanciam hiam?',e:'Do I work hard? (question)'}] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Sentences',
+            items: [{z:'Laigual',e:'sentence'},{z:'A sempa',e:'subject (of sentence)'},{z:'A thu',e:'predicate'},{z:'hi',e:'affirmative sentence ending'},{z:'kei/lo',e:'negation marker'},{z:'hiam',e:'question marker'},{z:'Va-ak in moh a tuah hi.',e:'The crow played a trick.'},{z:'Ka nu ka it hi.',e:'I love my mother.'},{z:'Inn a hoih mahmah hi.',e:'The house is very beautiful.'},{z:'Kei in nasep ka hanciam kei hi.',e:'I do not work hard. (negative)'}] },
+        ],
       },
       2: {
         title: "Numbers & Counting",
         subtitle: "Full number system — cardinal, ordinal, and how to use numbers in sentences.",
         badge: "Lesson 2 · Numbers",
-        tabs: ['Cardinal', 'Ordinal', 'In Sentences', 'Flashcards'],
+        tabs: [
+          { name: 'Cardinal', type: 'vocab-list', title: 'Full Number System',
+            info: 'Larger numbers combine smaller ones: <strong>sawm-leh-khat = 11</strong>, <strong>sawmnih-nga = 25</strong>.',
+            items: [{z:'bem',e:'0'},{z:'khat',e:'1'},{z:'nih',e:'2'},{z:'thum',e:'3'},{z:'li',e:'4'},{z:'nga',e:'5'},{z:'guk',e:'6'},{z:'sagih',e:'7'},{z:'giat',e:'8'},{z:'kua',e:'9'},{z:'sawmkhat',e:'10'},{z:'sawmnih',e:'20'},{z:'sawmthum',e:'30'},{z:'sawmli',e:'40'},{z:'sawmnga',e:'50'},{z:'zakhat',e:'100'},{z:'zanga',e:'500'},{z:'tulkhat',e:'1,000'},{z:'thenkhat',e:'10,000'},{z:'sangkhat',e:'100,000'},{z:'awnkhat',e:'1,000,000'},{z:'makkhat',e:'10,000,000'}] },
+          { name: 'Ordinal', type: 'vocab-list', title: 'Ordinal & Counting',
+            info: 'Add <strong>-na</strong> for ordinals. Use <strong>-veina</strong> for repetitions (once, twice).',
+            items: [{z:'a khatna',e:'first'},{z:'a nihna',e:'second'},{z:'khatveina',e:'once'},{z:'nihveina',e:'twice'},{z:'thumveina',e:'three times'},{z:'sawmnih-sagih',e:'27 (twenty-seven)'},{z:'zakhat-sawmnih',e:'120 (one hundred twenty)'}] },
+          { name: 'In Sentences', type: 'vocab-list', title: 'Numbers in Sentences',
+            items: [{z:'Ka sang uhah tukpeng kimawlna tualpi khat om hi.',e:'There is one big sports ground at our school.'},{z:'Kum sawmnih a pha hi.',e:'She is 20 years old.'},{z:'Khutme nga a nei hi.',e:'She has five fingers.'},{z:'Pak tampi a nei hi.',e:'He has many chickens.'}] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Numbers',
+            items: [{z:'khat',e:'1 (one)'},{z:'nih',e:'2 (two)'},{z:'thum',e:'3 (three)'},{z:'li',e:'4 (four)'},{z:'nga',e:'5 (five)'},{z:'guk',e:'6 (six)'},{z:'sagih',e:'7 (seven)'},{z:'giat',e:'8 (eight)'},{z:'kua',e:'9 (nine)'},{z:'sawmkhat',e:'10 (ten)'},{z:'zakhat',e:'100'},{z:'tulkhat',e:'1,000'},{z:'a khatna',e:'first (ordinal)'},{z:'khatveina',e:'once'},{z:'nihveina',e:'twice'},{z:'sawmnih-sagih',e:'27 (twenty-seven)'}] },
+        ],
       },
       3: {
         title: "Time Expressions",
         subtitle: "Days, months, time of day, and how to express 'when' in Zolai.",
         badge: "Lesson 3 · Time",
-        tabs: ['Days', 'Months', 'Time of Day', 'Flashcards'],
+        tabs: [
+          { name: 'Days', type: 'vocab-list', title: 'Nipikal Minte — Days of the Week',
+            items: [{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'}] },
+          { name: 'Months', type: 'vocab-list', title: 'Kraminte — Months',
+            items: [{z:'Theinosihkha',e:'January'},{z:'Tunkha',e:'February'},{z:'Dota',e:'March'},{z:'Dopi',e:'April'},{z:'Zingkha',e:'May'},{z:'Gamkha',e:'June'},{z:'Tangsihkha',e:'July'},{z:'Tangkha',e:'August'},{z:'Phalkha',e:'September'},{z:'Khuadokha',e:'October'},{z:'Nokha',e:'November'},{z:'Kaukha',e:'December'}] },
+          { name: 'Time of Day', type: 'vocab-list', title: 'Time of Day',
+            info: 'Use these time words as adverbs of time (Sepzia hun kammal) in sentences. <strong>Example:</strong> Zingsang tungin lai ka sim hi. → I study in the morning.',
+            items: [{z:'zingsang',e:'morning'},{z:'nitak',e:'evening/afternoon'},{z:'zan',e:'night'},{z:'zingtunga',e:'early morning'},{z:'nai sagih',e:"7 o'clock"},{z:'tu ni',e:'today'},{z:'zanin',e:'yesterday/last night'},{z:'taang',e:'tomorrow'},{z:'mai',e:'soon/later'}] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Time',
+            items: [{z:'Nipi',e:'Sunday'},{z:'Pizang',e:'Monday'},{z:'Pithai',e:'Tuesday'},{z:'Nilai',e:'Wednesday'},{z:'Laizing',e:'Thursday'},{z:'Laithai',e:'Friday'},{z:'Nino',e:'Saturday'},{z:'Theinosihkha',e:'January'},{z:'Tunkha',e:'February'},{z:'Dota',e:'March'},{z:'Dopi',e:'April'},{z:'Zingkha',e:'May'},{z:'Gamkha',e:'June'},{z:'zingsang',e:'morning'},{z:'nitak',e:'evening/afternoon'},{z:'zan',e:'night'},{z:'tu ni',e:'today'},{z:'zanin',e:'yesterday/last night'},{z:'taang',e:'tomorrow'}] },
+        ],
       },
       4: {
         title: "Articles",
         subtitle: "Zolai has three articles: 'khat' (indefinite), 'tua...pen', and 'tua...in' (definite). Learn to use them correctly.",
         badge: "Lesson 4 · Articles",
-        tabs: ['Indefinite', 'Definite', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Indefinite', type: 'vocab-list', title: "Indefinite Article — 'khat'",
+            info: 'In Zolai, the indefinite article is <strong>khat</strong> (meaning \'one/a\'). Place it after the noun. Do not use articles with Proper Nouns.',
+            items: [{z:'sakol khat',e:'a horse (indefinite)'},{z:'laibu khat',e:'a book'},{z:'mi citak khat',e:'a certain person'},{z:'sikkeu khat',e:'a cat'}] },
+          { name: 'Definite', type: 'vocab-list', title: "Definite Articles — 'Tua...pen' and 'Tua...in'",
+            info: 'Use <strong>Tua...pen</strong> when the noun is the topic/subject, and <strong>Tua...in</strong> when the noun is actively doing something. Zolai has <strong>3 articles</strong> total: khat, tua...pen, tua...in. (English has 2: a/an, the.)',
+            items: [{z:'Tua sakol pen',e:'the horse (subject/topic)'},{z:'Tua sakol in',e:'the horse (doing something)'},{z:'Tua laibu pen',e:'the book (subject)'}] },
+          { name: 'Practice', type: 'practice', title: 'Article Practice',
+            info: 'Fill in the article in your mind, then tap to reveal.',
+            items: [{z:'Kumpipa in, sakol ___ tawh khual a zin hi.',e:'khat (a horse)'},{z:'___ sakol pen, a kaang ahi hi.',e:'Tua (the horse — topic)'},{z:'___ sakol in kumpipa a thei hi.',e:'Tua (the horse — doing)'}] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Articles',
+            items: [{z:'khat',e:'indefinite article (a/one)'},{z:'tua...pen',e:'definite — topic/subject'},{z:'tua...in',e:'definite — doing the action'},{z:'sakol khat',e:'a horse'},{z:'Tua sakol pen',e:'the horse (topic)'},{z:'Tua sakol in',e:'the horse (acting)'}] },
+        ],
       },
       5: {
         title: "Simple Dialogues",
         subtitle: "Real Zolai conversations — greetings, asking directions, and everyday exchanges.",
         badge: "Lesson 5 · Dialogues",
-        tabs: ['Greetings', 'Questions', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Greetings', type: 'vocab-list', title: 'Greeting Dialogue',
+            items: [{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Na min bang ci hiam?',e:'What is your name?'},{z:'Ka min ___ ahi hi.',e:'My name is ___.'},{z:'Koi pan hong pai na hia?',e:'Where are you coming from?'},{z:'Zanin koi-ah om na hi vua?',e:'Where were you last night?'}] },
+          { name: 'Questions', type: 'vocab-list', title: 'Question Words',
+            info: 'These question words (Dotna kammalte) ask who, what, where, when, why, and how.',
+            items: [{z:'Kua?',e:'Who?'},{z:'Bang?',e:'What?'},{z:'Koi?',e:'Where?'},{z:'Bang hunin?',e:'When?'},{z:'Banghanghiam?',e:'Why?'},{z:'Bangci?',e:'How?'},{z:'Bang zah?',e:'How many?'}] },
+          { name: 'Practice', type: 'vocab-list', title: 'Full Dialogue',
+            info: 'Read and memorise this dialogue between two friends meeting.',
+            items: [{z:'A: Na dam hiam?',e:'Are you well?'},{z:'B: Ka dam hi, lungdam un. Nang zong na dam hiam?',e:'I am well, thank you. Are you also well?'},{z:'A: Ka dam hi. Koi-ah na pai hiam?',e:'I am well. Where are you going?'},{z:'B: Ka sang ah ka pai hi.',e:'I am going to school.'}] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Dialogues',
+            items: [{z:'Na dam hiam?',e:'Are you well?'},{z:'Ka dam hi.',e:'I am well.'},{z:'Na min bang ci hiam?',e:'What is your name?'},{z:'Koi pan hong pai na hia?',e:'Where are you coming from?'},{z:'Kua?',e:'Who?'},{z:'Bang?',e:'What?'},{z:'Koi?',e:'Where?'},{z:'Bang hunin?',e:'When?'},{z:'Banghanghiam?',e:'Why?'},{z:'Bangci?',e:'How?'}] },
+        ],
       },
     },
     vocabData: [
@@ -1341,31 +1419,204 @@ const levelData = {
         title: "Nouns (Minte)",
         subtitle: "Four kinds of nouns — Common, Proper, Abstract, and Collective. How they work in Zolai.",
         badge: "Lesson 1 · Nouns",
-        tabs: ['Types', 'Examples', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Types', type: 'type-cards', title: 'Four Types of Nouns (Minte)',
+            items: [
+              {name:'Neihkhawm min',en:'Common Noun',desc:'Names shared by all of a kind: mi (person), khua (village), laibu (book).'},
+              {name:'Neihtuam min',en:'Proper Noun',desc:'Unique names — always start with a capital letter: Tedim, Mang, Cingno.'},
+              {name:'Lawnmawh min',en:'Abstract Noun',desc:'Invisible things felt or thought: cidamna (health), dikna (justice), lungdamna (joy).'},
+              {name:'Honlawhna min',en:'Collective Noun',desc:'Names for groups: galkapte (soldiers), naupangte (children), minam (people).'},
+            ] },
+          { name: 'Examples', type: 'vocab-list', title: 'Noun Examples in Sentences',
+            items: [
+              {z:'Ka gang a honghawh hi.',e:'My friend came.'},
+              {z:'Utong a zempha mahmah hi.',e:'The Utong bird is very beautiful.'},
+              {z:'Zato ah zatui kila hi.',e:'There is medicine at the market.'},
+              {z:"Ka nu dikna in, genzawh lohin lian hi.",e:"My mother's righteousness shines without ceasing."},
+            ] },
+          { name: 'Practice', type: 'practice', title: 'Identify the Noun Type',
+            info: "For each Zolai word, identify whether it's Common, Proper, Abstract, or Collective.",
+            items: [
+              {z:'Tedim',e:'Proper Noun (city name)'},
+              {z:'inn',e:'Common Noun (house)'},
+              {z:'cidamna',e:'Abstract Noun (health)'},
+              {z:'galkapte',e:'Collective Noun (soldiers)'},
+              {z:'Mang',e:'Proper Noun (a name)'},
+              {z:'lungdamna',e:'Abstract Noun (happiness)'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Nouns',
+            items: [
+              {z:'Neihkhawm min',e:'Common Noun'},{z:'Neihtuam min',e:'Proper Noun'},
+              {z:'Lawnmawh min',e:'Abstract Noun'},{z:'Honlawhna min',e:'Collective Noun'},
+              {z:'mi',e:'person (common noun)'},{z:'Tedim',e:'city name (proper noun)'},
+              {z:'cidamna',e:'health (abstract noun)'},{z:'galkapte',e:'soldiers (collective noun)'},
+              {z:'innkuan',e:'family'},{z:'laibu',e:'book'},{z:'sang',e:'school'},
+              {z:'lungdamna',e:'happiness (abstract noun)'},{z:'dikna',e:'justice (abstract noun)'},
+              {z:'naupangte',e:'children (collective noun)'},
+            ] },
+        ],
       },
       2: {
         title: "Verbs (Sepna)",
         subtitle: "Transitive, intransitive, and helping verbs. How Zolai marks actions and states.",
         badge: "Lesson 2 · Verbs",
-        tabs: ['Types', 'Examples', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Types', type: 'type-cards', title: 'Three Types of Verbs (Sepna/Gamtatna)',
+            items: [
+              {name:'A thuak kisam sepna',en:'Transitive Verb',desc:'Requires an object to complete meaning. "Bawng in lopa a ne hi" — the cow eats grass.'},
+              {name:'A thuak kullo sepna',en:'Intransitive Verb',desc:'Complete without an object. "Thangpu a tai hi" — Thangpu runs.'},
+              {name:'A cinglo / ahuh sepna',en:'Incomplete / Helping Verb',desc:'Needs a complement. "Naupangte a cidam hi" — Children are healthy.'},
+            ] },
+          { name: 'Examples', type: 'vocab-list', title: 'Verb Examples',
+            items: [
+              {z:'Bawng in lopa a ne hi.',e:'The cow eats grass. (transitive: ne = eat)'},
+              {z:'Thangpu a tai hi.',e:'Thangpu runs. (intransitive: tai = run)'},
+              {z:'Dimno a laam hi.',e:'Dimno dances. (intransitive: laam = dance)'},
+              {z:'Naupangte a cidam hi.',e:'Children are healthy. (helping verb)'},
+              {z:'Lianpi in kong a khak hi.',e:'Lianpi knocked the door. (transitive: khak = knock)'},
+              {z:'Mangno in naupang khat ahi hi.',e:'Mangno is a child. (helping: ahi hi)'},
+            ] },
+          { name: 'Practice', type: 'practice', title: 'Practice — Verb Types',
+            items: [
+              {z:'Kei-in laibu khat nei-ing.',e:'Transitive (nei = have; object = laibu)'},
+              {z:'Ni a taang hi.',e:'Intransitive (taang = shine; no object)'},
+              {z:'Amah ka tanu ahi hi.',e:'Helping verb (ahi hi = is)'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Verbs',
+            items: [
+              {z:'A thuak kisam sepna',e:'Transitive Verb'},{z:'A thuak kullo sepna',e:'Intransitive Verb'},
+              {z:'A cinglo sepna',e:'Incomplete/Helping Verb'},
+              {z:'ne',e:'eat (transitive)'},{z:'tai',e:'run (intransitive)'},{z:'om',e:'be/stay/exist'},
+              {z:'laam',e:'dance (intransitive)'},{z:'ahi hi',e:'is/am/are (helping verb)'},
+              {z:'khak',e:'knock/strike (transitive)'},{z:'sa',e:'sing'},{z:'sim',e:'read/study'},
+              {z:'Bawng in lopa a ne hi.',e:'The cow eats grass. (transitive)'},{z:'Thangpu a tai hi.',e:'Thangpu runs. (intransitive)'},
+            ] },
+        ],
       },
       3: {
         title: "Adjectives (Pianzia)",
         subtitle: "Six kinds of adjectives — quality, quantity, number, demonstrative, interrogative, and possessive.",
         badge: "Lesson 3 · Adjectives",
-        tabs: ['Types', 'Comparison', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Types', type: 'type-cards', title: 'Six Types of Adjectives (Pianzia)',
+            items: [
+              {name:'Phacia lak pianzia',en:'Quality Adjective',desc:'Describes qualities: hoih (good), sau (tall), gol (round), thau (heavy).'},
+              {name:'Phazah lak pianzia',en:'Quantity Adjective',desc:'Describes amounts: tampi (many), tawmkha (few), beek (all).'},
+              {name:'Amalzah lak pianzia',en:'Number Adjective',desc:'Specific numbers: nga (five), sawmnih (twenty), giat (eight).'},
+              {name:'Lahkhiatna lak pianzia',en:'Demonstrative Adjective',desc:'Points to specific things: hih (this), hua (that), tua (that).'},
+              {name:'Dotna lak pianzia',en:'Interrogative Adjective',desc:'Asks about things: bang ci (what kind), koi (which), bang zah (how many).'},
+              {name:'Neihna lak pianzia',en:'Possessive Adjective',desc:"Shows ownership: ka (my), na (your), taang' (his), lia' (her), ih (our), amau' (their)."},
+            ] },
+          { name: 'Comparison', type: 'vocab-list', title: 'Comparison of Adjectives (Saikak/Tehkak)',
+            info: 'Add <strong>-zaw</strong> for Comparative (better), <strong>-pen</strong> for Superlative (best).',
+            items: [
+              {z:'hoih',e:'good'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},
+              {z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},
+              {z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'},
+            ] },
+          { name: 'Practice', type: 'vocab-list', title: 'Adjective Practice',
+            items: [
+              {z:'A mah in, inn hoih khat a nei hi.',e:'hoih = quality adjective (good house)'},
+              {z:'Ciinno in, pak tampi a nei hi.',e:'tampi = quantity adjective (many chickens)'},
+              {z:'Hih tangvalpa in a thahat hi.',e:'hih = demonstrative adjective (this young man)'},
+              {z:'Mangpu sangin Thangpu a hatzaw hi.',e:'hatzaw = comparative (stronger than Mangpu)'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Adjectives',
+            items: [
+              {z:'Phacia lak pianzia',e:'Quality Adjective'},{z:'Phazah lak pianzia',e:'Quantity Adjective'},
+              {z:'Amalzah lak pianzia',e:'Number Adjective'},{z:'Lahkhiatna lak pianzia',e:'Demonstrative Adjective'},
+              {z:'Dotna lak pianzia',e:'Interrogative Adjective'},{z:'Neihna lak pianzia',e:'Possessive Adjective'},
+              {z:'hoih',e:'good/beautiful'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},
+              {z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},
+              {z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'},
+              {z:'tampi',e:'many (quantity adj.)'},{z:'hih',e:'this (demonstrative)'},{z:'koi',e:'which (interrogative)'},
+            ] },
+        ],
       },
       4: {
         title: "Pronouns (Mintaang)",
         subtitle: "Personal, demonstrative, reflexive, interrogative, and possessive pronouns.",
         badge: "Lesson 4 · Pronouns",
-        tabs: ['Personal', 'Possessive', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Personal', type: 'vocab-list', title: 'Personal Pronouns (Mimalmintaang)',
+            info: 'Zolai distinguishes <strong>three persons</strong> and literary forms for he/she: Taang (he) and Lia (she). In everyday speech, \'Amah\' is used for both.',
+            items: [
+              {z:'Kei',e:'I (1st person sg.)'},{z:'Nang',e:'You (2nd person sg.)'},
+              {z:'Taang',e:'He (3rd person masc.)'},{z:'Lia',e:'She (3rd person fem.)'},
+              {z:'Amah',e:'He/She/It (general)'},{z:'Eite',e:'We (1st person pl.)'},
+              {z:'Note',e:'You (2nd person pl.)'},{z:'Amaute',e:'They (3rd person pl.)'},
+            ] },
+          { name: 'Possessive', type: 'vocab-list', title: 'Possessive Pronouns',
+            info: 'Possessive adjectives go before the noun (ka laibu = my book). Possessive pronouns stand alone (hih laibu in kei a hi = this book is mine).',
+            items: [
+              {z:'ka',e:'my'},{z:'na',e:'your'},{z:"taang'",e:"his"},{z:"lia'",e:"her"},
+              {z:'ih',e:'our'},{z:"amau'",e:'their'},{z:'kei a',e:'mine'},{z:'nang a',e:'yours'},
+            ] },
+          { name: 'Practice', type: 'vocab-list', title: 'Pronoun Practice',
+            items: [
+              {z:'Kei-in laibu khat nei-ing.',e:'I have a book. (Kei = I, subject)'},
+              {z:'Hih in ka laibu ahi hi.',e:'This is my book. (ka = my)'},
+              {z:'Hih laibu in kei a hi.',e:'This book is mine. (kei a = mine)'},
+              {z:'Nang mipil khat na hi hi.',e:'You are a wise person. (Nang = you)'},
+              {z:'Eite in inn khat nei hang.',e:'We have a house. (Eite = we)'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Pronouns',
+            items: [
+              {z:'Kei',e:'I (1st person sg.)'},{z:'Nang',e:'You (2nd person sg.)'},{z:'Taang',e:'He (masc.)'},
+              {z:'Lia',e:'She (fem.)'},{z:'Amah',e:'He/She/It (general)'},{z:'Eite',e:'We (1st pl.)'},
+              {z:'Note',e:'You (2nd pl.)'},{z:'Amaute',e:'They (3rd pl.)'},
+              {z:'ka',e:'my (possessive adj.)'},{z:'na',e:'your'},{z:"taang'",e:"his"},{z:"lia'",e:"her"},
+              {z:'ih',e:'our'},{z:"amau'",e:'their'},{z:'kei a',e:'mine (possessive pro.)'},{z:'nang a',e:'yours'},
+            ] },
+        ],
       },
       5: {
         title: "Tense (Hun Lahkhiatna)",
         subtitle: "Present, Past, and Future tenses with all their sub-forms: Simple, Continuous, Perfect.",
         badge: "Lesson 5 · Tenses",
-        tabs: ['Present', 'Past & Future', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Present', type: 'vocab-list', title: 'Tu Hun — Present Tense',
+            info: 'Present tenses in Zolai. Simple = base verb. Continuous = verb + laitak. Perfect = verb + khinzo. Perfect Continuous = verb doubled + khinzo.',
+            items: [
+              {z:'Thangpu a tai hi.',e:'Thangpu runs. (Simple Present)'},
+              {z:'Thangpu a tai laitak hi.',e:'Thangpu is running. (Present Continuous)'},
+              {z:'Ka na pai khinzo hi.',e:'I have gone. (Present Perfect)'},
+              {z:'Ka na paipai khinzo hi.',e:'I have been going. (Present Perfect Continuous)'},
+            ] },
+          { name: 'Past & Future', type: 'multi-section', title: 'A Beisa Hun & Mailam Hun',
+            info: 'Past: add <strong>khin</strong> (simple), <strong>khit laitak</strong> (continuous), <strong>khinzota</strong> (perfect). Future: add <strong>ding hi</strong> (simple).',
+            sections: [
+              { heading: 'Past Tense', items: [
+                {z:'Thangpu a tai khin hi.',e:'Thangpu ran. (Simple Past)'},
+                {z:'Thangpu a tai khit laitak hi.',e:'Thangpu was running. (Past Continuous)'},
+                {z:'Ka na pai khinzota hi.',e:'I had gone. (Past Perfect)'},
+                {z:'Ka na paipai khinzota hi.',e:'I had been going. (Past Perfect Continuous)'},
+              ] },
+              { heading: 'Future Tense', items: [
+                {z:'Thangpu a tai ding hi.',e:'Thangpu will run. (Simple Future)'},
+                {z:'Thangpu a tai ding laitak hi.',e:'Thangpu will be running. (Future Continuous)'},
+                {z:'Ka pai khinzo tading hi.',e:'I will have gone. (Future Perfect)'},
+              ] },
+            ] },
+          { name: 'Practice', type: 'practice', title: 'Tense Practice',
+            info: 'Identify the tense of each sentence.',
+            items: [
+              {z:'Ka pai ding hi.',e:'Simple Future (I will go)'},
+              {z:'A tai khin hi.',e:'Simple Past (He ran)'},
+              {z:'Ka na paipai khinzo hi.',e:'Present Perfect Continuous (I have been going)'},
+              {z:'A om laitak hi.',e:'Present Continuous (He is staying)'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Tense',
+            items: [
+              {z:'verb + hi',e:'Simple Present'},{z:'verb + laitak hi',e:'Present Continuous'},
+              {z:'verb + khinzo hi',e:'Present Perfect'},{z:'verb + khin hi',e:'Simple Past'},
+              {z:'verb + khit laitak hi',e:'Past Continuous'},{z:'verb + khinzota hi',e:'Past Perfect'},
+              {z:'verb + ding hi',e:'Simple Future'},{z:'verb + ding laitak hi',e:'Future Continuous'},
+              {z:'verb + khinzo tading hi',e:'Future Perfect'},
+              {z:'Thangpu a tai hi.',e:'Thangpu runs. (Simple Present)'},{z:'Thangpu a tai khin hi.',e:'Thangpu ran. (Simple Past)'},
+              {z:'Ka pai ding hi.',e:'I will go. (Simple Future)'},
+            ] },
+        ],
       },
     },
     vocabData: [
@@ -1444,31 +1695,211 @@ const levelData = {
         title: "Punctuation (Lailepna)",
         subtitle: "All 12 Zolai punctuation marks — comma, colon, apostrophe, hyphen and more — with correct usage rules.",
         badge: "Lesson 1 · Punctuation",
-        tabs: ['Marks', 'Rules', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Marks', type: 'markup-cards', title: '12 Punctuation Marks (Lailepna)',
+            items: [
+              {z:'Husanna',e:', comma',desc:'Used to separate clause elements, lists, and for clarity.'},
+              {z:'Ngaklang',e:'; semi-colon',desc:'Longer pause than comma; joins related independent clauses.'},
+              {z:'Ngakna',e:': colon',desc:'Introduces a list or explanation that follows.'},
+              {z:'Tawpna',e:'. full stop / period',desc:'Ends a complete sentence.'},
+              {z:'Dotna',e:'? question mark',desc:'Ends a question sentence.'},
+              {z:'Phawnna',e:'! exclamation mark',desc:'After exclamatory words and sentences.'},
+              {z:'Kamhonna / Kamkhakna',e:'" " quotation mark',desc:'Encloses direct speech (Genbanga Genna).'},
+              {z:'Neihsa lak / Tanglak',e:"' apostrophe",desc:"Shows possession: ka pa'sum = my father's money."},
+              {z:'Thekna',e:'- hyphen',desc:'Joins compound words and separates double vowels.'},
+              {z:'Git-phei',e:'_ dash',desc:'Used for a longer break or explanation mid-sentence.'},
+              {z:'Git-awn',e:'/ slash',desc:'Separates alternatives.'},
+              {z:'Kual / Umtuam',e:'( ) brackets',desc:'Encloses additional explanatory information.'},
+            ] },
+          { name: 'Rules', type: 'text-blocks', title: 'Punctuation Rules & Examples',
+            blocks: [
+              { html: 'Correct punctuation can change the entire meaning of a sentence in Zolai, just as in English.' },
+              { title: 'Kill him, not let him go.', html: 'Kill him — not: let him go. (comma changes meaning completely!)' },
+              { title: 'Na hehnepnakammalte hangin, ka lawmpa a lungdam hi; a lungsim nuamsak hi; a dahna zong beisak hi.', html: 'Your encouraging words made my friend glad; comforted his heart; removed his sorrow. (semi-colons join related clauses)' },
+              { html: "The apostrophe (neihsa lak) shows possession: <strong>Taang'khedap</strong> = Taang's shoes." },
+            ] },
+          { name: 'Practice', type: 'practice', title: 'Practice — Add the Punctuation',
+            info: 'What punctuation is missing? Tap to reveal.',
+            items: [
+              {z:'Lawm nang bang semsem na hia ___',e:'? (question mark — Dotna)'},
+              {z:'Oh ___ Hong pai mahmah hi',e:'! (exclamation — Phawnna)'},
+              {z:'Na hehnepnakammalte hangin ___ ka lungdam hi.',e:', (comma — Husanna)'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Punctuation',
+            items: [
+              {z:'Husanna',e:'Comma ( , )'},{z:'Ngaklang',e:'Semi-colon ( ; )'},{z:'Ngakna',e:'Colon ( : )'},
+              {z:'Tawpna',e:'Full stop ( . )'},{z:'Dotna',e:'Question mark ( ? )'},{z:'Phawnna',e:'Exclamation mark ( ! )'},
+              {z:'Kamhonna',e:'Quotation marks ( " " )'},{z:"Neihsa lak / Tanglak",e:"Apostrophe ( ' )"},
+              {z:'Thekna',e:'Hyphen ( - )'},{z:'Git-phei',e:'Dash ( _ )'},{z:'Git-awn',e:'Slash ( / )'},{z:'Kual / Umtuam',e:'Brackets ( )'},
+            ] },
+        ],
       },
       2: {
         title: "Proverbs (Paunak)",
         subtitle: "Study Zomi proverbs — their literal meaning, deeper wisdom, and use in speech and writing.",
         badge: "Lesson 2 · Proverbs",
-        tabs: ['Proverbs A-M', 'Proverbs N-Z', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Proverbs A-M', type: 'proverbs', title: 'Paunak — Proverbs (A–M)',
+            items: [
+              {z:'Ak a pute in sangnaupang note a it hi.',e:'Like a mother hen loving her chicks (unconditional love).'},
+              {z:'Beng zong kim citciat tangzang kiguang.',e:'Even a basket, when full, finds its place. (Wisdom gains recognition when complete.)'},
+              {z:'Kamsiam siallei sang, kamsia sial liau.',e:'A wise speaker gains a cow; a foolish one loses cattle. (Words have consequences.)'},
+              {z:'Kawl zong tuidamin kiho.',e:'Even a worm knows to swim in water. (Everyone knows their own element.)'},
+              {z:'Kom Kim zong tapasal sagih neisa nawkik.',e:'Even a basket has had seven husbands again. (The seemingly impossible can repeat.)'},
+              {z:'Lam nai tawn nuam behiang kum kua-a tung lo.',e:'A pleasant path not walked regularly takes years to reach. (Consistency matters.)'},
+              {z:'Leii leh ha zong kipet.',e:'Even iron and bone can break. (Even the strongest have limits.)'},
+              {z:'Meima lo-ah tho, tu lo.',e:"Don't rise without fire, don't stand without reason. (Act purposefully.)"},
+            ] },
+          { name: 'Proverbs N-Z', type: 'proverbs', title: 'Paunak — Proverbs (N–Z)',
+            items: [
+              {z:'Mihing leh papo.',e:'A person and a pot (life is as fragile as pottery).'},
+              {z:'Sial vom leh sial vom kiingai.',e:'Cattle of the same kind graze together. (Like attracts like.)'},
+              {z:'Suangpi suangneu in thek.',e:'A great tree is felled by a small axe. (Small things overcome great ones.)'},
+              {z:'Thupha in kongbiang kan lo, thusia in mual kua khum.',e:"Good words don't knock at the gate; bad words pile up on the hilltop. (Bad news spreads faster.)"},
+              {z:'Va-ak cingkam sakhau taw-ah kikuah lo.',e:"The crow on the strong branch doesn't fear the axe. (Security in strength.)"},
+              {z:'Zawlthu kalah sial thawl.',e:"In a close friend's talk, a cow is put to shame. (In intimate friendship, great things become small.)"},
+              {z:'Zawng nek ngau in thalpu.',e:"The dog that eats ends up being fined. (Actions have consequences.)"},
+              {z:'Zuau in a khap lawn.',e:"A liar is caught eventually. (Truth always prevails.)"},
+            ] },
+          { name: 'Practice', type: 'practice', title: 'Proverb Quiz',
+            info: 'Match the proverb to its lesson. Tap to reveal.',
+            items: [
+              {z:'Sial vom leh sial vom kiingai.',e:'Like attracts like.'},
+              {z:'Suangpi suangneu in thek.',e:'Small things overcome great ones.'},
+              {z:'Zuau in a khap lawn.',e:'Liars are always caught.'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Proverbs',
+            items: [
+              {z:'Ak a pute in sangnaupang...',e:'Mother hen loving her chicks — unconditional love'},
+              {z:'Kamsiam siallei sang...',e:'Wise words gain a cow; foolish ones lose cattle'},
+              {z:'Leii leh ha zong kipet.',e:'Even iron and bone can break'},
+              {z:'Sial vom leh sial vom kiingai.',e:'Like attracts like'},
+              {z:'Suangpi suangneu in thek.',e:'A great tree felled by a small axe'},
+              {z:'Thupha in kongbiang kan lo...',e:"Good words don't spread; bad news does"},
+              {z:'Va-ak cingkam sakhau...',e:'Security comes from strength'},
+              {z:'Zuau in a khap lawn.',e:'A liar is always caught'},
+              {z:'Mihing leh papo.',e:'Life is as fragile as pottery'},
+              {z:'Zawng nek ngau in thalpu.',e:'Actions have consequences'},
+              {z:'Lam nai tawn nuam...',e:'Consistency is key to reaching a goal'},
+              {z:'Meima lo-ah tho, tu lo.',e:'Act only with purpose'},
+            ] },
+        ],
       },
       3: {
         title: "Cultural Texts",
         subtitle: "Read authentic Zomi cultural texts — history, customs, kinship, and traditional ceremonies.",
         badge: "Lesson 3 · Culture",
-        tabs: ['Zo History', 'Customs', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Zo History', type: 'text-blocks', title: 'Zomite Pianna Thu — Zo History',
+            blocks: [
+              { html: 'The Zo people originally share heritage with the Mongolian peoples. Their ancestors migrated from the Sengam region (Mongolia), living in cave shelters called <strong>KHUL</strong> during their journey.' },
+              { html: 'Two ancient kingdoms shaped Zo identity: the <strong>Zo Kingdom</strong> (BC 1027–265) and the <strong>Chin Kingdom</strong> (BC 221–207). The descendants spread across Myanmar, India, and Bangladesh.' },
+              { html: 'Despite different clan names — Yaw, Asho, Cho, Zo — all share the same <strong>Zo ancestry</strong> from the original Mongolian homeland.' },
+            ],
+            items: [
+              {z:'Zomite',e:'Zo people (collective name)'},{z:'Zogam',e:'Zo homeland'},
+              {z:'Sengam',e:'Mongolia (ancestral origin)'},{z:'Khul',e:'Cave shelter (ancient dwelling)'},
+            ] },
+          { name: 'Customs', type: 'text-blocks', title: 'Zo Customs — Khuazindo & Pawi',
+            blocks: [
+              { html: '<strong>Khuado (Communal Feast)</strong>: A major village feast. On the day before (Meilah Satni), fires are lit in the fields to drive away evil spirits. Young men and women gather and celebrate with music (khuang, zam, daktal).' },
+              { html: '<strong>Khuai Aihna (Chicken Divination)</strong>: Before important work, a chicken is sacrificed. Its leg bones are examined to divine the future — health, harvest, success.' },
+              { html: '<strong>Innsung Phamawh (Kinship System)</strong>: Zomite have a detailed 12-role kinship system — Thalloh, Zinkhak, Pu, Tanupi, Tanu nauzaw, and more — each with specific duties at feasts and ceremonies.' },
+            ] },
+          { name: 'Practice', type: 'vocab-list', title: 'Cultural Vocabulary',
+            items: [
+              {z:'Khuazindo',e:'communal feast / village celebration'},{z:'Meilah satni',e:'fire-lighting day before a feast'},
+              {z:'Khuai aihna',e:'chicken divination'},{z:'Pawi',e:'traditional feast/festival'},
+              {z:'Thalloh',e:'primary kinship role (male line)'},{z:'Zinkhak',e:'secondary kinship role (male line)'},
+              {z:'Sungpi',e:'kinship role (female line)'},{z:'Zawl',e:'close friend / best friend'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Cultural Texts',
+            items: [
+              {z:'Khuazindo',e:'communal feast / village celebration'},{z:'Meilah satni',e:'fire-lighting day before a feast'},
+              {z:'Khuai aihna',e:'chicken divination'},{z:'Pawi',e:'traditional feast/festival'},
+              {z:'Thalloh',e:'primary kinship role (male line)'},{z:'Sungpi',e:'kinship role (female line)'},
+              {z:'Zawl',e:'close friend / best friend'},{z:'Zomite',e:'the Zo people'},
+              {z:'Zogam',e:'Zo homeland'},{z:'Sengam',e:'Mongolia (ancestral origin)'},{z:'Khul',e:'cave shelter (ancient dwelling)'},
+            ] },
+        ],
       },
       4: {
         title: "Composition (Kampau Luanzia)",
         subtitle: "Learn the art of Zolai composition — letter writing, direct and indirect speech, and active/passive voice.",
         badge: "Lesson 4 · Composition",
-        tabs: ['Voice', 'Letter Writing', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Voice', type: 'vocab-list', title: 'Active & Passive Voice',
+            info: 'In Zolai, to form the <strong>Passive Voice</strong>, move the object to the front and add <strong>pen</strong> after it. The verb stays the same.',
+            items: [
+              {z:'Cingno in lengladei sung a phiat hi.',e:'Active: Cingno opens the window.'},
+              {z:'Lengladei sung pen, Cingno in a phiat hi.',e:'Passive: The window is opened by Cingno.'},
+              {z:'Lia in la khat a sa hi.',e:'Active: She sings a song.'},
+              {z:'La khat pen, Lia in a sa hi.',e:'Passive: A song is sung by her.'},
+            ] },
+          { name: 'Letter Writing', type: 'vocab-list', title: 'Direct & Indirect Speech',
+            info: '<strong>Direct Speech (Genbanga Genna)</strong>: Quote the exact words, inside quotation marks.<br><strong>Indirect Speech (Gensawnna)</strong>: Report what was said, with the quotation marks removed and verbs adjusted.<br><br><strong>Letter writing (Laikhak gelhzia)</strong>: Date → Salutation (Kong it pa/nu) → Body → Closing (Hong phawk den).',
+            items: [
+              {z:'Thangpi in, "Kei-in khual ka zin ding hi," a ci hi.',e:'Direct: Thangpi said, "I will travel."'},
+              {z:'Thangpi in, amah khualzin ding, a gen hi.',e:'Indirect: Thangpi said that he would travel.'},
+            ] },
+          { name: 'Practice', type: 'practice', title: 'Composition Practice',
+            info: 'Convert to passive voice. Tap to reveal.',
+            items: [
+              {z:'Taang in ticket te a khawm hi.',e:'Passive: Ticket te pen, Taang in a khawm hi.'},
+              {z:'Lia in la khat a sa ding hi.',e:'Passive: La khat pen, Lia in a sa ding hi.'},
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Composition',
+            items: [
+              {z:'A Sepna Thupisak',e:'Active Voice'},{z:'A Sep Thupisak',e:'Passive Voice'},
+              {z:'Genbanga Genna',e:'Direct Speech'},{z:'Gensawnna',e:'Indirect Speech'},
+              {z:'Kampau Luanzia',e:'Composition'},{z:'Laikhak gelhzia',e:'Letter writing'},
+              {z:'Kong it pa/nu',e:'Dear father/mother (salutation)'},{z:'Hong phawk den',e:'Please remember (closing)'},
+              {z:'Itna lianpi tawh',e:'With great love'},{z:'Lungdam un',e:'Thank you / we are glad'},
+            ] },
+        ],
       },
       5: {
         title: "Free Writing",
         subtitle: "Apply everything — write your own Zolai sentences, short paragraphs, and creative compositions.",
         badge: "Lesson 5 · Writing",
-        tabs: ['Word Lists', 'Vocabulary', 'Practice', 'Flashcards'],
+        tabs: [
+          { name: 'Word Lists', type: 'vocab-list', title: 'Grammar Terms — English & Zolai',
+            info: 'These are the key grammar terms from the Paunam Khenna text, useful for discussing language and writing in Zolai.',
+            items: [
+              {z:'Kammal zatte',e:'Vocabulary list'},{z:'Paunam khenna',e:'Grammar'},
+              {z:'Kampau luanzia',e:'Composition'},{z:'Laigelhzia',e:'Orthography (correct writing)'},
+              {z:'Laimal gawmzia',e:'Spelling'},{z:'Awsuah',e:'Pronunciation'},
+              {z:'Lailepna',e:'Punctuation'},{z:'Genbanga Genna',e:'Direct Speech'},
+              {z:'Gensawnna',e:'Indirect Speech'},{z:'A Sepna Thupisak',e:'Active Voice'},
+              {z:'A Sep Thupisak',e:'Passive Voice'},{z:'Hun lahkhiatna',e:'Tense'},
+            ] },
+          { name: 'Vocabulary', type: 'vocab-list', title: 'Advanced Vocabulary — Abstract & Cultural',
+            items: [
+              {z:'Angtang',e:'courage'},{z:'Cidamna',e:'health'},
+              {z:'Dikna',e:'justice/righteousness'},{z:'Hansanna',e:'success'},
+              {z:'Hauhna',e:'wealth'},{z:'Lungdamna',e:'happiness/joy'},
+              {z:'Pilna',e:'wisdom/education'},{z:'Suahtakna',e:'independence/freedom'},
+              {z:'Thukhunpi',e:'constitution/agreement'},{z:'Zomite',e:'the Zo people (collective)'},
+            ] },
+          { name: 'Practice', type: 'prompts', title: 'Free Writing Prompts',
+            info: "Try writing 2–3 Zolai sentences for each prompt below. Use what you've learned throughout all four lessons.",
+            items: [
+              'Describe your family using Zolai pronouns and possessives.',
+              'Write about what you did yesterday using Past tense.',
+              'Use 3 proverbs in sentences that relate to modern life.',
+              'Write a short letter (laikhak) to a friend inviting them to a feast.',
+              'Describe the Zomite Pianna Thu (Zo history) in 5 sentences.',
+            ] },
+          { name: 'Flashcards', type: 'flashcards', title: 'Flashcards — Free Writing',
+            items: [
+              {z:'Paunam khenna',e:'Grammar'},{z:'Kampau luanzia',e:'Composition'},{z:'Laigelhzia',e:'Orthography'},
+              {z:'Laimal gawmzia',e:'Spelling'},{z:'Awsuah',e:'Pronunciation'},{z:'Lailepna',e:'Punctuation'},
+              {z:'Hun lahkhiatna',e:'Tense'},{z:'Paunak',e:'Proverbs'},{z:'Kammal zatte',e:'Vocabulary list'},
+              {z:'Angtang',e:'courage'},{z:'Cidamna',e:'health'},{z:'Dikna',e:'justice'},
+              {z:'Hansanna',e:'success'},{z:'Lungdamna',e:'happiness'},{z:'Pilna',e:'wisdom/education'},
+              {z:'Suahtakna',e:'independence/freedom'},
+            ] },
+        ],
       },
     },
     vocabData: [
@@ -1530,7 +1961,7 @@ const levelData = {
 // ── APPLY CUSTOM STRUCTURE FROM ADMIN ──
 (function applyCustomStructure() {
   try {
-    const saved = JSON.parse(localStorage.getItem('zolai_structure') || '{}');
+    const saved = JSON.parse(localStorage.getItem(KEYS.structure) || '{}');
     for (const lid of (saved._deletedLevels || [])) delete levelData[lid];
     for (const [lid, lvl] of Object.entries(saved)) {
       if (lid === '_deletedLevels') continue;
@@ -1609,7 +2040,7 @@ function renderVocabulary(c) {
   const ld = levelData[currentLevel];
   const adminVocab = (function() {
     try {
-      const raw = localStorage.getItem('zolai_admin_data');
+      const raw = localStorage.getItem(KEYS.adminData);
       if (!raw) return null;
       const d = JSON.parse(raw)?.[currentLevel]?.['_vocab'];
       return (d && d.length > 0) ? d : null;
@@ -1620,10 +2051,11 @@ function renderVocabulary(c) {
   const cats = vocabData.map(d => d.category);
   const totalWords = vocabData.reduce((n, d) => n + d.words.length, 0);
 
+  const vocabLabel = getFeatureFlags().labels?.vocabulary || SECTIONS.vocabulary.defaultLabel;
   c.innerHTML = `
     <div class="lesson-header">
       <div class="lesson-badge">${ld.icon} ${ld.name} — ${ld.zolai}</div>
-      <div class="lesson-title">Vocabulary</div>
+      <div class="lesson-title">${vocabLabel}</div>
       <div class="lesson-subtitle">All ${totalWords} vocabulary words for the ${ld.name} level. Search or filter by category.</div>
     </div>
     <div class="card" style="margin-bottom:16px">
@@ -1686,11 +2118,11 @@ function selectLevel(levelId) {
   try {
     const ld = levelData[levelId];
     if (!ld) {
-      localStorage.removeItem('zolai_selected_level');
+      localStorage.removeItem(KEYS.selectedLevel);
       return;
     }
     currentLevel = levelId;
-    localStorage.setItem('zolai_selected_level', levelId);
+    localStorage.setItem(KEYS.selectedLevel, levelId);
 
     // Apply theme
     document.body.setAttribute('data-level', levelId);
@@ -1731,7 +2163,7 @@ function selectLevel(levelId) {
 function goLevelSelector() {
   document.getElementById('levelSelector').style.display = 'flex';
   document.getElementById('mainApp').style.display = 'none';
-  localStorage.removeItem('zolai_selected_level');
+  localStorage.removeItem(KEYS.selectedLevel);
   currentLevel = null;
   document.body.removeAttribute('data-level');
   state.completedLessons.clear();
@@ -1757,9 +2189,10 @@ function renderSidebarLessons(levelId) {
     </button>`;
   }
   if (isGlobalEnabled('vocabulary')) {
+    const vocabLabel = getFeatureFlags().labels?.vocabulary || SECTIONS.vocabulary.defaultLabel;
     html += `<button class="nav-item" onclick="showView('vocabulary')" id="nav-vocab">
       <span class="nav-icon">◈</span>
-      <span class="nav-label">Vocabulary</span>
+      <span class="nav-label">${vocabLabel}</span>
     </button>`;
   }
   nav.innerHTML = html;
@@ -1771,7 +2204,8 @@ function renderSidebarLessons(levelId) {
     mlpHtml += `<button class="mlp-btn" onclick="showLesson(${i}); closeLessonPicker()">${i} · ${ld.lessons[i].title}</button>`;
   }
   if (isGlobalEnabled('vocabulary')) {
-    mlpHtml += `<button class="mlp-btn" onclick="showView('vocabulary'); closeLessonPicker()">◈ Vocabulary</button>`;
+    const vocabLabel = getFeatureFlags().labels?.vocabulary || SECTIONS.vocabulary.defaultLabel;
+    mlpHtml += `<button class="mlp-btn" onclick="showView('vocabulary'); closeLessonPicker()">◈ ${vocabLabel}</button>`;
   }
   mlp.innerHTML = `<button class="mlp-btn mlp-change-level" onclick="goLevelSelector(); closeLessonPicker()">← Change Level</button>` + mlpHtml;
   state.totalLessons = enabledCount || sortedNums.length;
@@ -1781,7 +2215,7 @@ function renderSidebarLessons(levelId) {
 function updateQuizBank(levelId) {
   const adminQuiz = (function() {
     try {
-      const raw = localStorage.getItem('zolai_admin_data');
+      const raw = localStorage.getItem(KEYS.adminData);
       if (!raw) return null;
       const d = JSON.parse(raw)?.[levelId]?.['_quiz'];
       return (d && d.length > 0) ? d : null;
@@ -1822,6 +2256,8 @@ function showLesson(n) {
   c.className = 'content fade-in';
   renderLevelLesson(n, c, 0);
   trackVisit(currentLevel, n);
+  closeLessonPicker();
+  setMobileNav('mnav-lessons');
 }
 
 function renderLevelLesson(n, c, tabIdx) {
@@ -1869,7 +2305,7 @@ function renderLevelLesson(n, c, tabIdx) {
     </div>
 
     <div class="tabs" id="lessonTabs">
-      ${enabledTabs.map(({ t, i }) => `<button class="tab${i===tabIdx?' active':''}" onclick="renderLevelLesson(${n},document.getElementById('mainContent'),${i})">${t}</button>`).join('')}
+      ${enabledTabs.map(({ t, i }) => `<button class="tab${i===tabIdx?' active':''}" onclick="renderLevelLesson(${n},document.getElementById('mainContent'),${i})">${typeof t === 'object' ? t.name : t}</button>`).join('')}
     </div>
 
     <div id="tabContent">${content}${renderAdminMedia(currentLevel, n, tabIdx)}</div>
@@ -1885,7 +2321,7 @@ function renderLevelLesson(n, c, tabIdx) {
 // ── ADMIN MEDIA OVERLAY ──
 function renderAdminMedia(level, lesson, tabIdx) {
   try {
-    const raw = localStorage.getItem('zolai_admin_data');
+    const raw = localStorage.getItem(KEYS.adminData);
     if (!raw) return '';
     const td = JSON.parse(raw)?.[level]?.[lesson]?.[tabIdx];
     if (!td) return '';
@@ -1900,7 +2336,7 @@ function renderAdminMedia(level, lesson, tabIdx) {
 // ── ADMIN ITEM AUDIO — applied after innerHTML is set ──
 function applyAdminItemAudio(level, lesson, tabIdx) {
   try {
-    const raw = localStorage.getItem('zolai_admin_data');
+    const raw = localStorage.getItem(KEYS.adminData);
     if (!raw) return;
     const items = JSON.parse(raw)?.[level]?.[lesson]?.[tabIdx]?.items;
     if (!items || !Object.keys(items).length) return;
@@ -1936,18 +2372,96 @@ function applyAdminItemAudio(level, lesson, tabIdx) {
 // ── VISIT TRACKING ──
 function trackVisit(level, lesson) {
   try {
-    const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
+    const log = JSON.parse(localStorage.getItem(KEYS.visitLog) || '[]');
     log.push({ ts: Date.now(), level, lesson });
     if (log.length > 500) log.splice(0, log.length - 500);
-    localStorage.setItem('zolai_visit_log', JSON.stringify(log));
+    localStorage.setItem(KEYS.visitLog, JSON.stringify(log));
   } catch(e) {}
   if (window.gtag) gtag('event', 'lesson_view', { level_name: level, lesson_num: lesson });
 }
 
+// ── TAB RENDERER REGISTRY — add new tab types here, never touch per-lesson code ──
+const TAB_RENDERERS = {
+  'vocab-list': (tab) => {
+    const rows = tab.items.map(w =>
+      `<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`
+    ).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${tab.info ? `<div class="info-box">${tab.info}</div>` : ''}${rows}</div>`;
+  },
+
+  'grid': (tab) => {
+    const cells = tab.items.map(item => {
+      if (typeof item === 'object' && item.s !== undefined) {
+        return `<div class="syllable-cell highlighted" style="padding:16px 8px"><div style="font-size:22px;font-weight:700;color:var(--gold-light)">${item.s}</div><div style="font-size:10px;color:var(--text-dim);margin-top:4px">${item.n}</div></div>`;
+      }
+      return `<div class="syllable-cell${tab.highlight ? ' highlighted' : ''}" ${tab.toggleable ? 'data-toggle="highlight"' : ''}>${item}</div>`;
+    }).join('');
+    const gridStyle = tab.columns ? `style="grid-template-columns:repeat(${tab.columns},1fr)"` : '';
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${tab.info ? `<div class="info-box">${tab.info}</div>` : ''}<div class="syllable-grid" ${gridStyle}>${cells}</div></div>`;
+  },
+
+  'sentences': (tab) => {
+    const rows = tab.items.map(s => `<div class="vocab-row"><span class="vocab-zo">${s}</span></div>`).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${tab.info ? `<div class="info-box">${tab.info}</div>` : ''}${rows}</div>`;
+  },
+
+  'practice': (tab) => {
+    const rows = tab.items.map(w =>
+      `<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${w.e}</span></div>`
+    ).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${tab.info ? `<div class="info-box">${tab.info}</div>` : ''}${rows}<div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
+  },
+
+  'type-cards': (tab) => {
+    const cards = tab.items.map(t =>
+      `<div style="margin-bottom:16px;padding:16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:2px">${t.name}</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${t.en}</div><div style="font-size:13px;color:var(--text-muted)">${t.desc}</div></div>`
+    ).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${cards}</div>`;
+  },
+
+  'text-blocks': (tab) => {
+    const blocks = tab.blocks.map(b =>
+      `${b.title ? `<div style="font-weight:600;margin-bottom:6px">${b.title}</div>` : ''}<div class="info-box">${b.html}</div>`
+    ).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${blocks}${tab.items ? tab.items.map(w => `<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('') : ''}</div>`;
+  },
+
+  'proverbs': (tab) => {
+    const items = tab.items.map(p =>
+      `<div style="margin-bottom:14px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:6px;font-size:14px">${p.z}</div><div style="font-size:12.5px;color:var(--text-muted)">${p.e}</div></div>`
+    ).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${items}</div>`;
+  },
+
+  'markup-cards': (tab) => {
+    const cards = tab.items.map(m =>
+      `<div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:600;color:var(--gold-light)">${m.z}</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)">${m.e}</span></div>${m.desc ? `<div style="font-size:12.5px;color:var(--text-muted)">${m.desc}</div>` : ''}</div>`
+    ).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${tab.info ? `<div class="info-box">${tab.info}</div>` : ''}${cards}</div>`;
+  },
+
+  'multi-section': (tab) => {
+    const sections = tab.sections.map((sec, idx) => {
+      const rows = sec.items.map(w => `<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('');
+      return `${sec.heading ? `<div style="font-weight:600;color:var(--gold-light);margin:${idx > 0 ? '16px' : '0'} 0 8px;font-size:13px">${sec.heading}</div>` : ''}${rows}`;
+    }).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${tab.info ? `<div class="info-box">${tab.info}</div>` : ''}${sections}</div>`;
+  },
+
+  'prompts': (tab) => {
+    const items = tab.items.map((p, i) =>
+      `<div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="font-size:11px;color:var(--gold);font-family:'DM Mono',monospace">PROMPT ${i+1}</span><div style="font-size:13.5px;color:var(--text);margin-top:4px">${p}</div></div>`
+    ).join('');
+    return `<div class="card">${tab.title ? `<div class="card-title">${tab.title}</div>` : ''}${tab.info ? `<div class="info-box">${tab.info}</div>` : ''}${items}</div>`;
+  },
+
+  'flashcards': (tab) => renderFlashcards(tab.items, tab.title || 'Flashcards'),
+};
+
 // ── CONTENT OVERRIDE (admin-editable rows) ──
 function getContentOverride(level, lesson, tabIdx) {
   try {
-    const raw = localStorage.getItem('zolai_admin_data');
+    const raw = localStorage.getItem(KEYS.adminData);
     if (!raw) return null;
     const rows = JSON.parse(raw)?.[level]?.[lesson]?.[tabIdx]?.contentRows;
     return (rows && rows.length > 0) ? rows : null;
@@ -1955,7 +2469,8 @@ function getContentOverride(level, lesson, tabIdx) {
 }
 
 function renderOverrideContent(n, tabIdx, rows) {
-  const tabTitle = levelData[currentLevel]?.lessons[n]?.tabs?.[tabIdx] || '';
+  const tabDef = levelData[currentLevel]?.lessons[n]?.tabs?.[tabIdx];
+  const tabTitle = (tabDef && typeof tabDef === 'object') ? tabDef.name : (tabDef || '');
   const items = rows.map(r =>
     r.e
       ? `<div class="vocab-row"><span class="vocab-zo">${r.z}</span><span class="vocab-en">${r.e}</span></div>`
@@ -1971,10 +2486,15 @@ function renderLevelLessonTab(n, tabIdx) {
     const override = getContentOverride(currentLevel, n, tabIdx);
     if (override) return renderOverrideContent(n, tabIdx, override);
   }
-  if (currentLevel === 'beginner') return renderBeginnerTab(n, tabIdx);
+  const tab = levelData[currentLevel]?.lessons[n]?.tabs?.[tabIdx];
+  if (tab && typeof tab === 'object' && tab.type) {
+    const renderer = TAB_RENDERERS[tab.type];
+    if (renderer) return renderer(tab);
+    return `<div class="card"><div class="card-title">Unknown tab type: ${esc(tab.type)}</div></div>`;
+  }
+  // Legacy fallback for string-keyed tabs (beginner/elementary still use old functions while migrating)
+  if (currentLevel === 'beginner')   return renderBeginnerTab(n, tabIdx);
   if (currentLevel === 'elementary') return renderElementaryTab(n, tabIdx);
-  if (currentLevel === 'intermediate') return renderIntermediateTab(n, tabIdx);
-  if (currentLevel === 'advanced') return renderAdvancedTab(n, tabIdx);
   return '';
 }
 
@@ -2096,106 +2616,6 @@ function renderElementaryFlashcards(n) {
   return renderFlashcards(data[n] || [], 'Flashcards — ' + (titles[n] || ''));
 }
 
-// ── INTERMEDIATE FLASHCARD DATA ──
-function renderIntermediateFlashcards(n) {
-  const titles = ['','Nouns','Verbs','Adjectives','Pronouns','Tense'];
-  const data = {
-    1: [
-      {z:'Neihkhawm min',e:'Common Noun'},{z:'Neihtuam min',e:'Proper Noun'},
-      {z:'Lawnmawh min',e:'Abstract Noun'},{z:'Honlawhna min',e:'Collective Noun'},
-      {z:'mi',e:'person (common noun)'},{z:'Tedim',e:'city name (proper noun)'},
-      {z:'cidamna',e:'health (abstract noun)'},{z:'galkapte',e:'soldiers (collective noun)'},
-      {z:'innkuan',e:'family'},{z:'laibu',e:'book'},{z:'sang',e:'school'},
-      {z:'lungdamna',e:'happiness (abstract noun)'},{z:'dikna',e:'justice (abstract noun)'},
-      {z:'naupangte',e:'children (collective noun)'},
-    ],
-    2: [
-      {z:'A thuak kisam sepna',e:'Transitive Verb'},{z:'A thuak kullo sepna',e:'Intransitive Verb'},
-      {z:'A cinglo sepna',e:'Incomplete/Helping Verb'},
-      {z:'ne',e:'eat (transitive)'},{z:'tai',e:'run (intransitive)'},{z:'om',e:'be/stay/exist'},
-      {z:'laam',e:'dance (intransitive)'},{z:'ahi hi',e:'is/am/are (helping verb)'},
-      {z:'khak',e:'knock/strike (transitive)'},{z:'sa',e:'sing'},{z:'sim',e:'read/study'},
-      {z:'Bawng in lopa a ne hi.',e:'The cow eats grass. (transitive)'},{z:'Thangpu a tai hi.',e:'Thangpu runs. (intransitive)'},
-    ],
-    3: [
-      {z:'Phacia lak pianzia',e:'Quality Adjective'},{z:'Phazah lak pianzia',e:'Quantity Adjective'},
-      {z:'Amalzah lak pianzia',e:'Number Adjective'},{z:'Lahkhiatna lak pianzia',e:'Demonstrative Adjective'},
-      {z:'Dotna lak pianzia',e:'Interrogative Adjective'},
-      {z:'Neihna lak pianzia',e:'Possessive Adjective'},
-      {z:'hoih',e:'good/beautiful'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},
-      {z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},
-      {z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'},
-      {z:'tampi',e:'many (quantity adj.)'},{z:'hih',e:'this (demonstrative)'},{z:'koi',e:'which (interrogative)'},
-    ],
-    4: [
-      {z:'Kei',e:'I (1st person sg.)'},{z:'Nang',e:'You (2nd person sg.)'},{z:'Taang',e:'He (masc.)'},
-      {z:'Lia',e:'She (fem.)'},{z:'Amah',e:'He/She/It (general)'},{z:'Eite',e:'We (1st pl.)'},
-      {z:'Note',e:'You (2nd pl.)'},{z:'Amaute',e:'They (3rd pl.)'},
-      {z:'ka',e:'my (possessive adj.)'},{z:'na',e:'your'},{z:"taang'",e:"his"},{z:"lia'",e:"her"},
-      {z:'ih',e:'our'},{z:"amau'",e:'their'},{z:'kei a',e:'mine (possessive pro.)'},{z:'nang a',e:'yours'},
-    ],
-    5: [
-      {z:'verb + hi',e:'Simple Present'},{z:'verb + laitak hi',e:'Present Continuous'},
-      {z:'verb + khinzo hi',e:'Present Perfect'},{z:'verb + khin hi',e:'Simple Past'},
-      {z:'verb + khit laitak hi',e:'Past Continuous'},{z:'verb + khinzota hi',e:'Past Perfect'},
-      {z:'verb + ding hi',e:'Simple Future'},{z:'verb + ding laitak hi',e:'Future Continuous'},
-      {z:'verb + khinzo tading hi',e:'Future Perfect'},
-      {z:'Thangpu a tai hi.',e:'Thangpu runs. (Simple Present)'},{z:'Thangpu a tai khin hi.',e:'Thangpu ran. (Simple Past)'},
-      {z:'Ka pai ding hi.',e:'I will go. (Simple Future)'},
-    ],
-  };
-  return renderFlashcards(data[n] || [], 'Flashcards — ' + (titles[n] || ''));
-}
-
-// ── ADVANCED FLASHCARD DATA ──
-function renderAdvancedFlashcards(n) {
-  const titles = ['','Punctuation','Proverbs','Cultural Texts','Composition','Free Writing'];
-  const data = {
-    1: [
-      {z:'Husanna',e:'Comma ( , )'},{z:'Ngaklang',e:'Semi-colon ( ; )'},{z:'Ngakna',e:'Colon ( : )'},
-      {z:'Tawpna',e:'Full stop ( . )'},{z:'Dotna',e:'Question mark ( ? )'},{z:'Phawnna',e:'Exclamation mark ( ! )'},
-      {z:'Kamhonna',e:'Quotation marks ( " " )'},{z:"Neihsa lak / Tanglak",e:"Apostrophe ( ' )"},
-      {z:'Thekna',e:'Hyphen ( - )'},{z:'Git-phei',e:'Dash ( _ )'},{z:'Git-awn',e:'Slash ( / )'},{z:'Kual / Umtuam',e:'Brackets ( )'},
-    ],
-    2: [
-      {z:'Ak a pute in sangnaupang...',e:'Mother hen loving her chicks — unconditional love'},
-      {z:'Kamsiam siallei sang...',e:'Wise words gain a cow; foolish ones lose cattle'},
-      {z:'Leii leh ha zong kipet.',e:'Even iron and bone can break'},
-      {z:'Sial vom leh sial vom kiingai.',e:'Like attracts like'},
-      {z:'Suangpi suangneu in thek.',e:'A great tree felled by a small axe'},
-      {z:'Thupha in kongbiang kan lo...',e:"Good words don't spread; bad news does"},
-      {z:'Va-ak cingkam sakhau...',e:'Security comes from strength'},
-      {z:'Zuau in a khap lawn.',e:'A liar is always caught'},
-      {z:'Mihing leh papo.',e:'Life is as fragile as pottery'},
-      {z:'Zawng nek ngau in thalpu.',e:'Actions have consequences'},
-      {z:'Lam nai tawn nuam...',e:'Consistency is key to reaching a goal'},
-      {z:'Meima lo-ah tho, tu lo.',e:'Act only with purpose'},
-    ],
-    3: [
-      {z:'Khuazindo',e:'communal feast / village celebration'},{z:'Meilah satni',e:'fire-lighting day before a feast'},
-      {z:'Khuai aihna',e:'chicken divination'},{z:'Pawi',e:'traditional feast/festival'},
-      {z:'Thalloh',e:'primary kinship role (male line)'},{z:'Sungpi',e:'kinship role (female line)'},
-      {z:'Zawl',e:'close friend / best friend'},{z:'Zomite',e:'the Zo people'},
-      {z:'Zogam',e:'Zo homeland'},{z:'Sengam',e:'Mongolia (ancestral origin)'},{z:'Khul',e:'cave shelter (ancient dwelling)'},
-    ],
-    4: [
-      {z:'A Sepna Thupisak',e:'Active Voice'},{z:'A Sep Thupisak',e:'Passive Voice'},
-      {z:'Genbanga Genna',e:'Direct Speech'},{z:'Gensawnna',e:'Indirect Speech'},
-      {z:'Kampau Luanzia',e:'Composition'},{z:'Laikhak gelhzia',e:'Letter writing'},
-      {z:'Kong it pa/nu',e:'Dear father/mother (salutation)'},{z:'Hong phawk den',e:'Please remember (closing)'},
-      {z:'Itna lianpi tawh',e:'With great love'},{z:'Lungdam un',e:'Thank you / we are glad'},
-    ],
-    5: [
-      {z:'Paunam khenna',e:'Grammar'},{z:'Kampau luanzia',e:'Composition'},{z:'Laigelhzia',e:'Orthography'},
-      {z:'Laimal gawmzia',e:'Spelling'},{z:'Awsuah',e:'Pronunciation'},{z:'Lailepna',e:'Punctuation'},
-      {z:'Hun lahkhiatna',e:'Tense'},{z:'Paunak',e:'Proverbs'},{z:'Kammal zatte',e:'Vocabulary list'},
-      {z:'Angtang',e:'courage'},{z:'Cidamna',e:'health'},{z:'Dikna',e:'justice'},
-      {z:'Hansanna',e:'success'},{z:'Lungdamna',e:'happiness'},{z:'Pilna',e:'wisdom/education'},
-      {z:'Suahtakna',e:'independence/freedom'},
-    ],
-  };
-  return renderFlashcards(data[n] || [], 'Flashcards — ' + (titles[n] || ''));
-}
 
 // ─── BEGINNER CONTENT ───
 function renderBeginnerTab(n, tabIdx) {
@@ -2363,184 +2783,6 @@ function renderElementaryTab(n, tabIdx) {
   return '<div class="card"><div class="card-title">Coming soon</div></div>';
 }
 
-// ─── INTERMEDIATE CONTENT ─── (reuse existing lesson renderers for lessons 1-5 but mapped to grammar topics)
-function renderIntermediateTab(n, tabIdx) {
-  if (tabIdx === 3) return renderIntermediateFlashcards(n);
-  if (n === 1) {
-    // Nouns
-    const types = [{name:'Neihkhawm min',en:'Common Noun',desc:'Names shared by all of a kind: mi (person), khua (village), laibu (book).'},{name:'Neihtuam min',en:'Proper Noun',desc:'Unique names — always start with a capital letter: Tedim, Mang, Cingno.'},{name:'Lawnmawh min',en:'Abstract Noun',desc:'Invisible things felt or thought: cidamna (health), dikna (justice), lungdamna (joy).'},{name:'Honlawhna min',en:'Collective Noun',desc:'Names for groups: galkapte (soldiers), naupangte (children), minam (people).'}];
-    const examples = [{z:'Ka gang a honghawh hi.',e:'My friend came.'},{z:'Utong a zempha mahmah hi.',e:'The Utong bird is very beautiful.'},{z:'Zato ah zatui kila hi.',e:'There is medicine at the market.'},{z:'Ka nu dikna in, genzawh lohin lian hi.',e:"My mother's righteousness shines without ceasing."}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Four Types of Nouns (Minte)</div>
-      ${types.map(t=>`<div style="margin-bottom:16px;padding:16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:2px">${t.name}</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${t.en}</div><div style="font-size:13px;color:var(--text-muted)">${t.desc}</div></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Noun Examples in Sentences</div>
-      ${examples.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
-    return `<div class="card"><div class="card-title">Identify the Noun Type</div>
-      <div class="info-box">For each Zolai word, identify whether it's Common, Proper, Abstract, or Collective.</div>
-      ${[{z:'Tedim',e:'Proper Noun (city name)'},{z:'inn',e:'Common Noun (house)'},{z:'cidamna',e:'Abstract Noun (health)'},{z:'galkapte',e:'Collective Noun (soldiers)'},{z:'Mang',e:'Proper Noun (a name)'},{z:'lungdamna',e:'Abstract Noun (happiness)'}].map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${w.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Tap to reveal the answer.</div></div>`;
-  }
-  if (n === 2) {
-    const types = [{name:'A thuak kisam sepna',en:'Transitive Verb',desc:'Requires an object to complete meaning. "Bawng in lopa a ne hi" — the cow eats grass.'},{name:'A thuak kullo sepna',en:'Intransitive Verb',desc:'Complete without an object. "Thangpu a tai hi" — Thangpu runs.'},{name:'A cinglo / ahuh sepna',en:'Incomplete / Helping Verb',desc:'Needs a complement. "Naupangte a cidam hi" — Children are healthy.'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Three Types of Verbs (Sepna/Gamtatna)</div>
-      ${types.map(t=>`<div style="margin-bottom:16px;padding:16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:2px">${t.name}</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${t.en}</div><div style="font-size:13px;color:var(--text-muted)">${t.desc}</div></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Verb Examples</div>
-      ${[{z:'Bawng in lopa a ne hi.',e:'The cow eats grass. (transitive: ne = eat)'},{z:'Thangpu a tai hi.',e:'Thangpu runs. (intransitive: tai = run)'},{z:'Dimno a laam hi.',e:'Dimno dances. (intransitive: laam = dance)'},{z:'Naupangte a cidam hi.',e:'Children are healthy. (helping verb)'},{z:'Lianpi in kong a khak hi.',e:'Lianpi knocked the door. (transitive: khak = knock)'},{z:'Mangno in naupang khat ahi hi.',e:'Mangno is a child. (helping: ahi hi)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
-    return `<div class="card"><div class="card-title">Practice — Verb Types</div>
-      ${[{z:'Kei-in laibu khat nei-ing.',e:'Transitive (nei = have; object = laibu)'},{z:'Ni a taang hi.',e:'Intransitive (taang = shine; no object)'},{z:'Amah ka tanu ahi hi.',e:'Helping verb (ahi hi = is)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
-  }
-  if (n === 3) {
-    const types = [{name:'Phacia lak pianzia',en:'Quality Adjective',desc:'Describes qualities: hoih (good), sau (tall), gol (round), thau (heavy).'},{name:'Phazah lak pianzia',en:'Quantity Adjective',desc:'Describes amounts: tampi (many), tawmkha (few), beek (all).'},{name:'Amalzah lak pianzia',en:'Number Adjective',desc:'Specific numbers: nga (five), sawmnih (twenty), giat (eight).'},{name:'Lahkhiatna lak pianzia',en:'Demonstrative Adjective',desc:'Points to specific things: hih (this), hua (that), tua (that).'},{name:'Dotna lak pianzia',en:'Interrogative Adjective',desc:'Asks about things: bang ci (what kind), koi (which), bang zah (how many).'},{name:'Neihna lak pianzia',en:'Possessive Adjective',desc:"Shows ownership: ka (my), na (your), taang' (his), lia' (her), ih (our), amau' (their)."}];
-    const comp = [{z:'hoih',e:'good'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},{z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},{z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Six Types of Adjectives (Pianzia)</div>
-      ${types.map(t=>`<div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:2px">${t.name}</div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${t.en}</div><div style="font-size:13px;color:var(--text-muted)">${t.desc}</div></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Comparison of Adjectives (Saikak/Tehkak)</div>
-      <div class="info-box">Add <strong>-zaw</strong> for Comparative (better), <strong>-pen</strong> for Superlative (best).</div>
-      ${comp.map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('')}</div>`;
-    return `<div class="card"><div class="card-title">Adjective Practice</div>
-      ${[{z:'A mah in, inn hoih khat a nei hi.',e:'hoih = quality adjective (good house)'},{z:'Ciinno in, pak tampi a nei hi.',e:'tampi = quantity adjective (many chickens)'},{z:'Hih tangvalpa in a thahat hi.',e:'hih = demonstrative adjective (this young man)'},{z:'Mangpu sangin Thangpu a hatzaw hi.',e:'hatzaw = comparative (stronger than Mangpu)'}].map(s=>`<div class="vocab-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
-  }
-  if (n === 4) {
-    const personal = [{z:'Kei',e:'I (1st person sg.)'},{z:'Nang',e:'You (2nd person sg.)'},{z:'Taang',e:'He (3rd person masc.)'},{z:'Lia',e:'She (3rd person fem.)'},{z:'Amah',e:'He/She/It (general)'},{z:'Eite',e:'We (1st person pl.)'},{z:'Note',e:'You (2nd person pl.)'},{z:'Amaute',e:'They (3rd person pl.)'}];
-    const poss = [{z:'ka',e:'my'},{z:'na',e:'your'},{z:"taang'",e:"his"},{z:"lia'",e:"her"},{z:'ih',e:'our'},{z:"amau'",e:'their'},{z:'kei a',e:'mine'},{z:'nang a',e:'yours'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Personal Pronouns (Mimalmintaang)</div>
-      <div class="info-box">Zolai distinguishes <strong>three persons</strong> and literary forms for he/she: Taang (he) and Lia (she). In everyday speech, 'Amah' is used for both.</div>
-      ${personal.map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Possessive Pronouns</div>
-      <div class="info-box">Possessive adjectives go before the noun (ka laibu = my book). Possessive pronouns stand alone (hih laibu in kei a hi = this book is mine).</div>
-      ${poss.map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('')}</div>`;
-    return `<div class="card"><div class="card-title">Pronoun Practice</div>
-      ${[{z:'Kei-in laibu khat nei-ing.',e:'I have a book. (Kei = I, subject)'},{z:'Hih in ka laibu ahi hi.',e:'This is my book. (ka = my)'},{z:'Hih laibu in kei a hi.',e:'This book is mine. (kei a = mine)'},{z:'Nang mipil khat na hi hi.',e:'You are a wise person. (Nang = you)'},{z:'Eite in inn khat nei hang.',e:'We have a house. (Eite = we)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
-  }
-  if (n === 5) {
-    const present = [{z:'Thangpu a tai hi.',e:'Thangpu runs. (Simple Present)'},{z:'Thangpu a tai laitak hi.',e:'Thangpu is running. (Present Continuous)'},{z:'Ka na pai khinzo hi.',e:'I have gone. (Present Perfect)'},{z:'Ka na paipai khinzo hi.',e:'I have been going. (Present Perfect Continuous)'}];
-    const past = [{z:'Thangpu a tai khin hi.',e:'Thangpu ran. (Simple Past)'},{z:'Thangpu a tai khit laitak hi.',e:'Thangpu was running. (Past Continuous)'},{z:'Ka na pai khinzota hi.',e:'I had gone. (Past Perfect)'},{z:'Ka na paipai khinzota hi.',e:'I had been going. (Past Perfect Continuous)'}];
-    const future = [{z:'Thangpu a tai ding hi.',e:'Thangpu will run. (Simple Future)'},{z:'Thangpu a tai ding laitak hi.',e:'Thangpu will be running. (Future Continuous)'},{z:'Ka pai khinzo tading hi.',e:'I will have gone. (Future Perfect)'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Tu Hun — Present Tense</div>
-      <div class="info-box">Present tenses in Zolai. Simple = base verb. Continuous = verb + laitak. Perfect = verb + khinzo. Perfect Continuous = verb doubled + khinzo.</div>
-      ${present.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">A Beisa Hun & Mailam Hun</div>
-      <div class="info-box">Past: add <strong>khin</strong> (simple), <strong>khit laitak</strong> (continuous), <strong>khinzota</strong> (perfect). Future: add <strong>ding hi</strong> (simple).</div>
-      <div style="font-weight:600;color:var(--gold-light);margin-bottom:8px;font-size:13px">Past Tense</div>
-      ${past.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}
-      <div style="font-weight:600;color:var(--gold-light);margin:16px 0 8px;font-size:13px">Future Tense</div>
-      ${future.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
-    return `<div class="card"><div class="card-title">Tense Practice</div>
-      <div class="info-box">Identify the tense of each sentence.</div>
-      ${[{z:'Ka pai ding hi.',e:'Simple Future (I will go)'},{z:'A tai khin hi.',e:'Simple Past (He ran)'},{z:'Ka na paipai khinzo hi.',e:'Present Perfect Continuous (I have been going)'},{z:'A om laitak hi.',e:'Present Continuous (He is staying)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
-  }
-  return '<div class="card"><div class="card-title">Coming soon</div></div>';
-}
-
-// ─── ADVANCED CONTENT ───
-function renderAdvancedTab(n, tabIdx) {
-  if (tabIdx === 3) return renderAdvancedFlashcards(n);
-  if (n === 1) {
-    const marks = [
-      {z:'Husanna',e:', comma',desc:'Used to separate clause elements, lists, and for clarity.'},
-      {z:'Ngaklang',e:'; semi-colon',desc:'Longer pause than comma; joins related independent clauses.'},
-      {z:'Ngakna',e:': colon',desc:'Introduces a list or explanation that follows.'},
-      {z:'Tawpna',e:'. full stop / period',desc:'Ends a complete sentence.'},
-      {z:'Dotna',e:'? question mark',desc:'Ends a question sentence.'},
-      {z:'Phawnna',e:'! exclamation mark',desc:'After exclamatory words and sentences.'},
-      {z:'Kamhonna / Kamkhakna',e:'" " quotation mark',desc:'Encloses direct speech (Genbanga Genna).'},
-      {z:'Neihsa lak / Tanglak',e:"' apostrophe",desc:"Shows possession: ka pa'sum = my father's money."},
-      {z:'Thekna',e:'- hyphen',desc:'Joins compound words and separates double vowels.'},
-      {z:'Git-phei',e:'_ dash',desc:'Used for a longer break or explanation mid-sentence.'},
-      {z:'Git-awn',e:'/ slash',desc:'Separates alternatives.'},
-      {z:'Kual / Umtuam',e:'( ) brackets',desc:'Encloses additional explanatory information.'},
-    ];
-    const rules = [{z:'Kill him, not let him go.',e:'Kill him — not: let him go. (comma changes meaning completely!)'},{z:'Na hehnepnakammalte hangin, ka lawmpa a lungdam hi; a lungsim nuamsak hi; a dahna zong beisak hi.',e:'Your encouraging words made my friend glad; comforted his heart; removed his sorrow. (semi-colons join related clauses)'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">12 Punctuation Marks (Lailepna)</div>
-      ${marks.map(m=>`<div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:600;color:var(--gold-light)">${m.z}</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)">${m.e}</span></div><div style="font-size:12.5px;color:var(--text-muted)">${m.desc}</div></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Punctuation Rules & Examples</div>
-      <div class="info-box">Correct punctuation can change the entire meaning of a sentence in Zolai, just as in English.</div>
-      ${rules.map(r=>`<div style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--text);margin-bottom:6px">${r.z}</div><div style="font-size:12.5px;color:var(--text-muted)">${r.e}</div></div>`).join('')}
-      <div class="info-box">The apostrophe (neihsa lak) shows possession: <strong>Taang'khedap</strong> = Taang's shoes.</div></div>`;
-    return `<div class="card"><div class="card-title">Practice — Add the Punctuation</div>
-      <div class="info-box">What punctuation is missing? Tap to reveal.</div>
-      ${[{z:'Lawm nang bang semsem na hia ___',e:'? (question mark — Dotna)'},{z:'Oh ___ Hong pai mahmah hi',e:'! (exclamation — Phawnna)'},{z:'Na hehnepnakammalte hangin ___ ka lungdam hi.',e:', (comma — Husanna)'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
-  }
-  if (n === 2) {
-    const provsAM = [
-      {z:'Ak a pute in sangnaupang note a it hi.',e:'Like a mother hen loving her chicks (unconditional love).'},
-      {z:'Beng zong kim citciat tangzang kiguang.',e:'Even a basket, when full, finds its place. (Wisdom gains recognition when complete.)'},
-      {z:'Kamsiam siallei sang, kamsia sial liau.',e:'A wise speaker gains a cow; a foolish one loses cattle. (Words have consequences.)'},
-      {z:'Kawl zong tuidamin kiho.',e:'Even a worm knows to swim in water. (Everyone knows their own element.)'},
-      {z:'Kom Kim zong tapasal sagih neisa nawkik.',e:'Even a basket has had seven husbands again. (The seemingly impossible can repeat.)'},
-      {z:'Lam nai tawn nuam behiang kum kua-a tung lo.',e:'A pleasant path not walked regularly takes years to reach. (Consistency matters.)'},
-      {z:'Leii leh ha zong kipet.',e:'Even iron and bone can break. (Even the strongest have limits.)'},
-      {z:'Meima lo-ah tho, tu lo.',e:"Don't rise without fire, don't stand without reason. (Act purposefully.)"},
-    ];
-    const provsNZ = [
-      {z:'Mihing leh papo.',e:'A person and a pot (life is as fragile as pottery).'},
-      {z:'Sial vom leh sial vom kiingai.',e:'Cattle of the same kind graze together. (Like attracts like.)'},
-      {z:'Suangpi suangneu in thek.',e:'A great tree is felled by a small axe. (Small things overcome great ones.)'},
-      {z:'Thupha in kongbiang kan lo, thusia in mual kua khum.',e:"Good words don't knock at the gate; bad words pile up on the hilltop. (Bad news spreads faster.)"},
-      {z:'Va-ak cingkam sakhau taw-ah kikuah lo.',e:"The crow on the strong branch doesn't fear the axe. (Security in strength.)"},
-      {z:'Zawlthu kalah sial thawl.',e:"In a close friend's talk, a cow is put to shame. (In intimate friendship, great things become small.)"},
-      {z:'Zawng nek ngau in thalpu.',e:"The dog that eats ends up being fined. (Actions have consequences.)"},
-      {z:'Zuau in a khap lawn.',e:"A liar is caught eventually. (Truth always prevails.)"},
-    ];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Paunak — Proverbs (A–M)</div>
-      ${provsAM.map(p=>`<div style="margin-bottom:14px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:6px;font-size:14px">${p.z}</div><div style="font-size:12.5px;color:var(--text-muted)">${p.e}</div></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Paunak — Proverbs (N–Z)</div>
-      ${provsNZ.map(p=>`<div style="margin-bottom:14px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><div style="font-weight:600;color:var(--gold-light);margin-bottom:6px;font-size:14px">${p.z}</div><div style="font-size:12.5px;color:var(--text-muted)">${p.e}</div></div>`).join('')}</div>`;
-    return `<div class="card"><div class="card-title">Proverb Quiz</div>
-      <div class="info-box">Match the proverb to its lesson. Tap to reveal.</div>
-      ${[{z:'Sial vom leh sial vom kiingai.',e:'Like attracts like.'},{z:'Suangpi suangneu in thek.',e:'Small things overcome great ones.'},{z:'Zuau in a khap lawn.',e:'Liars are always caught.'}].map(p=>`<div class="vocab-row"><span class="vocab-zo">${p.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${p.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
-  }
-  if (n === 3) {
-    const hist = `<div class="card"><div class="card-title">Zomite Pianna Thu — Zo History</div>
-      <div class="info-box">The Zo people originally share heritage with the Mongolian peoples. Their ancestors migrated from the Sengam region (Mongolia), living in cave shelters called <strong>KHUL</strong> during their journey.</div>
-      <div class="info-box">Two ancient kingdoms shaped Zo identity: the <strong>Zo Kingdom</strong> (BC 1027–265) and the <strong>Chin Kingdom</strong> (BC 221–207). The descendants spread across Myanmar, India, and Bangladesh.</div>
-      <div class="info-box">Despite different clan names — Yaw, Asho, Cho, Zo — all share the same <strong>Zo ancestry</strong> from the original Mongolian homeland.</div>
-      <div class="vocab-row"><span class="vocab-zo">Zomite</span><span class="vocab-en">Zo people (collective name)</span></div>
-      <div class="vocab-row"><span class="vocab-zo">Zogam</span><span class="vocab-en">Zo homeland</span></div>
-      <div class="vocab-row"><span class="vocab-zo">Sengam</span><span class="vocab-en">Mongolia (ancestral origin)</span></div>
-      <div class="vocab-row"><span class="vocab-zo">Khul</span><span class="vocab-en">Cave shelter (ancient dwelling)</span></div></div>`;
-    const customs = `<div class="card"><div class="card-title">Zo Customs — Khuazindo & Pawi</div>
-      <div class="info-box"><strong>Khuado (Communal Feast)</strong>: A major village feast. On the day before (Meilah Satni), fires are lit in the fields to drive away evil spirits. Young men and women gather and celebrate with music (khuang, zam, daktal).</div>
-      <div class="info-box"><strong>Khuai Aihna (Chicken Divination)</strong>: Before important work, a chicken is sacrificed. Its leg bones are examined to divine the future — health, harvest, success.</div>
-      <div class="info-box"><strong>Innsung Phamawh (Kinship System)</strong>: Zomite have a detailed 12-role kinship system — Thalloh, Zinkhak, Pu, Tanupi, Tanu nauzaw, and more — each with specific duties at feasts and ceremonies.</div></div>`;
-    if (tabIdx === 0) return hist;
-    if (tabIdx === 1) return customs;
-    return `<div class="card"><div class="card-title">Cultural Vocabulary</div>
-      ${[{z:'Khuazindo',e:'communal feast / village celebration'},{z:'Meilah satni',e:'fire-lighting day before a feast'},{z:'Khuai aihna',e:'chicken divination'},{z:'Pawi',e:'traditional feast/festival'},{z:'Thalloh',e:'primary kinship role (male line)'},{z:'Zinkhak',e:'secondary kinship role (male line)'},{z:'Sungpi',e:'kinship role (female line)'},{z:'Zawl',e:'close friend / best friend'}].map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('')}</div>`;
-  }
-  if (n === 4) {
-    const voice = [{z:'Cingno in lengladei sung a phiat hi.',e:'Active: Cingno opens the window.'},{z:'Lengladei sung pen, Cingno in a phiat hi.',e:'Passive: The window is opened by Cingno.'},{z:'Lia in la khat a sa hi.',e:'Active: She sings a song.'},{z:'La khat pen, Lia in a sa hi.',e:'Passive: A song is sung by her.'}];
-    const speech = [{z:'Thangpi in, "Kei-in khual ka zin ding hi," a ci hi.',e:'Direct: Thangpi said, "I will travel."'},{z:'Thangpi in, amah khualzin ding, a gen hi.',e:'Indirect: Thangpi said that he would travel.'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Active & Passive Voice</div>
-      <div class="info-box">In Zolai, to form the <strong>Passive Voice</strong>, move the object to the front and add <strong>pen</strong> after it. The verb stays the same.</div>
-      ${voice.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Direct & Indirect Speech</div>
-      <div class="info-box"><strong>Direct Speech (Genbanga Genna)</strong>: Quote the exact words, inside quotation marks.<br><strong>Indirect Speech (Gensawnna)</strong>: Report what was said, with the quotation marks removed and verbs adjusted.</div>
-      ${speech.map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Letter writing (Laikhak gelhzia): Start with date, then salutation (Kong it pa/nu), body, and closing (Hong phawk den).</div></div>`;
-    return `<div class="card"><div class="card-title">Composition Practice</div>
-      <div class="info-box">Convert to passive voice. Tap to reveal.</div>
-      ${[{z:'Taang in ticket te a khawm hi.',e:'Passive: Ticket te pen, Taang in a khawm hi.'},{z:'Lia in la khat a sa ding hi.',e:'Passive: La khat pen, Lia in a sa ding hi.'}].map(s=>`<div class="vocab-row"><span class="vocab-zo">${s.z}</span><span class="vocab-en" style="opacity:0;transition:opacity 0.3s;cursor:pointer" onclick="this.style.opacity=this.style.opacity==='1'?'0':'1'">${s.e}</span></div>`).join('')}
-      <div class="info-box" style="margin-top:12px">Tap to reveal.</div></div>`;
-  }
-  if (n === 5) {
-    const wordlist = [{z:'Kammal zatte',e:'Vocabulary list'},{z:'Paunam khenna',e:'Grammar'},{z:'Kampau luanzia',e:'Composition'},{z:'Laigelhzia',e:'Orthography (correct writing)'},{z:'Laimal gawmzia',e:'Spelling'},{z:'Awsuah',e:'Pronunciation'},{z:'Lailepna',e:'Punctuation'},{z:'Genbanga Genna',e:'Direct Speech'},{z:'Gensawnna',e:'Indirect Speech'},{z:'A Sepna Thupisak',e:'Active Voice'},{z:'A Sep Thupisak',e:'Passive Voice'},{z:'Hun lahkhiatna',e:'Tense'}];
-    const vocab = [{z:'Angtang',e:'courage'},{z:'Cidamna',e:'health'},{z:'Dikna',e:'justice/righteousness'},{z:'Hansanna',e:'success'},{z:'Hauhna',e:'wealth'},{z:'Lungdamna',e:'happiness/joy'},{z:'Pilna',e:'wisdom/education'},{z:'Suahtakna',e:'independence/freedom'},{z:'Thukhunpi',e:'constitution/agreement'},{z:'Zomite',e:'the Zo people (collective)'}];
-    if (tabIdx === 0) return `<div class="card"><div class="card-title">Grammar Terms — English & Zolai</div>
-      <div class="info-box">These are the key grammar terms from the Paunam Khenna text, useful for discussing language and writing in Zolai.</div>
-      ${wordlist.map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('')}</div>`;
-    if (tabIdx === 1) return `<div class="card"><div class="card-title">Advanced Vocabulary — Abstract & Cultural</div>
-      ${vocab.map(w=>`<div class="vocab-row"><span class="vocab-zo">${w.z}</span><span class="vocab-en">${w.e}</span></div>`).join('')}</div>`;
-    return `<div class="card"><div class="card-title">Free Writing Prompts</div>
-      <div class="info-box">Try writing 2–3 Zolai sentences for each prompt below. Use what you've learned throughout all four lessons.</div>
-      ${['Describe your family using Zolai pronouns and possessives.','Write about what you did yesterday using Past tense.','Use 3 proverbs in sentences that relate to modern life.','Write a short letter (laikhak) to a friend inviting them to a feast.','Describe the Zomite Pianna Thu (Zo history) in 5 sentences.'].map((p,i)=>`<div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)"><span style="font-size:11px;color:var(--gold);font-family:'DM Mono',monospace">PROMPT ${i+1}</span><div style="font-size:13.5px;color:var(--text);margin-top:4px">${p}</div></div>`).join('')}</div>`;
-  }
-  return '<div class="card"><div class="card-title">Coming soon</div></div>';
-}
-
 // ── OVERRIDE renderHome for level context ──
 function renderHome(c) {
   if (!currentLevel) { return; }
@@ -2550,7 +2792,7 @@ function renderHome(c) {
   c.innerHTML = `
     <div class="home-hero">
       <div class="lesson-badge">${ld.icon} ${ld.name} — ${ld.zolai}</div>
-      <div class="home-hero-title">Learn <em>Zolai</em><br>with Purpose.</div>
+      <div class="home-hero-title">${BRAND.heroTitle}</div>
       <div class="home-hero-sub">You are on the <strong>${ld.name}</strong> path. Complete all ${lessonCount} lessons to master this level, then try a harder one.</div>
       <button class="btn btn-primary" onclick="showLesson(${done < lessonCount ? done + 1 : 1})">
         ${done === 0 ? '→ Begin Level' : done < lessonCount ? '→ Continue Lesson ' + (done+1) : '→ Review Lessons'}
@@ -2662,7 +2904,7 @@ function renderLevelQuizResult() {
     quizPct: pct
   };
 
-  const hasFb = !!localStorage.getItem('zolai_firebase_url');
+  const hasFb = !!localStorage.getItem(KEYS.firebaseUrl);
   const submitBtn = hasFb
     ? `<button class="btn btn-outline" style="border-color:var(--gold-dim);color:var(--gold)"
          onclick="showSubmitModal(state.lastQuizResult)">&#127942; Submit Score</button>`
@@ -2712,17 +2954,17 @@ function updateXP() {
 function initializeApp() {
   // Track session start
   try {
-    const log = JSON.parse(localStorage.getItem('zolai_visit_log') || '[]');
+    const log = JSON.parse(localStorage.getItem(KEYS.visitLog) || '[]');
     log.push({ ts: Date.now(), type: 'session' });
     if (log.length > 500) log.splice(0, log.length - 500);
-    localStorage.setItem('zolai_visit_log', JSON.stringify(log));
+    localStorage.setItem(KEYS.visitLog, JSON.stringify(log));
   } catch(e) {}
 
   state.totalLessons = 5;
   state.currentQuizBank = null;
 
   // Restore previously selected level
-  const savedLevel = localStorage.getItem('zolai_selected_level');
+  const savedLevel = localStorage.getItem(KEYS.selectedLevel);
   if (savedLevel && levelData[savedLevel]) {
     selectLevel(savedLevel);
     return;
@@ -2756,11 +2998,12 @@ function escHtml(s) {
 }
 
 function renderLeaderboard(c) {
-  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  const fbUrl = localStorage.getItem(KEYS.firebaseUrl);
+  const lbLabel = getFeatureFlags().labels?.leaderboard || SECTIONS.leaderboard.defaultLabel;
   c.innerHTML = `
     <div class="lesson-header">
       <div class="lesson-badge">Global Rankings</div>
-      <div class="lesson-title">Leaderboard</div>
+      <div class="lesson-title">${lbLabel}</div>
       <div class="lesson-subtitle">Top learners across all levels. Complete a quiz to submit your score.</div>
     </div>
     <div id="lbContent" style="margin-top:16px">
@@ -2826,7 +3069,7 @@ function buildLbTable(entries) {
 }
 
 function showSubmitModal(result) {
-  if (!localStorage.getItem('zolai_firebase_url')) {
+  if (!localStorage.getItem(KEYS.firebaseUrl)) {
     alert('Leaderboard is not configured yet. Ask the admin to set up Firebase.');
     return;
   }
@@ -2863,7 +3106,7 @@ function closeSubmitModal() {
 function submitScore() {
   const name = (document.getElementById('submitNameInput').value || '').trim();
   if (!name) { document.getElementById('submitNameInput').focus(); return; }
-  const fbUrl = localStorage.getItem('zolai_firebase_url');
+  const fbUrl = localStorage.getItem(KEYS.firebaseUrl);
   if (!fbUrl) return;
   const payload = {
     name,
@@ -2897,3 +3140,14 @@ function submitScore() {
   });
 }
 
+// ── BRANDING INIT — populates static HTML elements from brand.js ──
+function initBranding() {
+  document.title = `${BRAND.appName} — ${BRAND.languageName} ${BRAND.appTagline}`;
+  const set = (id, html, prop = 'innerHTML') => { const el = document.getElementById(id); if (el) el[prop] = html; };
+  set('brandLogoMark',  BRAND.logoMark);
+  set('brandLogoTitle', BRAND.appName.replace(' ', '<br>'));
+  set('brandLogoSub',   BRAND.appTagline);
+  set('brandLsEyebrow', `${BRAND.appName} — ${BRAND.languageName} Language`);
+  set('brandLsSub',     `Select the level that best matches your current ${BRAND.languageName} knowledge. You can change levels anytime.`);
+}
+initBranding();
