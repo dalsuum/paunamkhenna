@@ -245,6 +245,286 @@ const CONTENT_MANIFEST = {
   },
 };
 
+// ── DEFAULT CONTENT FOR CRUD EDITORS ──
+const DEFAULT_VOCAB = {
+  beginner: [
+    { category: 'Greetings', words: [
+      {z:'Hallo / Dammaw', e:'Hello'},
+      {z:'Na dam hiam?', e:'Are you well?'},
+      {z:'Ka dam hi.', e:'I am well.'},
+      {z:'Lungdam mahmah hi.', e:'I am very glad.'},
+      {z:'Hong phawk den.', e:'Please remember us.'},
+      {z:'Na lawm it.', e:'Your loving friend.'},
+      {z:'Kong it pa/nu.', e:'Dear father / mother.'},
+      {z:'Ih kimuh lungdam un.', e:'We are glad to meet you.'},
+    ]},
+    { category: 'Nouns', words: [
+      {z:'mi', e:'person'}, {z:'inn', e:'house'}, {z:'lo', e:'field / farm'},
+      {z:'tui', e:'water'}, {z:'ni', e:'sun / day'}, {z:'zan', e:'night'},
+      {z:'sang', e:'school'}, {z:'gam', e:'country / land'}, {z:'khua', e:'village / town'},
+      {z:'nu', e:'mother'}, {z:'pa', e:'father'}, {z:'ta', e:'child'},
+      {z:'u', e:'elder sibling'}, {z:'nau', e:'younger sibling'},
+      {z:'laibu', e:'book'}, {z:'sum', e:'money'}, {z:'mawtaw', e:'car'},
+      {z:'vanleng', e:'airplane'}, {z:'an', e:'food / rice'}, {z:'lam', e:'road / way'},
+    ]},
+    { category: 'Verbs', words: [
+      {z:'pai', e:'go'}, {z:'ciah', e:'come / return'}, {z:'ne', e:'eat'},
+      {z:'dawn', e:'drink'}, {z:'om', e:'be / stay'}, {z:'tai', e:'run'},
+      {z:'sim', e:'read / study'}, {z:'gel', e:'write'}, {z:'sa', e:'sing'},
+      {z:'mu', e:'see'}, {z:'theih', e:'know'}, {z:'it', e:'love'},
+      {z:'dawng', e:'hear'}, {z:'ngaih', e:'think / remember'}, {z:'sep', e:'work'},
+      {z:'pia', e:'give'}, {z:'la', e:'take'}, {z:'lam', e:'walk'},
+      {z:'tu', e:'stand'}, {z:'lum', e:'sleep'},
+    ]},
+    { category: 'Particles', words: [
+      {z:'hi', e:'is / am / are (affirmative ending)'}, {z:'leh', e:'and'},
+      {z:'in', e:'subject marker'}, {z:'a', e:'3rd person subject marker'},
+      {z:'tawh', e:'with'}, {z:'ah', e:'at / in'}, {z:'panin', e:'from'},
+      {z:'nadingin', e:'for / in order to'}, {z:'napi-in', e:'although / even though'},
+      {z:'zong', e:'also / too'}, {z:'bek', e:'only / just'}, {z:'mahmah', e:'very / greatly'},
+      {z:'hiam', e:'question marker'}, {z:'ding hi', e:'will (future marker)'},
+    ]},
+    { category: 'Numbers', words: [
+      {z:'bem', e:'0'}, {z:'khat', e:'1'}, {z:'nih', e:'2'}, {z:'thum', e:'3'},
+      {z:'li', e:'4'}, {z:'nga', e:'5'}, {z:'guk', e:'6'}, {z:'sagih', e:'7'},
+      {z:'giat', e:'8'}, {z:'kua', e:'9'}, {z:'sawmkhat', e:'10'},
+      {z:'sawmnih', e:'20'}, {z:'zakhat', e:'100'}, {z:'tulkhat', e:'1,000'},
+      {z:'Nipi', e:'Sunday'}, {z:'Pizang', e:'Monday'}, {z:'Pithai', e:'Tuesday'},
+      {z:'Nilai', e:'Wednesday'}, {z:'Laizing', e:'Thursday'}, {z:'Laithai', e:'Friday'}, {z:'Nino', e:'Saturday'},
+    ]},
+  ],
+  elementary: [
+    { category: 'Sentence Structure', words: [
+      {z:'Laigual', e:'sentence'}, {z:'A sempa', e:'subject'},
+      {z:'A thu', e:'predicate'}, {z:'hi', e:'affirmative ending'},
+      {z:'kei / lo', e:'negation marker'}, {z:'hiam', e:'question marker'},
+      {z:'leh', e:'and (conjunction)'},
+    ]},
+    { category: 'Numbers', words: [
+      {z:'khat', e:'1'}, {z:'nih', e:'2'}, {z:'thum', e:'3'}, {z:'li', e:'4'}, {z:'nga', e:'5'},
+      {z:'guk', e:'6'}, {z:'sagih', e:'7'}, {z:'giat', e:'8'}, {z:'kua', e:'9'}, {z:'sawmkhat', e:'10'},
+      {z:'sawmnih', e:'20'}, {z:'sawmthum', e:'30'}, {z:'sawmli', e:'40'}, {z:'sawmnga', e:'50'},
+      {z:'zakhat', e:'100'}, {z:'zanga', e:'500'}, {z:'tulkhat', e:'1,000'}, {z:'awnkhat', e:'1,000,000'},
+      {z:'a khatna', e:'first (ordinal)'}, {z:'a nihna', e:'second'}, {z:'khatveina', e:'once'}, {z:'nihveina', e:'twice'},
+    ]},
+    { category: 'Time', words: [
+      {z:'Nipi', e:'Sunday'}, {z:'Pizang', e:'Monday'}, {z:'Pithai', e:'Tuesday'},
+      {z:'Nilai', e:'Wednesday'}, {z:'Laizing', e:'Thursday'}, {z:'Laithai', e:'Friday'}, {z:'Nino', e:'Saturday'},
+      {z:'Theinosihkha', e:'January'}, {z:'Tunkha', e:'February'}, {z:'Dota', e:'March'}, {z:'Dopi', e:'April'},
+      {z:'Zingkha', e:'May'}, {z:'Gamkha', e:'June'}, {z:'Tangsihkha', e:'July'}, {z:'Tangkha', e:'August'},
+      {z:'Phalkha', e:'September'}, {z:'Khuadokha', e:'October'}, {z:'Nokha', e:'November'}, {z:'Kaukha', e:'December'},
+      {z:'zingsang', e:'morning'}, {z:'nitak', e:'evening'}, {z:'zan', e:'night'},
+      {z:'tu ni', e:'today'}, {z:'zanin', e:'yesterday'}, {z:'taang', e:'tomorrow'},
+    ]},
+    { category: 'Articles', words: [
+      {z:'khat', e:'indefinite article — a / one'},
+      {z:'tua...pen', e:'definite article — the (topic)'},
+      {z:'tua...in', e:'definite article — the (agent / doer)'},
+      {z:'sakol khat', e:'a horse'}, {z:'laibu khat', e:'a book'},
+      {z:'Tua sakol pen', e:'the horse (as topic)'}, {z:'Tua sakol in', e:'the horse (as doer)'},
+    ]},
+    { category: 'Question Words', words: [
+      {z:'Kua?', e:'Who?'}, {z:'Bang?', e:'What?'}, {z:'Koi?', e:'Where?'},
+      {z:'Bang hunin?', e:'When?'}, {z:'Banghanghiam?', e:'Why?'},
+      {z:'Bangci?', e:'How?'}, {z:'Bang zah?', e:'How many?'},
+      {z:'Na min bang ci hiam?', e:'What is your name?'},
+      {z:'Koi pan hong pai na hia?', e:'Where are you from?'},
+    ]},
+  ],
+  intermediate: [
+    { category: 'Noun Types', words: [
+      {z:'Neihkhawm min', e:'Common Noun'}, {z:'Neihtuam min', e:'Proper Noun'},
+      {z:'Lawnmawh min', e:'Abstract Noun'}, {z:'Honlawhna min', e:'Collective Noun'},
+      {z:'inn', e:'house (common noun)'}, {z:'Tedim', e:'Tedim (proper noun)'},
+      {z:'cidamna', e:'health (abstract noun)'}, {z:'galkapte', e:'soldiers (collective noun)'},
+      {z:'lungdamna', e:'happiness (abstract noun)'}, {z:'dikna', e:'justice (abstract noun)'},
+      {z:'naupangte', e:'children (collective noun)'},
+    ]},
+    { category: 'Verb Types', words: [
+      {z:'A thuak kisam sepna', e:'Transitive Verb'},
+      {z:'A thuak kullo sepna', e:'Intransitive Verb'},
+      {z:'A cinglo sepna', e:'Helping / Incomplete Verb'},
+      {z:'ne', e:'eat (transitive)'}, {z:'tai', e:'run (intransitive)'},
+      {z:'laam', e:'dance (intransitive)'}, {z:'ahi hi', e:'is / am / are (helping verb)'},
+      {z:'khak', e:'knock (transitive)'}, {z:'om', e:'be / exist (intransitive)'},
+    ]},
+    { category: 'Adjective Types', words: [
+      {z:'Phacia lak pianzia', e:'Quality Adjective'},
+      {z:'Phazah lak pianzia', e:'Quantity Adjective'},
+      {z:'Amalzah lak pianzia', e:'Number Adjective'},
+      {z:'Lahkhiatna lak pianzia', e:'Demonstrative Adjective'},
+      {z:'Dotna lak pianzia', e:'Interrogative Adjective'},
+      {z:'Neihna lak pianzia', e:'Possessive Adjective'},
+      {z:'hoih / hoihzaw / hoihpen', e:'good / better / best'},
+      {z:'hat / hatzaw / hatpen', e:'strong / stronger / strongest'},
+      {z:'baih / baihzaw / baihpen', e:'far / farther / farthest'},
+      {z:'hih', e:'this (demonstrative)'}, {z:'koi', e:'which (interrogative)'}, {z:'tampi', e:'many (quantity)'},
+    ]},
+    { category: 'Pronouns', words: [
+      {z:'Kei', e:'I (1st person sg.)'}, {z:'Nang', e:'You (2nd person sg.)'},
+      {z:'Taang', e:'He (masc.)'}, {z:'Lia', e:'She (fem.)'},
+      {z:'Amah', e:'He / She / It (general)'}, {z:'Eite', e:'We (1st pl.)'},
+      {z:'Note', e:'You (2nd pl.)'}, {z:'Amaute', e:'They (3rd pl.)'},
+      {z:'ka', e:'my'}, {z:'na', e:'your'}, {z:"taang'", e:'his'},
+      {z:"lia'", e:'her'}, {z:'ih', e:'our'}, {z:"amau'", e:'their'},
+      {z:'kei a', e:'mine'}, {z:'nang a', e:'yours'},
+    ]},
+    { category: 'Tense Markers', words: [
+      {z:'verb + hi', e:'Simple Present'},
+      {z:'verb + laitak hi', e:'Present Continuous'},
+      {z:'verb + khinzo hi', e:'Present Perfect'},
+      {z:'verb + khin hi', e:'Simple Past'},
+      {z:'verb + khit laitak hi', e:'Past Continuous'},
+      {z:'verb + khinzota hi', e:'Past Perfect'},
+      {z:'verb + ding hi', e:'Simple Future'},
+      {z:'verb + ding laitak hi', e:'Future Continuous'},
+      {z:'verb + khinzo tading hi', e:'Future Perfect'},
+    ]},
+  ],
+  advanced: [
+    { category: 'Punctuation', words: [
+      {z:'Husanna', e:'Comma ( , )'}, {z:'Ngaklang', e:'Semi-colon ( ; )'},
+      {z:'Ngakna', e:'Colon ( : )'}, {z:'Tawpna', e:'Full stop ( . )'},
+      {z:'Dotna', e:'Question mark ( ? )'}, {z:'Phawnna', e:'Exclamation mark ( ! )'},
+      {z:'Kamhonna', e:'Quotation marks ( " " )'}, {z:"Neihsa lak / Tanglak", e:"Apostrophe ( ' )"},
+      {z:'Thekna', e:'Hyphen ( - )'}, {z:'Git-phei', e:'Dash ( _ )'},
+      {z:'Git-awn', e:'Slash ( / )'}, {z:'Kual / Umtuam', e:'Brackets ( )'},
+    ]},
+    { category: 'Grammar Terms', words: [
+      {z:'Paunam khenna', e:'Grammar'}, {z:'Kampau luanzia', e:'Composition'},
+      {z:'Laigelhzia', e:'Orthography'}, {z:'Laimal gawmzia', e:'Spelling'},
+      {z:'Awsuah', e:'Pronunciation'}, {z:'Lailepna', e:'Punctuation'},
+      {z:'Hun lahkhiatna', e:'Tense'}, {z:'Paunak', e:'Proverbs'},
+      {z:'A Sepna Thupisak', e:'Active Voice'}, {z:'A Sep Thupisak', e:'Passive Voice'},
+      {z:'Genbanga Genna', e:'Direct Speech'}, {z:'Gensawnna', e:'Indirect Speech'},
+      {z:'Kammal zatte', e:'Vocabulary list'},
+    ]},
+    { category: 'Cultural Terms', words: [
+      {z:'Zomite', e:'the Zo people'}, {z:'Zogam', e:'Zo homeland'},
+      {z:'Sengam', e:'Mongolia (ancestral origin)'}, {z:'Khul', e:'cave shelter (ancient dwelling)'},
+      {z:'Khuazindo', e:'communal feast'}, {z:'Meilah satni', e:'fire-lighting day before a feast'},
+      {z:'Khuai aihna', e:'chicken divination'}, {z:'Pawi', e:'traditional feast / festival'},
+      {z:'Zawl', e:'close friend / best friend'}, {z:'Thalloh', e:'primary kinship role (male line)'},
+      {z:'Sungpi', e:'kinship role (female line)'},
+    ]},
+    { category: 'Abstract Vocabulary', words: [
+      {z:'Angtang', e:'courage'}, {z:'Cidamna', e:'health'},
+      {z:'Dikna', e:'justice / righteousness'}, {z:'Hansanna', e:'success'},
+      {z:'Hauhna', e:'wealth'}, {z:'Lungdamna', e:'happiness / joy'},
+      {z:'Pilna', e:'wisdom / education'}, {z:'Suahtakna', e:'independence / freedom'},
+      {z:'Thukhunpi', e:'constitution / agreement'},
+    ]},
+    { category: 'Key Proverb Words', words: [
+      {z:'paunak', e:'proverb'}, {z:'kamsiam', e:'wise speaker'},
+      {z:'kamsia', e:'foolish speaker'}, {z:'sial vom', e:'cattle of the same kind'},
+      {z:'suangpi', e:'great tree'}, {z:'suangneu', e:'small axe'},
+      {z:'zuau', e:'liar'}, {z:'zawl', e:'close friend'},
+      {z:'meima', e:'fire'}, {z:'mihing', e:'human being'},
+    ]},
+  ],
+};
+
+const DEFAULT_QUIZ = {
+  beginner: [
+    { q: "How many core vowels does Zolai have?", opts: ["4","5","6","7"], ans: 2 },
+    { q: "Which letter is a Zolai vowel?", opts: ["B","K","aw","Ng"], ans: 2 },
+    { q: "What does 'inn' mean?", opts: ["river","house","person","tree"], ans: 1 },
+    { q: "How do you say 'Hello' in Zolai?", opts: ["Damno","Hallo","Lungdam","Pai"], ans: 1 },
+    { q: "What is 'khat' in Zolai?", opts: ["two","ten","one","zero"], ans: 2 },
+    { q: "What is the word for 'person' in Zolai?", opts: ["mi","ni","pai","inn"], ans: 0 },
+    { q: "'Nih' means?", opts: ["one","two","three","four"], ans: 1 },
+    { q: "Which consonant digraph is unique to Zolai?", opts: ["sh","ch","Ng","wh"], ans: 2 },
+    { q: "What does 'dam' mean?", opts: ["sick","well/healthy","tired","hungry"], ans: 1 },
+    { q: "'Sawm' means?", opts: ["100","10","1000","5"], ans: 1 },
+  ],
+  elementary: [
+    { q: "In Zolai sentence structure, what comes first?", opts: ["Verb","Object","Subject","Adjective"], ans: 2 },
+    { q: "What is the Zolai word for 'one hundred'?", opts: ["tulkhat","zakhat","sawm","sawmkhat"], ans: 1 },
+    { q: "The indefinite article in Zolai is?", opts: ["tua","pen","khat","in"], ans: 2 },
+    { q: "How do you say 'Sunday' in Zolai?", opts: ["Pizang","Nipi","Laithai","Nilai"], ans: 1 },
+    { q: "'Tua...pen' is a ___?", opts: ["Indefinite article","Definite article","Pronoun","Verb"], ans: 1 },
+    { q: "What does 'zan' mean in time expressions?", opts: ["morning","afternoon","night","evening"], ans: 2 },
+    { q: "'Sawmnih' equals?", opts: ["12","20","100","21"], ans: 1 },
+    { q: "The Zolai month 'Tunkha' corresponds to?", opts: ["January","February","March","April"], ans: 1 },
+    { q: "What does 'damhiam' mean?", opts: ["Are you tired?","Are you hungry?","Are you well?","Are you busy?"], ans: 2 },
+    { q: "'Zingkha' is which month?", opts: ["April","May","June","July"], ans: 1 },
+  ],
+  intermediate: [
+    { q: "What is the Zolai term for 'Verb'?", opts: ["Mintaang","Pianzia","Gamtatna / Sepna","Munlahna"], ans: 2 },
+    { q: "Which type of noun is 'Tedim' (a city name)?", opts: ["Common noun","Abstract noun","Proper noun","Collective noun"], ans: 2 },
+    { q: "What does 'khin hi' added to a verb indicate?", opts: ["Future tense","Simple Past tense","Present Perfect","Continuous aspect"], ans: 1 },
+    { q: "A transitive verb is called?", opts: ["A thuak kullo sepna","A thuak kisam sepna","A cinglo sepna","Gamtatnazem"], ans: 1 },
+    { q: "The Comparative degree uses which suffix?", opts: ["+ pen","+ zaw","+ mahmah","+ bek"], ans: 1 },
+    { q: "In Zolai, 'she' (literary) is?", opts: ["Taang","Kei","Amah","Lia"], ans: 3 },
+    { q: "Which pronoun means 'we' in Zolai?", opts: ["Nang","Kei","Eite","Amah"], ans: 2 },
+    { q: "'Ding hi' at the end of a verb indicates?", opts: ["Past tense","Future tense","Continuous present","Perfect aspect"], ans: 1 },
+    { q: "What kind of noun is 'cidamna' (health)?", opts: ["Common noun","Proper noun","Collective noun","Abstract noun"], ans: 3 },
+    { q: "The Superlative degree uses which suffix?", opts: ["+ pen","+ zaw","+ mahmah","+ ding"], ans: 0 },
+  ],
+  advanced: [
+    { q: "Which punctuation mark is 'Husanna' in Zolai?", opts: ["Full stop","Comma","Colon","Hyphen"], ans: 1 },
+    { q: "What does the proverb 'Sial vom leh sial vom kiingai' mean?", opts: ["Work hard for the harvest","Like attracts like","A foolish person loses all","The brave win battles"], ans: 1 },
+    { q: "In Direct Speech (Genbanga Genna), the quoted text goes inside?", opts: ["Brackets ()","Apostrophes","Quotation marks","Hyphens"], ans: 2 },
+    { q: "The Apostrophe (tanglak) is used to show?", opts: ["A question","Possession","A pause","Exclamation"], ans: 1 },
+    { q: "What is the Active voice called in Zolai?", opts: ["A Sepna Thupisak","A Sep Thupisak","Genbanga Genna","Gensawnna"], ans: 0 },
+    { q: "Zo people originally migrated from which region?", opts: ["India","Tibet","Mongolia","China proper"], ans: 2 },
+    { q: "The Hyphen (Thekna) in Zolai is used when?", opts: ["Two vowels meet","Sentence ends","A noun is plural","Verb is past"], ans: 0 },
+    { q: "'Paunak' means?", opts: ["Grammar","Proverbs","Composition","Alphabet"], ans: 1 },
+    { q: "What is 'Kampau Luanzia' in English?", opts: ["Grammar","Reading","Composition","Vocabulary"], ans: 2 },
+    { q: "February 12, 1947 is significant to Zomite because?", opts: ["Independence Day","Union Day / Pinlong Conference","National Language Day","Zo New Year"], ans: 1 },
+  ],
+};
+
+const DEFAULT_REFERENCE = [
+  { title: 'Kammal Namte — Parts of Speech', rows: [
+    {z:'A Min', e:'Noun'}, {z:'Mintaang', e:'Pronoun'}, {z:'Gamtatna / Sepna', e:'Verb'},
+    {z:'Pianzia', e:'Adjective'}, {z:'Sepzia / Gamtatnazem', e:'Adverb'},
+    {z:'Munlahna', e:'Preposition'}, {z:'Thuzopna', e:'Conjunction'}, {z:'Lamdang Sakna', e:'Interjection'},
+  ]},
+  { title: 'Hun Lahkhiatna — Tense Summary', rows: [
+    {z:'Tu Hun — Simple Present', e:'hi'},
+    {z:'Tu Hun — Continuous', e:'laitak hi'},
+    {z:'Tu Hun — Perfect', e:'khinzo hi'},
+    {z:'A Beisa Hun — Simple Past', e:'khin hi'},
+    {z:'A Beisa Hun — Continuous', e:'khit laitak hi'},
+    {z:'A Beisa Hun — Perfect', e:'khinzota hi'},
+    {z:'Mailam Hun — Simple Future', e:'ding hi'},
+    {z:'Mailam Hun — Continuous', e:'ding laitak hi'},
+    {z:'Mailam Hun — Perfect', e:'khinzo tading hi'},
+  ]},
+  { title: 'Pronoun Quick Reference', rows: [
+    {z:'Kei — ka — kei\'', e:'I / my / me (1st sg.)'},
+    {z:'Nang — na — nang\'', e:'You / your / you (2nd sg.)'},
+    {z:'Taang — taang\' — taang\'', e:'He / his / him (masc.)'},
+    {z:'Lia — lia\' — lia\'', e:'She / her / her (fem.)'},
+    {z:'Eite — ih — ei\'', e:'We / our / us (1st pl.)'},
+    {z:'Note — no\' — no\'', e:'You / your / you (2nd pl.)'},
+    {z:'Amaute — amau\' — amau\'', e:'They / their / them (3rd pl.)'},
+  ]},
+  { title: 'Adjective Comparison', rows: [
+    {z:'root form', e:'Positive — e.g. hat (strong)'},
+    {z:'root + zaw', e:'Comparative — e.g. hatzaw (stronger)'},
+    {z:'root + pen', e:'Superlative — e.g. hatpen (strongest)'},
+  ]},
+  { title: 'Common Vocabulary', rows: [
+    {z:'inn', e:'house'}, {z:'mi', e:'person'}, {z:'pai', e:'go'}, {z:'om', e:'be/stay'},
+    {z:'hoih', e:'good/beautiful'}, {z:'mahmah', e:'very'}, {z:'leh', e:'and'},
+    {z:'napi-in', e:'but'}, {z:'zong', e:'also'}, {z:'ah', e:'in/at'},
+    {z:'hi', e:'is/am/are'}, {z:'khin', e:'past marker'}, {z:'ding', e:'future marker'},
+    {z:'khinzo', e:'perfect marker'}, {z:'laitak', e:'continuous marker'}, {z:'taang', e:'he (masc.)'},
+  ]},
+];
+
+function getDefaultVocab(lid) {
+  return JSON.parse(JSON.stringify(DEFAULT_VOCAB[lid] || []));
+}
+function getDefaultQuiz(lid) {
+  return JSON.parse(JSON.stringify(DEFAULT_QUIZ[lid] || []));
+}
+function getDefaultRef() {
+  return JSON.parse(JSON.stringify(DEFAULT_REFERENCE));
+}
+
 // ── STATE ──
 let adminData = {};
 let currentLevel = null;
@@ -1644,7 +1924,7 @@ function showVocabAdmin(lid) {
   document.getElementById(`lvl-${lid}`)?.classList.add('active');
   document.getElementById(`vocab-${lid}`)?.classList.add('active');
   const saved = adminData[lid]?.['_vocab'];
-  currentVocabData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  currentVocabData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultVocab(lid);
   document.getElementById('topCrumb').textContent = `${runtimeStructure[lid]?.name} › Vocabulary`;
   document.getElementById('saveBar').style.display = 'flex';
   renderVocabEditor();
@@ -1764,7 +2044,7 @@ function discardVocabChanges() {
   if (!confirm('Discard all unsaved changes?')) return;
   pendingChanges = false;
   const saved = adminData[currentVocabLevel]?.['_vocab'];
-  currentVocabData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  currentVocabData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultVocab(currentVocabLevel);
   renderVocabEditor();
 }
 
@@ -1781,7 +2061,7 @@ function showQuizAdmin(lid) {
   document.getElementById(`lvl-${lid}`)?.classList.add('active');
   document.getElementById(`quiz-${lid}`)?.classList.add('active');
   const saved = adminData[lid]?.['_quiz'];
-  currentQuizData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  currentQuizData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultQuiz(lid);
   document.getElementById('topCrumb').textContent = `${runtimeStructure[lid]?.name} › Quiz Bank`;
   document.getElementById('saveBar').style.display = 'flex';
   renderQuizEditor();
@@ -1886,7 +2166,7 @@ function discardQuizChanges() {
   if (!confirm('Discard all unsaved changes?')) return;
   pendingChanges = false;
   const saved = adminData[currentQuizLevel]?.['_quiz'];
-  currentQuizData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  currentQuizData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultQuiz(currentQuizLevel);
   renderQuizEditor();
 }
 
@@ -1899,7 +2179,7 @@ function showReferenceAdmin() {
   clearAllNav();
   document.getElementById('referenceNavBtn')?.classList.add('active');
   const saved = adminData['_reference'];
-  currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultRef();
   document.getElementById('topCrumb').textContent = 'Grammar Reference';
   document.getElementById('saveBar').style.display = 'flex';
   renderReferenceEditor();
@@ -2016,7 +2296,7 @@ function discardReferenceChanges() {
   if (!confirm('Discard all unsaved changes?')) return;
   pendingChanges = false;
   const saved = adminData['_reference'];
-  currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultRef();
   renderReferenceEditor();
 }
 
