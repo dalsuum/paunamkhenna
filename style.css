@@ -190,6 +190,16 @@
 
   .topbar-breadcrumb span { color: var(--text-muted); }
 
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-level-btn {
+    display: none; /* shown only on mobile via body[data-level] rule below */
+  }
+
   .xp-badge {
     display: flex;
     align-items: center;
@@ -964,6 +974,20 @@
     .topbar-breadcrumb { font-size: 11px; }
 
     .xp-badge { padding: 5px 10px; font-size: 12px; }
+
+    body[data-level] .mobile-level-btn {
+      display: inline-flex;
+      align-items: center;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+    }
 
     .content {
       padding: 16px 16px 90px; /* bottom padding for mobile nav */

@@ -1031,7 +1031,35 @@ function renderResources(c) {
       <div class="lesson-header">
         <div class="lesson-badge">Additional Materials</div>
         <div class="lesson-title">${esc(resLabel)}</div>
-        <div class="lesson-subtitle">No resources have been added yet.</div>
+        <div class="lesson-subtitle">Supplementary materials to support your ${esc(BRAND.languageName)} learning journey.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📖 Primary Text</div>
+        <div class="res-list">
+          <div class="res-item">
+            <div class="res-item-info">
+              <div class="res-item-title">${esc(BRAND.heroBadge)}</div>
+              <div class="res-item-desc">${esc(BRAND.appName)} — the foundational ${esc(BRAND.languageName)} grammar and composition guide that all lessons in this app are drawn from.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📝 Study Tips</div>
+        <div class="res-list">
+          <div class="res-item"><div class="res-item-info">
+            <div class="res-item-title">Use the Flashcards daily</div>
+            <div class="res-item-desc">Each lesson's Flashcards tab is the fastest way to build vocabulary retention. Aim for one full deck per day.</div>
+          </div></div>
+          <div class="res-item"><div class="res-item-info">
+            <div class="res-item-title">Check the Grammar Reference</div>
+            <div class="res-item-desc">The Reference tab has a condensed parts-of-speech chart and the complete tense marker table — useful while reading or writing.</div>
+          </div></div>
+          <div class="res-item"><div class="res-item-info">
+            <div class="res-item-title">Take the Quiz after each level</div>
+            <div class="res-item-desc">The Quiz pulls from the full lesson bank. Submit your score to the leaderboard to track progress over time.</div>
+          </div></div>
+        </div>
       </div>`;
     return;
   }
