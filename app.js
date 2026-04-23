@@ -889,16 +889,38 @@ function renderReference(c) {
       <div class="lesson-header">
         <div class="lesson-badge">Quick Reference</div>
         <div class="lesson-title">Grammar Reference</div>
-        <div class="lesson-subtitle">A condensed reference sheet covering key Zolai grammar terms.</div>
+        <div class="lesson-subtitle">A condensed reference sheet covering key Zolai grammar terms and resources.</div>
       </div>
-      ${adminRef.map(sec => `
-        <div class="card">
+      ${adminRef.map(sec => {
+        if ((sec.type || 'grammar') === 'resources') {
+          const items = sec.rows.map(r => {
+            const linkBtn = r.url
+              ? `<a href="${r.url}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
+              : '';
+            const fileBtn = r.file
+              ? `<a href="${r.file}" download="${r.fileName||'file'}" class="res-link-btn res-dl-btn">📥 ${r.fileName||'Download'}</a>`
+              : '';
+            return `<div class="res-item">
+              <div class="res-item-info">
+                <div class="res-item-title">${r.z}</div>
+                ${r.e ? `<div class="res-item-desc">${r.e}</div>` : ''}
+              </div>
+              ${(linkBtn||fileBtn) ? `<div class="res-item-links">${linkBtn}${fileBtn}</div>` : ''}
+            </div>`;
+          }).join('');
+          return `<div class="card">
+            <div class="card-title">📎 ${sec.title}</div>
+            <div class="res-list">${items || '<p style="color:var(--muted);font-size:13px">No resources yet.</p>'}</div>
+          </div>`;
+        }
+        return `<div class="card">
           <div class="card-title">${sec.title}</div>
           <table class="grammar-table">
             <tr><th>Zolai</th><th>English</th></tr>
             ${sec.rows.map(r=>`<tr><td class="z">${r.z}</td><td class="e">${r.e}</td></tr>`).join('')}
           </table>
-        </div>`).join('')}`;
+        </div>`;
+      }).join('')}`;
     return;
   }
   c.innerHTML = `
