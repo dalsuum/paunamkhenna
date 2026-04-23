@@ -17,10 +17,21 @@ function getAdminSection(key) {
 }
 
 function applyFeatureFlags() {
-  const pairs = { quiz: 'nav-quiz', leaderboard: 'nav-leaderboard', reference: 'nav-reference' };
+  const flags = getFeatureFlags();
+  const labels = flags.labels || {};
+  const pairs = {
+    quiz:        'nav-quiz',
+    leaderboard: 'nav-leaderboard',
+    reference:   'nav-reference',
+  };
   for (const [f, id] of Object.entries(pairs)) {
     const el = document.getElementById(id);
-    if (el) el.style.display = isGlobalEnabled(f) ? '' : 'none';
+    if (!el) continue;
+    el.style.display = flags.global?.[f] !== false ? '' : 'none';
+    if (labels[f]) {
+      const lbl = el.querySelector('.nav-label');
+      if (lbl) lbl.textContent = labels[f];
+    }
   }
 }
 
@@ -903,10 +914,12 @@ function renderReference(c) {
         </table>
       </div>`).join('') : '';
 
-    const resHtml = adminRes ? `
+    const resEnabled = getFeatureFlags().global?.resources !== false;
+    const resLabel   = getFeatureFlags().labels?.resources || 'Resources';
+    const resHtml = (adminRes && resEnabled) ? `
       <div class="lesson-header" style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
         <div class="lesson-badge">Resources</div>
-        <div class="lesson-title" style="font-size:22px">Additional Resources</div>
+        <div class="lesson-title" style="font-size:22px">${resLabel}</div>
       </div>
       ${adminRes.map(sec => {
         const items = sec.items.map(r => {

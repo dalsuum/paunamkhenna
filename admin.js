@@ -610,6 +610,7 @@ async function login() {
     document.getElementById('adminMain').style.display = 'block';
     loadData();
     buildSidebar();
+    applyAdminLabels();
   } else {
     const l2 = getLockout();
     l2.attempts = (l2.attempts || 0) + 1;
@@ -636,6 +637,7 @@ async function setupPassword() {
   document.getElementById('adminMain').style.display = 'block';
   loadData();
   buildSidebar();
+  applyAdminLabels();
 }
 
 function logout() {
@@ -1529,28 +1531,44 @@ function saveFlags(flags) {
 function renderFeatureControls() {
   activeSettingsTab = 'features';
   const flags = getFlags();
+  const labels = flags.labels || {};
 
   const globalDefs = [
-    { key: 'quiz',        label: 'Quiz Mode',        icon: '✦', hint: 'Allow students to take level quizzes' },
-    { key: 'vocabulary',  label: 'Vocabulary',        icon: '◈', hint: 'Show the vocabulary browser page' },
-    { key: 'leaderboard', label: 'Leaderboard',       icon: '🏆', hint: 'Show the global score leaderboard' },
-    { key: 'reference',   label: 'Grammar Reference', icon: '≡', hint: 'Show the grammar reference page' },
+    { key: 'quiz',        label: 'Quiz Mode',        icon: '✦', hint: 'Quiz section shown in student app' },
+    { key: 'vocabulary',  label: 'Vocabulary',        icon: '◈', hint: 'Vocabulary browser shown in student app' },
+    { key: 'leaderboard', label: 'Leaderboard',       icon: '🏆', hint: 'Score leaderboard shown in student app' },
+    { key: 'reference',   label: 'Gram. Reference',   icon: '≡', hint: 'Grammar reference page in student app' },
+    { key: 'resources',   label: 'Resources',         icon: '📎', hint: 'Additional resources section in student app' },
+    { key: 'analytics',   label: 'Analytics',         icon: '📊', hint: 'Analytics dashboard in admin panel', adminOnly: true },
   ];
 
   const globalRows = globalDefs.map(f => {
     const on = flags.global?.[f.key] !== false;
-    return `<div class="control-row">
-      <div>
-        <div class="control-row-label">
-          <span class="control-icon">${f.icon}</span>
-          <span>${f.label}</span>
+    const currentLabel = labels[f.key] || '';
+    const defaultLabel = f.label;
+    return `<div class="control-row" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="control-row-label">
+            <span class="control-icon">${f.icon}</span>
+            <span>${f.label}</span>
+            ${f.adminOnly ? '<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(201,168,76,0.1);color:var(--gold);margin-left:6px">Admin only</span>' : ''}
+          </div>
+          <div class="control-hint" style="padding-left:32px">${f.hint}</div>
         </div>
-        <div class="control-hint" style="padding-left:32px">${f.hint}</div>
+        <label class="toggle-switch">
+          <input type="checkbox" ${on?'checked':''} onchange="toggleGlobal('${f.key}',this.checked)">
+          <span class="toggle-track"></span>
+        </label>
       </div>
-      <label class="toggle-switch">
-        <input type="checkbox" ${on?'checked':''} onchange="toggleGlobal('${f.key}',this.checked)">
-        <span class="toggle-track"></span>
-      </label>
+      <div style="padding-left:32px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--text-dim);white-space:nowrap">Custom name:</span>
+        <input type="text" value="${esc(currentLabel)}" placeholder="${esc(defaultLabel)}"
+          onblur="renameFeature('${f.key}',this.value)"
+          onkeydown="if(event.key==='Enter'){renameFeature('${f.key}',this.value);this.blur()}"
+          style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);width:180px;outline:none">
+        <span style="font-size:11px;color:var(--text-dim)">default: <em>${esc(defaultLabel)}</em></span>
+      </div>
     </div>`;
   }).join('');
 
@@ -1632,6 +1650,7 @@ function toggleGlobal(feature, enabled) {
   if (!flags.global) flags.global = {};
   flags.global[feature] = enabled;
   saveFlags(flags);
+  applyAdminLabels();
   showToast(`${feature} ${enabled ? 'enabled' : 'disabled'}`);
 }
 
@@ -1664,10 +1683,41 @@ function toggleTab(level, lesson, tabIdx, enabled) {
 }
 
 function resetAllFlags() {
-  if (!confirm('Reset all feature controls to default (everything enabled)?')) return;
+  if (!confirm('Reset all feature controls to default (everything enabled, all names reset)?')) return;
   localStorage.removeItem(FLAGS_KEY);
   renderFeatureControls();
+  applyAdminLabels();
   showToast('All controls reset to default');
+}
+
+function renameFeature(key, val) {
+  const flags = getFlags();
+  if (!flags.labels) flags.labels = {};
+  const trimmed = val.trim();
+  if (trimmed) flags.labels[key] = trimmed;
+  else delete flags.labels[key];
+  saveFlags(flags);
+  applyAdminLabels();
+  showToast(trimmed ? `"${key}" renamed to "${trimmed}"` : `"${key}" reset to default name`);
+}
+
+function applyAdminLabels() {
+  const flags = getFlags();
+  const labels = flags.labels || {};
+  const global = flags.global || {};
+  const map = {
+    analyticsNavBtn:  { label: labels.analytics  || 'Analytics',      show: global.analytics  !== false },
+    leaderboardNavBtn:{ label: labels.leaderboard || 'Leaderboard',    show: true },
+    referenceNavBtn:  { label: labels.reference   || 'Gram. Reference',show: true },
+    resourcesNavBtn:  { label: labels.resources   || 'Resources',      show: true },
+  };
+  for (const [id, cfg] of Object.entries(map)) {
+    const btn = document.getElementById(id);
+    if (!btn) continue;
+    const spans = btn.querySelectorAll('span');
+    if (spans.length >= 2) spans[1].textContent = cfg.label;
+    btn.style.display = cfg.show ? '' : 'none';
+  }
 }
 
 // ── FIREBASE ──
