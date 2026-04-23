@@ -725,7 +725,7 @@ function buildRuntimeStructure() {
 }
 
 function getTabData(lvl, lsn, tab) {
-  return adminData?.[lvl]?.[lsn]?.[tab] || { image: null, audio: null, vocab: [], items: {} };
+  return adminData?.[lvl]?.[lsn]?.[tab] || { image: null, audio: null, video: null, vocab: [], items: {} };
 }
 
 function setTabData(lvl, lsn, tab, data) {
@@ -832,6 +832,19 @@ function renderEditor() {
       ${td.audio ? `<button class="clear-btn" onclick="clearMedia('audio')">✕ Remove audio</button>` : ''}
     </div>`;
 
+  const videoSection = `
+    <div class="section-card">
+      <div class="section-title">🎥 Tab Video</div>
+      <div class="upload-area${td.video?' has-file':''}" id="videoArea">
+        <input type="file" accept="video/*" onchange="handleVideoUpload(this)">
+        <div class="upload-icon">🎬</div>
+        <div class="upload-label">${td.video ? 'Video uploaded — click to replace' : 'Click to upload video'}</div>
+        <div class="upload-sub">MP4, WebM, OGV · max 10 MB · plays at top of tab in app</div>
+        ${td.video ? `<video class="tab-video" controls src="${td.video}" style="width:100%;max-height:200px;"></video>` : ''}
+      </div>
+      ${td.video ? `<button class="clear-btn" onclick="clearMedia('video')">✕ Remove video</button>` : ''}
+    </div>`;
+
   const contentSection = getContentSection();
 
   document.getElementById('adminContent').innerHTML = `
@@ -839,6 +852,7 @@ function renderEditor() {
     ${contentSection}
     ${imgSection}
     ${audioSection}
+    ${videoSection}
   `;
   document.getElementById('saveBar').style.display = 'flex';
 }
@@ -1111,6 +1125,16 @@ function handleTabAudio(input) {
   });
 }
 
+function handleVideoUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  readFile(file, 10, data => {
+    const td = getTabData(currentLevel, currentLesson, currentTab);
+    td.video = data;
+    setTabData(currentLevel, currentLesson, currentTab, td);
+    saveData(); renderEditor(); showToast('Video uploaded');
+  });
+}
+
 function handleItemAudio(input, i) {
   const file = input.files[0]; if (!file) return;
   readFile(file, 2, data => {
@@ -1127,7 +1151,7 @@ function clearMedia(type) {
   td[type] = null;
   setTabData(currentLevel, currentLesson, currentTab, td);
   saveData(); renderEditor();
-  showToast(`${type === 'image' ? 'Image' : 'Audio'} removed`);
+  showToast(`${type === 'image' ? 'Image' : type === 'audio' ? 'Audio' : 'Video'} removed`);
 }
 
 function clearItemAudio(i) {

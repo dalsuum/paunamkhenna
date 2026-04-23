@@ -2355,6 +2355,7 @@ function renderAdminMedia(level, lesson, tabIdx) {
     if (!td) return '';
     let html = '';
     if (td.image) html += `<div class="card" style="padding:12px"><img src="${td.image}" alt="" style="width:100%;border-radius:8px;max-height:300px;object-fit:contain"></div>`;
+    if (td.video) html += `<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Tab Video</div><video controls style="width:100%;max-height:300px;border-radius:8px" src="${td.video}"></video></div>`;
     if (td.audio) html += `<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Tab Audio</div><audio controls style="width:100%;height:36px" src="${td.audio}"></audio></div>`;
     if (td.vocab?.length) html += `<div class="card"><div class="card-title">Additional Vocabulary</div>${td.vocab.map(v=>`<div class="vocab-row"><div style="display:flex;align-items:center;gap:8px"><span class="vocab-zo">${v.z}</span>${v.audio?`<button onclick="(new Audio('${v.audio}')).play()" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);cursor:pointer;padding:2px 6px;font-size:11px">&#9654;</button>`:''}</div><span class="vocab-en">${v.e}</span></div>`).join('')}</div>`;
     return html;
