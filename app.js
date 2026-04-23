@@ -23,6 +23,7 @@ function applyFeatureFlags() {
     quiz:        'nav-quiz',
     leaderboard: 'nav-leaderboard',
     reference:   'nav-reference',
+    resources:   'nav-resources',
   };
   for (const [f, id] of Object.entries(pairs)) {
     const el = document.getElementById(id);
@@ -390,7 +391,7 @@ function showView(view) {
 
   if (view === 'home') { setNav('nav-home'); setBreadcrumb('Home'); renderHome(c); }
   else if (view === 'quiz') { setNav('nav-quiz'); setBreadcrumb('Quiz Mode'); renderQuizStart(c); }
-  else if (view === 'reference') { setNav('nav-reference'); setBreadcrumb('Grammar Reference'); renderReference(c); }
+  else if (view === 'reference') { setNav('nav-reference'); setBreadcrumb(getFeatureFlags().labels?.reference || 'Grammar Reference'); renderReference(c); }
 }
 
 function showLesson(n) {
@@ -887,75 +888,31 @@ function renderResults(c) {
 
 // ── REFERENCE ──
 function renderReference(c) {
-  const adminRef = (function() {
-    try {
-      const raw = localStorage.getItem('zolai_admin_data');
-      if (!raw) return null;
-      const d = JSON.parse(raw)?.['_reference'];
-      return (d && d.length > 0) ? d : null;
-    } catch(e) { return null; }
-  })();
-  const adminRes = (function() {
-    try {
-      const raw = localStorage.getItem('zolai_admin_data');
-      if (!raw) return null;
-      const d = JSON.parse(raw)?.['_resources'];
-      return (d && d.length > 0) ? d : null;
-    } catch(e) { return null; }
-  })();
+  const adminRef = getAdminSection('_reference');
+  const refLabel = getFeatureFlags().labels?.reference || 'Grammar Reference';
 
-  if (adminRef || adminRes) {
-    const grammarHtml = adminRef ? adminRef.map(sec => `
+  if (adminRef) {
+    const grammarHtml = adminRef.map(sec => `
       <div class="card">
         <div class="card-title">${sec.title}</div>
         <table class="grammar-table">
           <tr><th>Zolai</th><th>English</th></tr>
           ${sec.rows.map(r=>`<tr><td class="z">${r.z}</td><td class="e">${r.e}</td></tr>`).join('')}
         </table>
-      </div>`).join('') : '';
-
-    const resEnabled = getFeatureFlags().global?.resources !== false;
-    const resLabel   = getFeatureFlags().labels?.resources || 'Resources';
-    const resHtml = (adminRes && resEnabled) ? `
-      <div class="lesson-header" style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
-        <div class="lesson-badge">Resources</div>
-        <div class="lesson-title" style="font-size:22px">${resLabel}</div>
-      </div>
-      ${adminRes.map(sec => {
-        const items = sec.items.map(r => {
-          const linkBtn = r.url
-            ? `<a href="${r.url}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
-            : '';
-          const fileBtn = r.file
-            ? `<a href="${r.file}" download="${r.fileName||'file'}" class="res-link-btn res-dl-btn">📥 ${r.fileName||'Download'}</a>`
-            : '';
-          return `<div class="res-item">
-            <div class="res-item-info">
-              <div class="res-item-title">${r.label}</div>
-              ${r.desc ? `<div class="res-item-desc">${r.desc}</div>` : ''}
-            </div>
-            ${(linkBtn||fileBtn) ? `<div class="res-item-links">${linkBtn}${fileBtn}</div>` : ''}
-          </div>`;
-        }).join('');
-        return `<div class="card">
-          <div class="card-title">📂 ${sec.title}</div>
-          <div class="res-list">${items || '<p style="color:var(--muted);font-size:13px">No resources yet.</p>'}</div>
-        </div>`;
-      }).join('')}` : '';
-
+      </div>`).join('');
     c.innerHTML = `
       <div class="lesson-header">
         <div class="lesson-badge">Quick Reference</div>
-        <div class="lesson-title">Grammar Reference</div>
+        <div class="lesson-title">${refLabel}</div>
         <div class="lesson-subtitle">A condensed reference sheet covering key Zolai grammar terms.</div>
       </div>
-      ${grammarHtml}${resHtml}`;
+      ${grammarHtml}`;
     return;
   }
   c.innerHTML = `
     <div class="lesson-header">
       <div class="lesson-badge">Quick Reference</div>
-      <div class="lesson-title">Grammar Reference</div>
+      <div class="lesson-title">${refLabel}</div>
       <div class="lesson-subtitle">A condensed reference sheet covering key grammar terms, the pronoun chart, and the tense system.</div>
     </div>
 
@@ -1035,6 +992,51 @@ function renderReference(c) {
   `;
 }
 
+// ── RESOURCES ──
+function renderResources(c) {
+  const adminRes = getAdminSection('_resources');
+  const resLabel = getFeatureFlags().labels?.resources || 'Resources';
+
+  if (!adminRes || adminRes.length === 0) {
+    c.innerHTML = `
+      <div class="lesson-header">
+        <div class="lesson-badge">Additional Materials</div>
+        <div class="lesson-title">${resLabel}</div>
+        <div class="lesson-subtitle">No resources have been added yet.</div>
+      </div>`;
+    return;
+  }
+
+  const secHtml = adminRes.map(sec => {
+    const items = sec.items.map(r => {
+      const linkBtn = r.url
+        ? `<a href="${r.url}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
+        : '';
+      const fileBtn = r.file
+        ? `<a href="${r.file}" download="${r.fileName||'file'}" class="res-link-btn res-dl-btn">📥 ${r.fileName||'Download'}</a>`
+        : '';
+      return `<div class="res-item">
+        <div class="res-item-info">
+          <div class="res-item-title">${r.label}</div>
+          ${r.desc ? `<div class="res-item-desc">${r.desc}</div>` : ''}
+        </div>
+        ${(linkBtn||fileBtn) ? `<div class="res-item-links">${linkBtn}${fileBtn}</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="card">
+      <div class="card-title">📂 ${sec.title}</div>
+      <div class="res-list">${items || '<p style="color:var(--muted);font-size:13px">No resources yet.</p>'}</div>
+    </div>`;
+  }).join('');
+
+  c.innerHTML = `
+    <div class="lesson-header">
+      <div class="lesson-badge">Additional Materials</div>
+      <div class="lesson-title">${resLabel}</div>
+    </div>
+    ${secHtml}`;
+}
+
 // ── MOBILE NAV ──
 function toggleLessonPicker() {
   const picker = document.getElementById('lessonPicker');
@@ -1060,6 +1062,7 @@ showView = function(view) {
   if (view === 'reference'  && !isGlobalEnabled('reference'))  return showView('home');
   if (view === 'leaderboard'&& !isGlobalEnabled('leaderboard'))return showView('home');
   if (view === 'vocabulary' && !isGlobalEnabled('vocabulary')) return showView('home');
+  if (view === 'resources'  && !isGlobalEnabled('resources'))  return showView('home');
 
   if (view === 'vocabulary') {
     state.activeView = 'vocabulary';
@@ -1081,11 +1084,23 @@ showView = function(view) {
     closeLessonPicker();
     return;
   }
+  if (view === 'resources') {
+    state.activeView = 'resources';
+    const c = document.getElementById('mainContent');
+    c.className = 'content fade-in';
+    setNav('nav-resources');
+    const resLabel = getFeatureFlags().labels?.resources || 'Resources';
+    setBreadcrumb(resLabel);
+    renderResources(c);
+    closeLessonPicker();
+    return;
+  }
   _origShowView(view);
   closeLessonPicker();
   if (view === 'home') setMobileNav('mnav-home');
   else if (view === 'quiz') setMobileNav('mnav-quiz');
   else if (view === 'reference') setMobileNav('mnav-ref');
+  else if (view === 'resources') setMobileNav('mnav-resources');
 };
 
 const _origShowLesson = showLesson;
