@@ -541,9 +541,10 @@ let currentVocabData  = [];
 let currentQuizLevel  = null;
 let currentQuizData   = [];
 let currentRefData    = [];
-let adminMode = 'lesson'; // 'lesson' | 'vocab' | 'quiz' | 'reference'
-let _refFileData = null;  // base64 data URL for pending file attachment
-let _refFileName = null;
+let adminMode = 'lesson'; // 'lesson' | 'vocab' | 'quiz' | 'reference' | 'resources'
+let currentResData = [];
+let _resFileData = null;  // base64 data URL for pending resource file attachment
+let _resFileName = null;
 
 const DATA_KEY      = 'zolai_admin_data';
 const STRUCTURE_KEY = 'zolai_structure';
@@ -738,7 +739,7 @@ function clearBottomNav() {
 function clearAllNav() {
   document.querySelectorAll('.lesson-nav').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.lesson-btn,.level-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('#referenceNavBtn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#referenceNavBtn,#resourcesNavBtn').forEach(b => b.classList.remove('active'));
   clearBottomNav();
 }
 
@@ -1182,9 +1183,10 @@ function collectEdits() {
 }
 
 function saveChanges() {
-  if (adminMode === 'vocab')     return saveVocabChanges();
-  if (adminMode === 'quiz')      return saveQuizChanges();
-  if (adminMode === 'reference') return saveReferenceChanges();
+  if (adminMode === 'vocab')      return saveVocabChanges();
+  if (adminMode === 'quiz')       return saveQuizChanges();
+  if (adminMode === 'reference')  return saveReferenceChanges();
+  if (adminMode === 'resources')  return saveResourcesChanges();
   const td = collectEdits();
   setTabData(currentLevel, currentLesson, currentTab, td);
   saveData();
@@ -1194,9 +1196,10 @@ function saveChanges() {
 }
 
 function discardChanges() {
-  if (adminMode === 'vocab')     return discardVocabChanges();
-  if (adminMode === 'quiz')      return discardQuizChanges();
-  if (adminMode === 'reference') return discardReferenceChanges();
+  if (adminMode === 'vocab')      return discardVocabChanges();
+  if (adminMode === 'quiz')       return discardQuizChanges();
+  if (adminMode === 'reference')  return discardReferenceChanges();
+  if (adminMode === 'resources')  return discardResourcesChanges();
   if (!confirm('Discard all unsaved changes for this tab?')) return;
   pendingChanges = false;
   renderEditor();
@@ -2189,28 +2192,8 @@ function showReferenceAdmin() {
 
 function renderReferenceEditor() {
   const secHtml = currentRefData.map((sec, si) => {
-    const type = sec.type || 'grammar';
-    const rows = sec.rows.map((r, ri) => {
-      if (type === 'resources') {
-        const linkBtn = r.url
-          ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(201,168,76,0.12);border:1px solid var(--gold-dim);color:var(--gold);text-decoration:none;white-space:nowrap">🔗 Link</a>`
-          : '';
-        const fileBtn = r.file
-          ? `<a href="${esc(r.file)}" download="${esc(r.fileName||'file')}" style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(91,143,212,0.12);border:1px solid rgba(91,143,212,0.4);color:#5b8fd4;text-decoration:none;white-space:nowrap">📥 ${esc(r.fileName||'Download')}</a>`
-          : '';
-        return `<div class="content-row" id="rr-${si}-${ri}" style="align-items:flex-start">
-          <div class="content-row-body" style="flex-direction:column;align-items:flex-start;gap:3px">
-            <span style="font-weight:500;color:var(--text)">${esc(r.z)}</span>
-            ${r.e ? `<span style="font-size:12px;color:var(--text-dim)">${esc(r.e)}</span>` : ''}
-            ${(linkBtn||fileBtn) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">${linkBtn}${fileBtn}</div>` : ''}
-          </div>
-          <div class="content-row-actions">
-            <button class="icon-btn" onclick="editRefRow(${si},${ri})" title="Edit">&#9998;</button>
-            <button class="icon-btn del" onclick="deleteRefRow(${si},${ri})" title="Delete">&#128465;</button>
-          </div>
-        </div>`;
-      }
-      return `<div class="content-row" id="rr-${si}-${ri}">
+    const rows = sec.rows.map((r, ri) =>
+      `<div class="content-row" id="rr-${si}-${ri}">
         <div class="content-row-body">
           <span class="content-row-z">${esc(r.z)}</span>
           <span class="content-row-e">${esc(r.e)}</span>
@@ -2219,34 +2202,27 @@ function renderReferenceEditor() {
           <button class="icon-btn" onclick="editRefRow(${si},${ri})" title="Edit">&#9998;</button>
           <button class="icon-btn del" onclick="deleteRefRow(${si},${ri})" title="Delete">&#128465;</button>
         </div>
-      </div>`;
-    }).join('');
-
-    const icon = type === 'resources' ? '📎' : '§';
-    const typeLabel = type === 'resources'
-      ? `<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(91,143,212,0.15);color:#5b8fd4;margin-left:6px;font-weight:400">Resources</span>`
-      : `<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(201,168,76,0.1);color:var(--gold);margin-left:6px;font-weight:400">Grammar</span>`;
-    const addLabel = type === 'resources' ? '+ Add Resource' : '+ Add Row';
-
+      </div>`
+    ).join('');
     return `<div class="section-card" style="margin-bottom:10px" id="rsec-${si}">
       <div class="section-title" style="justify-content:space-between">
-        <span>${icon} ${esc(sec.title)}${typeLabel} <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.rows.length} ${type==='resources'?'items':'rows'})</span></span>
+        <span>§ ${esc(sec.title)} <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.rows.length} rows)</span></span>
         <div style="display:flex;gap:6px">
           <button class="btn btn-outline" onclick="renameRefSection(${si})" style="font-size:11px;padding:3px 10px">Rename</button>
           <button class="btn btn-outline" onclick="deleteRefSection(${si})" style="font-size:11px;padding:3px 10px;color:var(--red)">✕ Delete</button>
         </div>
       </div>
-      <div id="rrows-${si}">${rows || `<div style="color:var(--text-dim);font-size:12px;padding:6px 0">No ${type==='resources'?'resources':'rows'} yet.</div>`}</div>
-      <button class="btn btn-outline" onclick="addRefRow(${si})" style="font-size:12px;margin-top:8px">${addLabel}</button>
+      <div id="rrows-${si}">${rows || '<div style="color:var(--text-dim);font-size:12px;padding:6px 0">No rows yet.</div>'}</div>
+      <button class="btn btn-outline" onclick="addRefRow(${si})" style="font-size:12px;margin-top:8px">+ Add Row</button>
     </div>`;
   }).join('');
 
   document.getElementById('adminContent').innerHTML = `
     <div class="section-card">
-      <div class="section-title">≡ Reference Editor</div>
+      <div class="section-title">≡ Grammar Reference Editor</div>
       <div class="info-box" style="margin-bottom:12px">
-        Add <strong>Grammar Table</strong> sections (Zolai / English rows) or <strong>Resources</strong> sections (title, description, URL link, file attachment).
-        When saved, this replaces the built-in Grammar Reference page. Leave empty to keep the built-in reference.
+        Add sections with Zolai → English rows. When saved, this replaces the built-in Grammar Reference page.
+        Leave empty to keep the app's built-in reference. Use the <strong>Resources</strong> tab for URL links and file attachments.
       </div>
       ${secHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No sections yet — click + Add Section to start.</div>'}
       <button class="btn btn-outline" onclick="addRefSection()" style="font-size:12px;margin-top:10px">+ Add Section</button>
@@ -2254,10 +2230,9 @@ function renderReferenceEditor() {
 }
 
 function addRefSection() {
-  const title = prompt('Section title (e.g. "Resources Reference"):');
+  const title = prompt('Section title (e.g. "Parts of Speech"):');
   if (!title?.trim()) return;
-  const isRes = confirm('Choose section type:\n\nOK → Resources  (URL links + file attachments)\nCancel → Grammar Table  (Zolai / English rows)');
-  currentRefData.push({ title: title.trim(), type: isRes ? 'resources' : 'grammar', rows: [] });
+  currentRefData.push({ title: title.trim(), rows: [] });
   setPending(); renderReferenceEditor();
 }
 
@@ -2275,33 +2250,10 @@ function deleteRefSection(si) {
 }
 
 function addRefRow(si) {
-  const type = currentRefData[si]?.type || 'grammar';
-  currentRefData[si].rows.push(type === 'resources'
-    ? { z: '', e: '', url: '', file: null, fileName: '' }
-    : { z: '', e: '' }
-  );
+  currentRefData[si].rows.push({ z: '', e: '' });
   setPending();
   renderReferenceEditor();
   editRefRow(si, currentRefData[si].rows.length - 1);
-}
-
-function handleRefFileChange(input) {
-  const file = input.files[0];
-  if (!file) { _refFileData = null; _refFileName = null; return; }
-  if (file.size > 5 * 1024 * 1024) {
-    alert('File is larger than 5 MB. Please choose a smaller file or use a URL link instead.');
-    input.value = '';
-    _refFileData = null; _refFileName = null;
-    return;
-  }
-  _refFileName = file.name;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    _refFileData = ev.target.result;
-    const label = document.querySelector('[data-reffilelabel]');
-    if (label) label.textContent = '📎 ' + file.name;
-  };
-  reader.readAsDataURL(file);
 }
 
 function editRefRow(si, ri) {
@@ -2309,43 +2261,18 @@ function editRefRow(si, ri) {
   if (!r) return;
   const el = document.getElementById(`rr-${si}-${ri}`);
   if (!el) return;
-  _refFileData = null; _refFileName = null;
-
-  const type = currentRefData[si]?.type || 'grammar';
-  if (type === 'resources') {
-    const curFile = r.fileName ? `📎 ${esc(r.fileName)}` : 'No file attached';
-    el.outerHTML = `<div class="content-row editing" id="rr-${si}-${ri}" style="flex-direction:column;align-items:stretch;gap:7px;padding:12px">
-      <input class="content-input-z" id="rriz-${si}-${ri}" value="${esc(r.z)}" placeholder="Resource title (required)">
-      <input class="content-input-e" id="rrie-${si}-${ri}" value="${esc(r.e)}" placeholder="Description (optional)">
-      <input id="rriu-${si}-${ri}" value="${esc(r.url||'')}" placeholder="URL — https://... or relative path (optional)"
-        style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box">
-      <div style="display:flex;align-items:center;gap:10px;font-size:12px">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2)">
-          📎 Attach file
-          <input type="file" style="display:none" onchange="handleRefFileChange(this)">
-        </label>
-        <span data-reffilelabel style="color:var(--text-dim)">${curFile}</span>
-        ${r.file ? `<button class="btn btn-outline" onclick="currentRefData[${si}].rows[${ri}].file=null;currentRefData[${si}].rows[${ri}].fileName='';renderReferenceEditor()" style="font-size:11px;padding:2px 8px;color:var(--red)">✕ Remove file</button>` : ''}
-      </div>
-      <div style="display:flex;gap:6px;margin-top:2px">
-        <button class="btn btn-gold" onclick="saveRefRow(${si},${ri})" style="font-size:12px;padding:5px 14px">✓ Save</button>
-        <button class="btn btn-outline" onclick="renderReferenceEditor()" style="font-size:12px;padding:5px 14px">✕ Cancel</button>
-      </div>
-    </div>`;
-  } else {
-    el.outerHTML = `<div class="content-row editing" id="rr-${si}-${ri}">
-      <div class="content-row-body">
-        <input class="content-input-z" id="rriz-${si}-${ri}" value="${esc(r.z)}" placeholder="Zolai term"
-          onkeydown="if(event.key==='Enter')saveRefRow(${si},${ri})">
-        <input class="content-input-e" id="rrie-${si}-${ri}" value="${esc(r.e)}" placeholder="English meaning"
-          onkeydown="if(event.key==='Enter')saveRefRow(${si},${ri})">
-      </div>
-      <div class="content-row-actions">
-        <button class="icon-btn" onclick="saveRefRow(${si},${ri})" title="Save">&#10003;</button>
-        <button class="icon-btn" onclick="renderReferenceEditor()" title="Cancel">&#10005;</button>
-      </div>
-    </div>`;
-  }
+  el.outerHTML = `<div class="content-row editing" id="rr-${si}-${ri}">
+    <div class="content-row-body">
+      <input class="content-input-z" id="rriz-${si}-${ri}" value="${esc(r.z)}" placeholder="Zolai term"
+        onkeydown="if(event.key==='Enter')saveRefRow(${si},${ri})">
+      <input class="content-input-e" id="rrie-${si}-${ri}" value="${esc(r.e)}" placeholder="English meaning"
+        onkeydown="if(event.key==='Enter')saveRefRow(${si},${ri})">
+    </div>
+    <div class="content-row-actions">
+      <button class="icon-btn" onclick="saveRefRow(${si},${ri})" title="Save">&#10003;</button>
+      <button class="icon-btn" onclick="renderReferenceEditor()" title="Cancel">&#10005;</button>
+    </div>
+  </div>`;
   document.getElementById(`rriz-${si}-${ri}`)?.focus();
 }
 
@@ -2353,18 +2280,7 @@ function saveRefRow(si, ri) {
   const z = document.getElementById(`rriz-${si}-${ri}`)?.value.trim() || '';
   const e = document.getElementById(`rrie-${si}-${ri}`)?.value.trim() || '';
   if (!z) { deleteRefRow(si, ri); return; }
-  const type = currentRefData[si]?.type || 'grammar';
-  if (type === 'resources') {
-    const url = document.getElementById(`rriu-${si}-${ri}`)?.value.trim() || '';
-    const existing = currentRefData[si].rows[ri] || {};
-    const row = { z, e, url,
-      file: _refFileData ?? existing.file ?? null,
-      fileName: _refFileData ? _refFileName : (existing.fileName || '') };
-    currentRefData[si].rows[ri] = row;
-    _refFileData = null; _refFileName = null;
-  } else {
-    currentRefData[si].rows[ri] = { z, e };
-  }
+  currentRefData[si].rows[ri] = { z, e };
   setPending(); renderReferenceEditor();
 }
 
@@ -2387,6 +2303,174 @@ function discardReferenceChanges() {
   const saved = adminData['_reference'];
   currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultRef();
   renderReferenceEditor();
+}
+
+// ── ADDITIONAL RESOURCES EDITOR ──
+function showResourcesAdmin() {
+  if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
+  pendingChanges = false;
+  adminMode = 'resources';
+  currentLevel = null; currentLesson = null;
+  clearAllNav();
+  document.getElementById('resourcesNavBtn')?.classList.add('active');
+  const saved = adminData['_resources'];
+  currentResData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  document.getElementById('topCrumb').textContent = 'Additional Resources';
+  document.getElementById('saveBar').style.display = 'flex';
+  renderResourcesEditor();
+}
+
+function renderResourcesEditor() {
+  const secHtml = currentResData.map((sec, si) => {
+    const items = sec.items.map((r, ri) => {
+      const linkBtn = r.url
+        ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(201,168,76,0.12);border:1px solid var(--gold-dim);color:var(--gold);text-decoration:none;white-space:nowrap">🔗 Link</a>`
+        : '';
+      const fileBtn = r.file
+        ? `<a href="${esc(r.file)}" download="${esc(r.fileName||'file')}" style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(91,143,212,0.12);border:1px solid rgba(91,143,212,0.4);color:#5b8fd4;text-decoration:none;white-space:nowrap">📥 ${esc(r.fileName||'Download')}</a>`
+        : '';
+      return `<div class="content-row" id="ri-${si}-${ri}" style="align-items:flex-start">
+        <div class="content-row-body" style="flex-direction:column;align-items:flex-start;gap:3px">
+          <span style="font-weight:500;color:var(--text)">${esc(r.label)}</span>
+          ${r.desc ? `<span style="font-size:12px;color:var(--text-dim)">${esc(r.desc)}</span>` : ''}
+          ${(linkBtn||fileBtn) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">${linkBtn}${fileBtn}</div>` : ''}
+        </div>
+        <div class="content-row-actions">
+          <button class="icon-btn" onclick="editResItem(${si},${ri})" title="Edit">&#9998;</button>
+          <button class="icon-btn del" onclick="deleteResItem(${si},${ri})" title="Delete">&#128465;</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="section-card" style="margin-bottom:10px" id="rsec2-${si}">
+      <div class="section-title" style="justify-content:space-between">
+        <span>📂 ${esc(sec.title)} <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.items.length} items)</span></span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline" onclick="renameResSection(${si})" style="font-size:11px;padding:3px 10px">Rename</button>
+          <button class="btn btn-outline" onclick="deleteResSection(${si})" style="font-size:11px;padding:3px 10px;color:var(--red)">✕ Delete</button>
+        </div>
+      </div>
+      <div id="ritems-${si}">${items || '<div style="color:var(--text-dim);font-size:12px;padding:6px 0">No resources yet.</div>'}</div>
+      <button class="btn btn-outline" onclick="addResItem(${si})" style="font-size:12px;margin-top:8px">+ Add Resource</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">📎 Additional Resources Editor</div>
+      <div class="info-box" style="margin-bottom:12px">
+        Add resource categories and items. Each item has a title, description, and optional URL link or file attachment (max 5 MB).
+        Displayed on the Grammar Reference page for students.
+      </div>
+      ${secHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No categories yet — click + Add Category to start.</div>'}
+      <button class="btn btn-outline" onclick="addResSection()" style="font-size:12px;margin-top:10px">+ Add Category</button>
+    </div>`;
+}
+
+function addResSection() {
+  const title = prompt('Category name (e.g. "Study Materials"):');
+  if (!title?.trim()) return;
+  currentResData.push({ title: title.trim(), items: [] });
+  setPending(); renderResourcesEditor();
+}
+
+function renameResSection(si) {
+  const title = prompt('New category name:', currentResData[si]?.title || '');
+  if (!title?.trim()) return;
+  currentResData[si].title = title.trim();
+  setPending(); renderResourcesEditor();
+}
+
+function deleteResSection(si) {
+  if (!confirm(`Delete category "${currentResData[si]?.title}" and all its resources?`)) return;
+  currentResData.splice(si, 1);
+  setPending(); renderResourcesEditor();
+}
+
+function addResItem(si) {
+  currentResData[si].items.push({ label: '', desc: '', url: '', file: null, fileName: '' });
+  setPending();
+  renderResourcesEditor();
+  editResItem(si, currentResData[si].items.length - 1);
+}
+
+function editResItem(si, ri) {
+  const r = currentResData[si]?.items[ri];
+  if (!r) return;
+  const el = document.getElementById(`ri-${si}-${ri}`);
+  if (!el) return;
+  _resFileData = null; _resFileName = null;
+  const curFile = r.fileName ? `📎 ${esc(r.fileName)}` : 'No file attached';
+  el.outerHTML = `<div class="content-row editing" id="ri-${si}-${ri}" style="flex-direction:column;align-items:stretch;gap:7px;padding:12px">
+    <input class="content-input-z" id="ril-${si}-${ri}" value="${esc(r.label)}" placeholder="Resource title (required)">
+    <input class="content-input-e" id="rid-${si}-${ri}" value="${esc(r.desc)}" placeholder="Description (optional)">
+    <input id="riu-${si}-${ri}" value="${esc(r.url||'')}" placeholder="URL — https://... or relative file path (optional)"
+      style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;flex-wrap:wrap">
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2)">
+        📎 Attach file
+        <input type="file" style="display:none" onchange="handleResFileChange(this,${si},${ri})">
+      </label>
+      <span id="res-file-label-${si}-${ri}" style="color:var(--text-dim)">${curFile}</span>
+      ${r.file ? `<button class="btn btn-outline" onclick="currentResData[${si}].items[${ri}].file=null;currentResData[${si}].items[${ri}].fileName='';renderResourcesEditor()" style="font-size:11px;padding:2px 8px;color:var(--red)">✕ Remove</button>` : ''}
+    </div>
+    <div style="display:flex;gap:6px;margin-top:2px">
+      <button class="btn btn-gold" onclick="saveResItem(${si},${ri})" style="font-size:12px;padding:5px 14px">✓ Save</button>
+      <button class="btn btn-outline" onclick="renderResourcesEditor()" style="font-size:12px;padding:5px 14px">✕ Cancel</button>
+    </div>
+  </div>`;
+  document.getElementById(`ril-${si}-${ri}`)?.focus();
+}
+
+function handleResFileChange(input, si, ri) {
+  const file = input.files[0];
+  if (!file) { _resFileData = null; _resFileName = null; return; }
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File is larger than 5 MB. Please choose a smaller file or link to it via URL instead.');
+    input.value = '';
+    _resFileData = null; _resFileName = null;
+    return;
+  }
+  _resFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    _resFileData = ev.target.result;
+    const lbl = document.getElementById(`res-file-label-${si}-${ri}`);
+    if (lbl) lbl.textContent = '📎 ' + file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveResItem(si, ri) {
+  const label = document.getElementById(`ril-${si}-${ri}`)?.value.trim() || '';
+  const desc  = document.getElementById(`rid-${si}-${ri}`)?.value.trim() || '';
+  if (!label) { deleteResItem(si, ri); return; }
+  const url  = document.getElementById(`riu-${si}-${ri}`)?.value.trim() || '';
+  const existing = currentResData[si].items[ri] || {};
+  currentResData[si].items[ri] = { label, desc, url,
+    file:     _resFileData ?? existing.file ?? null,
+    fileName: _resFileData ? _resFileName : (existing.fileName || '') };
+  _resFileData = null; _resFileName = null;
+  setPending(); renderResourcesEditor();
+}
+
+function deleteResItem(si, ri) {
+  currentResData[si].items.splice(ri, 1);
+  setPending(); renderResourcesEditor();
+}
+
+function saveResourcesChanges() {
+  adminData['_resources'] = JSON.parse(JSON.stringify(currentResData));
+  saveData(); pendingChanges = false;
+  showToast('Resources saved ✓');
+  renderResourcesEditor();
+}
+
+function discardResourcesChanges() {
+  if (!confirm('Discard all unsaved changes?')) return;
+  pendingChanges = false;
+  const saved = adminData['_resources'];
+  currentResData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
+  renderResourcesEditor();
 }
 
 // ── UTILS ──

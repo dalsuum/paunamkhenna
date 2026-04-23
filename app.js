@@ -884,43 +884,59 @@ function renderReference(c) {
       return (d && d.length > 0) ? d : null;
     } catch(e) { return null; }
   })();
-  if (adminRef) {
+  const adminRes = (function() {
+    try {
+      const raw = localStorage.getItem('zolai_admin_data');
+      if (!raw) return null;
+      const d = JSON.parse(raw)?.['_resources'];
+      return (d && d.length > 0) ? d : null;
+    } catch(e) { return null; }
+  })();
+
+  if (adminRef || adminRes) {
+    const grammarHtml = adminRef ? adminRef.map(sec => `
+      <div class="card">
+        <div class="card-title">${sec.title}</div>
+        <table class="grammar-table">
+          <tr><th>Zolai</th><th>English</th></tr>
+          ${sec.rows.map(r=>`<tr><td class="z">${r.z}</td><td class="e">${r.e}</td></tr>`).join('')}
+        </table>
+      </div>`).join('') : '';
+
+    const resHtml = adminRes ? `
+      <div class="lesson-header" style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+        <div class="lesson-badge">Resources</div>
+        <div class="lesson-title" style="font-size:22px">Additional Resources</div>
+      </div>
+      ${adminRes.map(sec => {
+        const items = sec.items.map(r => {
+          const linkBtn = r.url
+            ? `<a href="${r.url}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
+            : '';
+          const fileBtn = r.file
+            ? `<a href="${r.file}" download="${r.fileName||'file'}" class="res-link-btn res-dl-btn">📥 ${r.fileName||'Download'}</a>`
+            : '';
+          return `<div class="res-item">
+            <div class="res-item-info">
+              <div class="res-item-title">${r.label}</div>
+              ${r.desc ? `<div class="res-item-desc">${r.desc}</div>` : ''}
+            </div>
+            ${(linkBtn||fileBtn) ? `<div class="res-item-links">${linkBtn}${fileBtn}</div>` : ''}
+          </div>`;
+        }).join('');
+        return `<div class="card">
+          <div class="card-title">📂 ${sec.title}</div>
+          <div class="res-list">${items || '<p style="color:var(--muted);font-size:13px">No resources yet.</p>'}</div>
+        </div>`;
+      }).join('')}` : '';
+
     c.innerHTML = `
       <div class="lesson-header">
         <div class="lesson-badge">Quick Reference</div>
         <div class="lesson-title">Grammar Reference</div>
-        <div class="lesson-subtitle">A condensed reference sheet covering key Zolai grammar terms and resources.</div>
+        <div class="lesson-subtitle">A condensed reference sheet covering key Zolai grammar terms.</div>
       </div>
-      ${adminRef.map(sec => {
-        if ((sec.type || 'grammar') === 'resources') {
-          const items = sec.rows.map(r => {
-            const linkBtn = r.url
-              ? `<a href="${r.url}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
-              : '';
-            const fileBtn = r.file
-              ? `<a href="${r.file}" download="${r.fileName||'file'}" class="res-link-btn res-dl-btn">📥 ${r.fileName||'Download'}</a>`
-              : '';
-            return `<div class="res-item">
-              <div class="res-item-info">
-                <div class="res-item-title">${r.z}</div>
-                ${r.e ? `<div class="res-item-desc">${r.e}</div>` : ''}
-              </div>
-              ${(linkBtn||fileBtn) ? `<div class="res-item-links">${linkBtn}${fileBtn}</div>` : ''}
-            </div>`;
-          }).join('');
-          return `<div class="card">
-            <div class="card-title">📎 ${sec.title}</div>
-            <div class="res-list">${items || '<p style="color:var(--muted);font-size:13px">No resources yet.</p>'}</div>
-          </div>`;
-        }
-        return `<div class="card">
-          <div class="card-title">${sec.title}</div>
-          <table class="grammar-table">
-            <tr><th>Zolai</th><th>English</th></tr>
-            ${sec.rows.map(r=>`<tr><td class="z">${r.z}</td><td class="e">${r.e}</td></tr>`).join('')}
-          </table>
-        </div>`;
-      }).join('')}`;
+      ${grammarHtml}${resHtml}`;
     return;
   }
   c.innerHTML = `
