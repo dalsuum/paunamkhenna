@@ -893,20 +893,21 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     background: none;
     border: none;
     color: var(--text-dim);
     font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
+    font-size: 9px;
     cursor: pointer;
-    padding: 6px 10px;
+    padding: 5px 4px;
     border-radius: 8px;
     transition: color 0.15s;
-    min-width: 56px;
+    min-width: 0;
+    flex: 1;
   }
 
-  .mobile-nav-btn .mnav-icon { font-size: 18px; line-height: 1; }
+  .mobile-nav-btn .mnav-icon { font-size: 17px; line-height: 1; }
   .mobile-nav-btn.active { color: var(--gold-light); }
 
   /* dropdown lesson picker on mobile */

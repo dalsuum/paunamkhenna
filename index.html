@@ -121,15 +121,8 @@
   </div>
 </nav>
 
-<!-- MOBILE LESSON PICKER -->
-<div class="mobile-lesson-picker" id="lessonPicker">
-  <button class="mlp-btn" onclick="showLesson(1); closeLessonPicker()">I · Alphabet</button>
-  <button class="mlp-btn" onclick="showLesson(2); closeLessonPicker()">II · Syllables</button>
-  <button class="mlp-btn" onclick="showLesson(3); closeLessonPicker()">III · Parts of Speech</button>
-  <button class="mlp-btn" onclick="showLesson(4); closeLessonPicker()">IV · Nouns</button>
-  <button class="mlp-btn" onclick="showLesson(5); closeLessonPicker()">V · Verbs</button>
-  <button class="mlp-btn" onclick="showLesson(6); closeLessonPicker()">VI · Adjectives</button>
-</div>
+<!-- MOBILE LESSON PICKER — populated dynamically by renderLevelNav() in app.js -->
+<div class="mobile-lesson-picker" id="lessonPicker"></div>
 
 
 <script src="app.js"></script>

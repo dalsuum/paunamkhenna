@@ -1,3 +1,9 @@
+// ── UTILS ──
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 // ── FEATURE FLAGS ──
 function getFeatureFlags() {
   try { return JSON.parse(localStorage.getItem('zolai_features') || '{}'); }
@@ -19,19 +25,30 @@ function getAdminSection(key) {
 function applyFeatureFlags() {
   const flags = getFeatureFlags();
   const labels = flags.labels || {};
-  const pairs = {
-    quiz:        'nav-quiz',
-    leaderboard: 'nav-leaderboard',
-    reference:   'nav-reference',
-    resources:   'nav-resources',
-  };
-  for (const [f, id] of Object.entries(pairs)) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    el.style.display = flags.global?.[f] !== false ? '' : 'none';
-    if (labels[f]) {
-      const lbl = el.querySelector('.nav-label');
-      if (lbl) lbl.textContent = labels[f];
+
+  // sidebar nav id → mobile nav id → feature key
+  const pairs = [
+    { key: 'quiz',        sid: 'nav-quiz',        mid: 'mnav-quiz' },
+    { key: 'leaderboard', sid: 'nav-leaderboard',  mid: null },
+    { key: 'reference',   sid: 'nav-reference',    mid: 'mnav-ref' },
+    { key: 'resources',   sid: 'nav-resources',    mid: 'mnav-resources' },
+    { key: 'vocabulary',  sid: 'nav-vocab',        mid: null },
+  ];
+
+  for (const { key, sid, mid } of pairs) {
+    const enabled = flags.global?.[key] !== false;
+    const display = enabled ? '' : 'none';
+    const el = document.getElementById(sid);
+    if (el) {
+      el.style.display = display;
+      if (labels[key]) {
+        const lbl = el.querySelector('.nav-label');
+        if (lbl) lbl.textContent = labels[key];
+      }
+    }
+    if (mid) {
+      const mel = document.getElementById(mid);
+      if (mel) mel.style.display = display;
     }
   }
 }
@@ -894,16 +911,16 @@ function renderReference(c) {
   if (adminRef) {
     const grammarHtml = adminRef.map(sec => `
       <div class="card">
-        <div class="card-title">${sec.title}</div>
+        <div class="card-title">${esc(sec.title)}</div>
         <table class="grammar-table">
           <tr><th>Zolai</th><th>English</th></tr>
-          ${sec.rows.map(r=>`<tr><td class="z">${r.z}</td><td class="e">${r.e}</td></tr>`).join('')}
+          ${sec.rows.map(r=>`<tr><td class="z">${esc(r.z)}</td><td class="e">${esc(r.e)}</td></tr>`).join('')}
         </table>
       </div>`).join('');
     c.innerHTML = `
       <div class="lesson-header">
         <div class="lesson-badge">Quick Reference</div>
-        <div class="lesson-title">${refLabel}</div>
+        <div class="lesson-title">${esc(refLabel)}</div>
         <div class="lesson-subtitle">A condensed reference sheet covering key Zolai grammar terms.</div>
       </div>
       ${grammarHtml}`;
@@ -1001,7 +1018,7 @@ function renderResources(c) {
     c.innerHTML = `
       <div class="lesson-header">
         <div class="lesson-badge">Additional Materials</div>
-        <div class="lesson-title">${resLabel}</div>
+        <div class="lesson-title">${esc(resLabel)}</div>
         <div class="lesson-subtitle">No resources have been added yet.</div>
       </div>`;
     return;
@@ -1010,21 +1027,21 @@ function renderResources(c) {
   const secHtml = adminRes.map(sec => {
     const items = sec.items.map(r => {
       const linkBtn = r.url
-        ? `<a href="${r.url}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
+        ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
         : '';
       const fileBtn = r.file
-        ? `<a href="${r.file}" download="${r.fileName||'file'}" class="res-link-btn res-dl-btn">📥 ${r.fileName||'Download'}</a>`
+        ? `<a href="${esc(r.file)}" download="${esc(r.fileName||'file')}" class="res-link-btn res-dl-btn">📥 ${esc(r.fileName||'Download')}</a>`
         : '';
       return `<div class="res-item">
         <div class="res-item-info">
-          <div class="res-item-title">${r.label}</div>
-          ${r.desc ? `<div class="res-item-desc">${r.desc}</div>` : ''}
+          <div class="res-item-title">${esc(r.label)}</div>
+          ${r.desc ? `<div class="res-item-desc">${esc(r.desc)}</div>` : ''}
         </div>
         ${(linkBtn||fileBtn) ? `<div class="res-item-links">${linkBtn}${fileBtn}</div>` : ''}
       </div>`;
     }).join('');
     return `<div class="card">
-      <div class="card-title">📂 ${sec.title}</div>
+      <div class="card-title">📂 ${esc(sec.title)}</div>
       <div class="res-list">${items || '<p style="color:var(--muted);font-size:13px">No resources yet.</p>'}</div>
     </div>`;
   }).join('');
@@ -1032,7 +1049,7 @@ function renderResources(c) {
   c.innerHTML = `
     <div class="lesson-header">
       <div class="lesson-badge">Additional Materials</div>
-      <div class="lesson-title">${resLabel}</div>
+      <div class="lesson-title">${esc(resLabel)}</div>
     </div>
     ${secHtml}`;
 }
