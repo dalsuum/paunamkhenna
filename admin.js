@@ -201,7 +201,7 @@ const CONTENT_MANIFEST = {
       2: { label: 'Verb Types Practice', items: [{z:'Kei-in laibu khat nei-ing.',e:'Transitive (nei = have; object = laibu)'},{z:'Ni a taang hi.',e:'Intransitive (taang = shine; no object)'},{z:'Amah ka tanu ahi hi.',e:'Helping verb (ahi hi = is)'}] },
     },
     3: {
-      0: { label: 'Five Types of Adjectives', items: [{z:'Phacia lak pianzia (Quality)',e:'hoih (good), sau (tall), gol (round), thau (heavy).'},{z:'Phazah lak pianzia (Quantity)',e:'tampi (many), tawmkha (few), beek (all).'},{z:'Amalzah lak pianzia (Number)',e:'nga (five), sawmnih (twenty), giat (eight).'},{z:'Lahkhiatna lak pianzia (Demonstrative)',e:'hih (this), hua (that), tua (that).'},{z:'Dotna lak pianzia (Interrogative)',e:'bang ci (what kind), koi (which), bang zah (how many).'}] },
+      0: { label: 'Six Types of Adjectives', items: [{z:'Phacia lak pianzia (Quality)',e:'hoih (good), sau (tall), gol (round), thau (heavy).'},{z:'Phazah lak pianzia (Quantity)',e:'tampi (many), tawmkha (few), beek (all).'},{z:'Amalzah lak pianzia (Number)',e:'nga (five), sawmnih (twenty), giat (eight).'},{z:'Lahkhiatna lak pianzia (Demonstrative)',e:'hih (this), hua (that), tua (that).'},{z:'Dotna lak pianzia (Interrogative)',e:'bang ci (what kind), koi (which), bang zah (how many).'},{z:'Neihna lak pianzia (Possessive)',e:"ka (my), na (your), taang' (his), lia' (her), ih (our), amau' (their)."}] },
       1: { label: 'Comparison of Adjectives', items: [{z:'hoih',e:'good'},{z:'hoihzaw',e:'better'},{z:'hoihpen',e:'best'},{z:'hat',e:'strong'},{z:'hatzaw',e:'stronger'},{z:'hatpen',e:'strongest'},{z:'baih',e:'far'},{z:'baihzaw',e:'farther'},{z:'baihpen',e:'farthest'}] },
       2: { label: 'Adjective Practice', items: [{z:'A mah in, inn hoih khat a nei hi.',e:'hoih = quality adjective (good house)'},{z:'Ciinno in, pak tampi a nei hi.',e:'tampi = quantity adjective (many chickens)'},{z:'Hih tangvalpa in a thahat hi.',e:'hih = demonstrative adjective (this young man)'},{z:'Mangpu sangin Thangpu a hatzaw hi.',e:'hatzaw = comparative (stronger than Mangpu)'}] },
     },
@@ -682,6 +682,7 @@ function saveContentRow(idx) {
   const z = document.getElementById(`ciz-${idx}`)?.value.trim() || '';
   const e = document.getElementById(`cie-${idx}`)?.value.trim() || '';
   currentContentRows[idx] = { z, e };
+  setPending();
   renderContentRows();
 }
 
@@ -874,6 +875,16 @@ function collectEdits() {
     const e = document.getElementById(`ve-${i}`)?.value.trim() || '';
     if (z || e) vocab.push({ z, e, audio: td.vocab?.[i]?.audio || null });
   });
+  // Flush any open inline content-row edit from the DOM before collecting
+  const openEdit = document.querySelector('.content-row.editing');
+  if (openEdit) {
+    const idx = parseInt(openEdit.dataset.idx, 10);
+    const z = document.getElementById(`ciz-${idx}`)?.value.trim() || '';
+    const e = document.getElementById(`cie-${idx}`)?.value.trim() || '';
+    if (!isNaN(idx) && idx >= 0 && idx < currentContentRows.length) {
+      currentContentRows[idx] = { z: z || currentContentRows[idx].z, e };
+    }
+  }
   const contentRows = currentContentRows.filter(r => r.z.trim());
   return { image: td.image, audio: td.audio, vocab, items: td.items || {}, contentRows };
 }
