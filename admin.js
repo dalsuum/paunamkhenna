@@ -2235,12 +2235,13 @@ function showReferenceAdmin() {
   document.getElementById('referenceNavBtn')?.classList.add('active');
   const saved = adminData['_reference'];
   currentRefData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : getDefaultRef();
-  document.getElementById('topCrumb').textContent = 'Grammar Reference';
+  document.getElementById('topCrumb').textContent = getFlags().labels?.reference || 'Grammar Reference';
   document.getElementById('saveBar').style.display = 'flex';
   renderReferenceEditor();
 }
 
 function renderReferenceEditor() {
+  const pageLabel = getFlags().labels?.reference || 'Grammar Reference';
   const secHtml = currentRefData.map((sec, si) => {
     const rows = sec.rows.map((r, ri) =>
       `<div class="content-row" id="rr-${si}-${ri}">
@@ -2249,16 +2250,20 @@ function renderReferenceEditor() {
           <span class="content-row-e">${esc(r.e)}</span>
         </div>
         <div class="content-row-actions">
-          <button class="icon-btn" onclick="editRefRow(${si},${ri})" title="Edit">&#9998;</button>
+          <button class="icon-btn" onclick="editRefRow(${si},${ri})" title="Edit" style="display:flex;align-items:center;gap:3px;font-size:11px;padding:2px 8px;width:auto">&#9998; Edit</button>
           <button class="icon-btn del" onclick="deleteRefRow(${si},${ri})" title="Delete">&#128465;</button>
         </div>
       </div>`
     ).join('');
     return `<div class="section-card" style="margin-bottom:10px" id="rsec-${si}">
       <div class="section-title" style="justify-content:space-between">
-        <span>§ ${esc(sec.title)} <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.rows.length} rows)</span></span>
+        <span style="display:flex;align-items:center;gap:6px">§
+          <span id="reftitle-${si}" onclick="inlineEditRefSection(${si})"
+            style="cursor:pointer;border-bottom:1px dashed var(--border);padding-bottom:1px"
+            title="Click to rename">${esc(sec.title)}</span>
+          <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.rows.length} rows)</span>
+        </span>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-outline" onclick="renameRefSection(${si})" style="font-size:11px;padding:3px 10px">Rename</button>
           <button class="btn btn-outline" onclick="deleteRefSection(${si})" style="font-size:11px;padding:3px 10px;color:var(--red)">✕ Delete</button>
         </div>
       </div>
@@ -2269,10 +2274,10 @@ function renderReferenceEditor() {
 
   document.getElementById('adminContent').innerHTML = `
     <div class="section-card">
-      <div class="section-title">≡ Grammar Reference Editor</div>
+      <div class="section-title">≡ ${esc(pageLabel)} Editor</div>
       <div class="info-box" style="margin-bottom:12px">
-        Add sections with Zolai → English rows. When saved, this replaces the built-in Grammar Reference page.
-        Leave empty to keep the app's built-in reference. Use the <strong>Resources</strong> tab for URL links and file attachments.
+        Add sections with Zolai → English rows. <strong>Click a section name to rename it.</strong>
+        When saved, this replaces the built-in Grammar Reference page.
       </div>
       ${secHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No sections yet — click + Add Section to start.</div>'}
       <button class="btn btn-outline" onclick="addRefSection()" style="font-size:12px;margin-top:10px">+ Add Section</button>
@@ -2286,11 +2291,20 @@ function addRefSection() {
   setPending(); renderReferenceEditor();
 }
 
-function renameRefSection(si) {
-  const title = prompt('New section title:', currentRefData[si]?.title || '');
-  if (!title?.trim()) return;
-  currentRefData[si].title = title.trim();
-  setPending(); renderReferenceEditor();
+function inlineEditRefSection(si) {
+  const el = document.getElementById(`reftitle-${si}`);
+  if (!el) return;
+  const cur = currentRefData[si]?.title || '';
+  el.outerHTML = `<input id="reftitle-${si}" value="${esc(cur)}" placeholder="Section name"
+    style="font-size:14px;font-weight:600;padding:2px 6px;border-radius:5px;border:1px solid var(--gold-dim);background:var(--surface2);color:var(--text);min-width:160px"
+    onblur="saveRefSectionTitle(${si},this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')renderReferenceEditor()">`;
+  document.getElementById(`reftitle-${si}`)?.focus();
+}
+
+function saveRefSectionTitle(si, val) {
+  if (val.trim()) { currentRefData[si].title = val.trim(); setPending(); }
+  renderReferenceEditor();
 }
 
 function deleteRefSection(si) {
@@ -2365,12 +2379,13 @@ function showResourcesAdmin() {
   document.getElementById('resourcesNavBtn')?.classList.add('active');
   const saved = adminData['_resources'];
   currentResData = (saved && saved.length) ? JSON.parse(JSON.stringify(saved)) : [];
-  document.getElementById('topCrumb').textContent = 'Additional Resources';
+  document.getElementById('topCrumb').textContent = getFlags().labels?.resources || 'Resources';
   document.getElementById('saveBar').style.display = 'flex';
   renderResourcesEditor();
 }
 
 function renderResourcesEditor() {
+  const pageLabel = getFlags().labels?.resources || 'Resources';
   const secHtml = currentResData.map((sec, si) => {
     const items = sec.items.map((r, ri) => {
       const linkBtn = r.url
@@ -2386,16 +2401,20 @@ function renderResourcesEditor() {
           ${(linkBtn||fileBtn) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">${linkBtn}${fileBtn}</div>` : ''}
         </div>
         <div class="content-row-actions">
-          <button class="icon-btn" onclick="editResItem(${si},${ri})" title="Edit">&#9998;</button>
+          <button class="icon-btn" onclick="editResItem(${si},${ri})" title="Edit" style="display:flex;align-items:center;gap:3px;font-size:11px;padding:2px 8px;width:auto">&#9998; Edit</button>
           <button class="icon-btn del" onclick="deleteResItem(${si},${ri})" title="Delete">&#128465;</button>
         </div>
       </div>`;
     }).join('');
     return `<div class="section-card" style="margin-bottom:10px" id="rsec2-${si}">
       <div class="section-title" style="justify-content:space-between">
-        <span>📂 ${esc(sec.title)} <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.items.length} items)</span></span>
+        <span style="display:flex;align-items:center;gap:6px">📂
+          <span id="restitle-${si}" onclick="inlineEditResSection(${si})"
+            style="cursor:pointer;border-bottom:1px dashed var(--border);padding-bottom:1px"
+            title="Click to rename">${esc(sec.title)}</span>
+          <span style="font-size:11px;color:var(--text-dim);font-weight:400">(${sec.items.length} items)</span>
+        </span>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-outline" onclick="renameResSection(${si})" style="font-size:11px;padding:3px 10px">Rename</button>
           <button class="btn btn-outline" onclick="deleteResSection(${si})" style="font-size:11px;padding:3px 10px;color:var(--red)">✕ Delete</button>
         </div>
       </div>
@@ -2406,10 +2425,10 @@ function renderResourcesEditor() {
 
   document.getElementById('adminContent').innerHTML = `
     <div class="section-card">
-      <div class="section-title">📎 Additional Resources Editor</div>
+      <div class="section-title">📎 ${esc(pageLabel)} Editor</div>
       <div class="info-box" style="margin-bottom:12px">
-        Add resource categories and items. Each item has a title, description, and optional URL link or file attachment (max 5 MB).
-        Displayed on the Grammar Reference page for students.
+        Add resource categories and items. <strong>Click a category name to rename it. Click ✏ Edit on any row to update its title, description, URL or file.</strong>
+        Max file size: 5 MB.
       </div>
       ${secHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No categories yet — click + Add Category to start.</div>'}
       <button class="btn btn-outline" onclick="addResSection()" style="font-size:12px;margin-top:10px">+ Add Category</button>
@@ -2423,11 +2442,20 @@ function addResSection() {
   setPending(); renderResourcesEditor();
 }
 
-function renameResSection(si) {
-  const title = prompt('New category name:', currentResData[si]?.title || '');
-  if (!title?.trim()) return;
-  currentResData[si].title = title.trim();
-  setPending(); renderResourcesEditor();
+function inlineEditResSection(si) {
+  const el = document.getElementById(`restitle-${si}`);
+  if (!el) return;
+  const cur = currentResData[si]?.title || '';
+  el.outerHTML = `<input id="restitle-${si}" value="${esc(cur)}" placeholder="Category name"
+    style="font-size:14px;font-weight:600;padding:2px 6px;border-radius:5px;border:1px solid var(--gold-dim);background:var(--surface2);color:var(--text);min-width:160px"
+    onblur="saveResSectionTitle(${si},this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')renderResourcesEditor()">`;
+  document.getElementById(`restitle-${si}`)?.focus();
+}
+
+function saveResSectionTitle(si, val) {
+  if (val.trim()) { currentResData[si].title = val.trim(); setPending(); }
+  renderResourcesEditor();
 }
 
 function deleteResSection(si) {
