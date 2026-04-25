@@ -548,152 +548,140 @@ let _resFileName = null;
 
 const DATA_KEY      = KEYS.adminData;
 const STRUCTURE_KEY = KEYS.structure;
-const PW_KEY        = KEYS.adminPw;
-const LOCKOUT_KEY   = KEYS.lockout;
-const MAX_ATTEMPTS   = 5;
-const LOCKOUT_MS     = 10 * 60 * 1000; // 10 minutes
 
-// ── CRYPTO — SHA-256 via Web Crypto API ──
-async function hashPw(pw) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
+// ── FIREBASE AUTH + DATABASE ──
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyD6TuwAQSa00u9AiU_SrOh81X6yUHcWPDY",
+  authDomain:        "zopau-paunam-khenna.firebaseapp.com",
+  databaseURL:       "https://zopau-paunam-khenna-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "zopau-paunam-khenna",
+  storageBucket:     "zopau-paunam-khenna.firebasestorage.app",
+  messagingSenderId: "241580430522",
+  appId:             "1:241580430522:web:56e67804d07c91dfc71e83"
+};
+const ALLOWED_EMAIL = 'dalsuum08@gmail.com';
 
-function isPasswordSet() {
-  const h = localStorage.getItem(PW_KEY);
-  return !!(h && h.length === 64 && /^[0-9a-f]+$/.test(h));
-}
+let auth;
+let storage;
+let database;
+let _flags = {};
+let _adminReady = false;
 
-// ── LOCKOUT ──
-function getLockout() {
-  try { return JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{"attempts":0,"until":0}'); }
-  catch { return { attempts: 0, until: 0 }; }
-}
-function setLockout(l) { localStorage.setItem(LOCKOUT_KEY, JSON.stringify(l)); }
-
-let _lockoutTimer = null;
-function refreshLockoutUI() {
-  const l = getLockout();
-  const msg = document.getElementById('lockoutMsg');
-  const btn = document.getElementById('loginBtn');
-  const inp = document.getElementById('pwInput');
-  if (!msg) return;
-  clearTimeout(_lockoutTimer);
-
-  if (l.until > Date.now()) {
-    const secs = Math.ceil((l.until - Date.now()) / 1000);
-    const m = Math.floor(secs / 60), s = secs % 60;
-    msg.textContent = `Too many attempts. Try again in ${m}:${String(s).padStart(2,'0')}`;
-    if (btn) btn.disabled = true;
-    if (inp) inp.disabled = true;
-    _lockoutTimer = setTimeout(refreshLockoutUI, 1000);
-  } else {
-    const remaining = MAX_ATTEMPTS - (l.attempts || 0);
-    msg.textContent = l.attempts > 0 ? `${remaining} attempt${remaining !== 1 ? 's' : ''} remaining` : '';
-    if (btn) btn.disabled = false;
-    if (inp) { inp.disabled = false; inp.focus(); }
-  }
-}
-
-// ── AUTH ──
-async function login() {
-  const l = getLockout();
-  if (l.until > Date.now()) { refreshLockoutUI(); return; }
-
-  const pw = document.getElementById('pwInput').value;
-  if (!pw) return;
-
-  const hash = await hashPw(pw);
-  if (hash === localStorage.getItem(PW_KEY)) {
-    setLockout({ attempts: 0, until: 0 });
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminMain').style.display = 'block';
-    loadData();
-    buildSidebar();
-    applyAdminLabels();
-  } else {
-    const l2 = getLockout();
-    l2.attempts = (l2.attempts || 0) + 1;
-    if (l2.attempts >= MAX_ATTEMPTS) {
-      l2.until = Date.now() + LOCKOUT_MS;
-    }
-    setLockout(l2);
-    document.getElementById('loginError').textContent = 'Incorrect password.';
-    document.getElementById('pwInput').value = '';
-    refreshLockoutUI();
-  }
-}
-
-async function setupPassword() {
-  const pw1 = document.getElementById('setupPw1').value;
-  const pw2 = document.getElementById('setupPw2').value;
-  const err = document.getElementById('setupError');
-  if (pw1.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
-  if (pw1 !== pw2)    { err.textContent = 'Passwords do not match.'; return; }
-  const hash = await hashPw(pw1);
-  localStorage.setItem(PW_KEY, hash);
-  setLockout({ attempts: 0, until: 0 });
-  document.getElementById('setupScreen').style.display = 'none';
-  document.getElementById('adminMain').style.display = 'block';
-  loadData();
-  buildSidebar();
-  applyAdminLabels();
+function signInWithGoogle() {
+  const btn = document.getElementById('googleSignInBtn');
+  const err = document.getElementById('loginError');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  err.textContent = '';
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ login_hint: ALLOWED_EMAIL });
+  auth.signInWithPopup(provider).catch(e => {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Sign in with Google`;
+    err.textContent = e.code === 'auth/popup-closed-by-user' ? '' : 'Sign-in failed. Try again.';
+  });
 }
 
 function logout() {
-  document.getElementById('adminMain').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('pwInput').value = '';
-  document.getElementById('loginError').textContent = '';
-  refreshLockoutUI();
-}
-
-async function changePassword() {
-  const current = prompt('Enter your current password:');
-  if (!current) return;
-  const currentHash = await hashPw(current);
-  if (currentHash !== localStorage.getItem(PW_KEY)) {
-    alert('Incorrect current password.');
-    return;
-  }
-  const np = prompt('New password (min 8 characters):');
-  if (!np) return;
-  if (np.length < 8) { alert('Password must be at least 8 characters.'); return; }
-  const np2 = prompt('Confirm new password:');
-  if (np !== np2) { alert('Passwords do not match.'); return; }
-  const hash = await hashPw(np);
-  localStorage.setItem(PW_KEY, hash);
-  showToast('Password updated ✓');
+  _adminReady = false;
+  auth.signOut();
 }
 
 // ── INIT ──
 window.addEventListener('load', () => {
-  if (!isPasswordSet()) {
-    document.getElementById('setupScreen').style.display = 'flex';
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
-    refreshLockoutUI();
-  }
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth     = firebase.auth();
+  storage  = firebase.storage();
+  database = firebase.database();
+
+  auth.onAuthStateChanged(user => {
+    if (user && user.email === ALLOWED_EMAIL) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminMain').style.display  = 'block';
+      if (!_adminReady) {
+        _adminReady = true;
+        document.getElementById('levelNav').innerHTML =
+          '<div style="padding:8px 14px;color:var(--text-dim);font-size:12px">Loading…</div>';
+        loadData().then(() => {
+          buildSidebar();
+          applyAdminLabels();
+        }).catch(() => {
+          buildSidebar();
+          applyAdminLabels();
+        });
+      }
+    } else {
+      _adminReady = false;
+      if (user) {
+        auth.signOut();
+        document.getElementById('loginError').textContent = `Access denied. Only ${ALLOWED_EMAIL} is authorised.`;
+      }
+      document.getElementById('adminMain').style.display  = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+    }
+  });
 });
 
 // ── DATA ──
-function loadData() {
-  try { adminData = JSON.parse(localStorage.getItem(DATA_KEY) || '{}'); }
-  catch { adminData = {}; }
-  loadCustomStructure();
+async function loadData() {
+  try {
+    // 5-second timeout so the sidebar never hangs indefinitely if Firebase is unreachable
+    const results = await Promise.race([
+      Promise.all([
+        database.ref('adminData').once('value'),
+        database.ref('structure').once('value'),
+        database.ref('features').once('value'),
+        database.ref('settings').once('value'),
+      ]),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('Firebase timeout')), 5000))
+    ]);
+    const [adminSnap, structSnap, featSnap, settSnap] = results;
+    adminData       = adminSnap.val()  || {};
+    customStructure = structSnap.val() || {};
+    _flags          = featSnap.val()   || {};
+    const settings  = settSnap.val()   || {};
+    // Mirror to localStorage for offline fallback
+    try { localStorage.setItem(DATA_KEY,      JSON.stringify(adminData));       } catch(e) {}
+    try { localStorage.setItem(STRUCTURE_KEY, JSON.stringify(customStructure)); } catch(e) {}
+    try { localStorage.setItem(FLAGS_KEY,     JSON.stringify(_flags));          } catch(e) {}
+    if (settings.gaId)        localStorage.setItem(KEYS.gaId,        settings.gaId);
+    if (settings.firebaseUrl) localStorage.setItem(KEYS.firebaseUrl, settings.firebaseUrl);
+  } catch(e) {
+    console.warn('Firebase load failed, using local cache:', e.message);
+    try { adminData       = JSON.parse(localStorage.getItem(DATA_KEY)      || '{}'); } catch { adminData = {}; }
+    try { customStructure = JSON.parse(localStorage.getItem(STRUCTURE_KEY) || '{}'); } catch { customStructure = {}; }
+    try { _flags          = JSON.parse(localStorage.getItem(FLAGS_KEY)     || '{}'); } catch { _flags = {}; }
+  }
+  buildRuntimeStructure();
 }
 
-function saveData() { localStorage.setItem(DATA_KEY, JSON.stringify(adminData)); }
+function saveData() {
+  // Write to Firebase — the shared source of truth for all clients
+  if (database) {
+    database.ref('adminData').set(adminData).catch(e => {
+      showToast('⚠ Save failed — check your connection');
+      console.error('Firebase write failed:', e);
+    });
+  }
+  // Also mirror to localStorage as offline cache
+  try { localStorage.setItem(DATA_KEY, JSON.stringify(adminData)); } catch(e) {}
+  return true;
+}
 
 // ── STRUCTURE (runtime merge of hardcoded defaults + custom overrides) ──
 function loadCustomStructure() {
-  try { customStructure = JSON.parse(localStorage.getItem(STRUCTURE_KEY) || '{}'); }
-  catch { customStructure = {}; }
+  // No-op: loadData() now handles this. Kept for compatibility.
   buildRuntimeStructure();
 }
 
 function saveCustomStructure() {
-  localStorage.setItem(STRUCTURE_KEY, JSON.stringify(customStructure));
+  if (database) {
+    database.ref('structure').set(customStructure).catch(e => {
+      showToast('⚠ Save failed — check your connection');
+      console.error('Firebase write failed:', e);
+    });
+  }
+  try { localStorage.setItem(STRUCTURE_KEY, JSON.stringify(customStructure)); } catch(e) {}
   buildRuntimeStructure();
 }
 
@@ -813,7 +801,7 @@ function renderEditor() {
         <input type="file" accept="image/*" onchange="handleImageUpload(this)">
         <div class="upload-icon">🖼</div>
         <div class="upload-label">${td.image ? 'Image uploaded — click to replace' : 'Click to upload an image'}</div>
-        <div class="upload-sub">JPG, PNG, WebP, GIF · max 2 MB</div>
+        <div class="upload-sub">JPG, PNG, WebP, GIF · max 50 MB</div>
         ${td.image ? `<div class="upload-preview"><img src="${td.image}" alt="preview"></div>` : ''}
       </div>
       ${td.image ? `<button class="clear-btn" onclick="clearMedia('image')">✕ Remove image</button>` : ''}
@@ -826,23 +814,37 @@ function renderEditor() {
         <input type="file" accept="audio/*" onchange="handleTabAudio(this)">
         <div class="upload-icon">🎵</div>
         <div class="upload-label">${td.audio ? 'Audio uploaded — click to replace' : 'Click to upload audio'}</div>
-        <div class="upload-sub">MP3, OGG, WAV · max 5 MB · plays at top of tab in app</div>
+        <div class="upload-sub">MP3, OGG, WAV · max 50 MB · plays at top of tab in app</div>
         ${td.audio ? `<audio class="tab-audio" controls src="${td.audio}"></audio>` : ''}
       </div>
       ${td.audio ? `<button class="clear-btn" onclick="clearMedia('audio')">✕ Remove audio</button>` : ''}
     </div>`;
 
+  const isVideoUrl = td.video && !td.video.startsWith('data:');
+  const isVideoFile = td.video && td.video.startsWith('data:');
   const videoSection = `
     <div class="section-card">
       <div class="section-title">🎥 Tab Video</div>
-      <div class="upload-area${td.video?' has-file':''}" id="videoArea">
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">URL (YouTube, Vimeo, direct MP4/WebM)</div>
+        <div style="display:flex;gap:8px">
+          <input type="url" id="tabVideoUrl" placeholder="https://youtube.com/watch?v=... or direct video URL"
+            value="${isVideoUrl ? esc(td.video) : ''}"
+            style="flex:1;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"
+            onkeydown="if(event.key==='Enter')saveTabVideoUrl()">
+          <button class="btn btn-outline" onclick="saveTabVideoUrl()" style="font-size:12px;padding:7px 14px;white-space:nowrap">Save URL</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;text-align:center">— or upload a file —</div>
+      <div class="upload-area${isVideoFile?' has-file':''}" id="videoArea">
         <input type="file" accept="video/*" onchange="handleVideoUpload(this)">
         <div class="upload-icon">🎬</div>
-        <div class="upload-label">${td.video ? 'Video uploaded — click to replace' : 'Click to upload video'}</div>
-        <div class="upload-sub">MP4, WebM, OGV · max 10 MB · plays at top of tab in app</div>
-        ${td.video ? `<video class="tab-video" controls src="${td.video}" style="width:100%;max-height:200px;"></video>` : ''}
+        <div class="upload-label">${isVideoFile ? 'Video uploaded — click to replace' : 'Click to upload video file'}</div>
+        <div class="upload-sub">MP4, WebM, OGV · max 50 MB · stored locally</div>
+        ${isVideoFile ? `<video class="tab-video" controls src="${td.video}" style="width:100%;max-height:200px;margin-top:8px"></video>` : ''}
       </div>
-      ${td.video ? `<button class="clear-btn" onclick="clearMedia('video')">✕ Remove video</button>` : ''}
+      ${isVideoUrl ? `<div style="margin-top:10px;font-size:12px;color:var(--gold)">✓ URL saved: ${esc(td.video)}</div>` : ''}
+      ${td.video ? `<button class="clear-btn" onclick="clearMedia('video')" style="margin-top:8px">✕ Remove video</button>` : ''}
     </div>`;
 
   const contentSection = getContentSection();
@@ -940,17 +942,18 @@ function handleContentRowAudio(input, idx) {
   const file = input.files[0]; if (!file) return;
   const key = currentContentRows[idx]?.z;
   if (!key?.trim()) return;
-  readFile(file, 2, data => {
+  showToast('Uploading audio…');
+  uploadToStorage(file, 'audio').then(url => {
     const td = collectEdits();
     if (!td.items) td.items = {};
     if (!td.items[key]) td.items[key] = {};
-    td.items[key].audio = data;
+    td.items[key].audio = url;
     setTabData(currentLevel, currentLesson, currentTab, td);
     saveData();
     currentTabItems = td.items;
     renderContentRows();
-    showToast(`Audio added for "${key}"`);
-  });
+    showToast(`Audio added for "${key}" ✓`);
+  }).catch(e => alert('Upload failed: ' + e.message));
 }
 
 function playContentRowAudio(idx) { document.getElementById(`cra-${idx}`)?.play(); }
@@ -1094,56 +1097,66 @@ function deleteRow(i) {
   setPending();
 }
 
-// ── MEDIA HANDLERS ──
-function readFile(file, maxMB, callback) {
-  if (file.size > maxMB * 1024 * 1024) {
-    alert(`File too large. Max ${maxMB} MB allowed.`);
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = e => callback(e.target.result);
-  reader.readAsDataURL(file);
+// ── MEDIA HANDLERS — files go to Firebase Storage, only URL stored locally ──
+async function uploadToStorage(file, folder) {
+  if (file.size > 50 * 1024 * 1024) throw new Error('File too large. Max 50 MB.');
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const ref = storage.ref(`${folder}/${Date.now()}_${safeName}`);
+  await ref.put(file);
+  return await ref.getDownloadURL();
 }
 
 function handleImageUpload(input) {
   const file = input.files[0]; if (!file) return;
-  readFile(file, 2, data => {
+  showToast('Uploading image…');
+  uploadToStorage(file, 'images').then(url => {
     const td = getTabData(currentLevel, currentLesson, currentTab);
-    td.image = data;
+    td.image = url;
     setTabData(currentLevel, currentLesson, currentTab, td);
-    saveData(); renderEditor(); showToast('Image uploaded');
-  });
+    saveData(); renderEditor(); showToast('Image uploaded ✓');
+  }).catch(e => alert('Upload failed: ' + e.message));
 }
 
 function handleTabAudio(input) {
   const file = input.files[0]; if (!file) return;
-  readFile(file, 5, data => {
+  showToast('Uploading audio…');
+  uploadToStorage(file, 'audio').then(url => {
     const td = getTabData(currentLevel, currentLesson, currentTab);
-    td.audio = data;
+    td.audio = url;
     setTabData(currentLevel, currentLesson, currentTab, td);
-    saveData(); renderEditor(); showToast('Audio uploaded');
-  });
+    saveData(); renderEditor(); showToast('Audio uploaded ✓');
+  }).catch(e => alert('Upload failed: ' + e.message));
+}
+
+function saveTabVideoUrl() {
+  const url = document.getElementById('tabVideoUrl')?.value.trim() || '';
+  const td = getTabData(currentLevel, currentLesson, currentTab);
+  td.video = url || null;
+  setTabData(currentLevel, currentLesson, currentTab, td);
+  saveData(); renderEditor(); showToast(url ? 'Video URL saved' : 'Video removed');
 }
 
 function handleVideoUpload(input) {
   const file = input.files[0]; if (!file) return;
-  readFile(file, 10, data => {
+  showToast('Uploading video…');
+  uploadToStorage(file, 'video').then(url => {
     const td = getTabData(currentLevel, currentLesson, currentTab);
-    td.video = data;
+    td.video = url;
     setTabData(currentLevel, currentLesson, currentTab, td);
-    saveData(); renderEditor(); showToast('Video uploaded');
-  });
+    saveData(); renderEditor(); showToast('Video uploaded ✓');
+  }).catch(e => alert('Upload failed: ' + e.message));
 }
 
 function handleItemAudio(input, i) {
   const file = input.files[0]; if (!file) return;
-  readFile(file, 2, data => {
+  showToast('Uploading audio…');
+  uploadToStorage(file, 'audio').then(url => {
     const td = collectEdits();
     if (!td.vocab[i]) td.vocab[i] = { z: '', e: '' };
-    td.vocab[i].audio = data;
+    td.vocab[i].audio = url;
     setTabData(currentLevel, currentLesson, currentTab, td);
-    saveData(); renderEditor(); showToast('Item audio uploaded');
-  });
+    saveData(); renderEditor(); showToast('Item audio uploaded ✓');
+  }).catch(e => alert('Upload failed: ' + e.message));
 }
 
 function clearMedia(type) {
@@ -1165,14 +1178,15 @@ function playItemAudio(i) { document.getElementById(`va-${i}`)?.play(); }
 
 function handleItemKeyAudio(input, key, safeKey) {
   const file = input.files[0]; if (!file) return;
-  readFile(file, 2, data => {
+  showToast('Uploading audio…');
+  uploadToStorage(file, 'audio').then(url => {
     const td = getTabData(currentLevel, currentLesson, currentTab);
     if (!td.items) td.items = {};
     if (!td.items[key]) td.items[key] = {};
-    td.items[key].audio = data;
+    td.items[key].audio = url;
     setTabData(currentLevel, currentLesson, currentTab, td);
-    saveData(); renderEditor(); showToast(`Audio added for "${key}"`);
-  });
+    saveData(); renderEditor(); showToast(`Audio added for "${key}" ✓`);
+  }).catch(e => alert('Upload failed: ' + e.message));
 }
 
 function clearItemKeyAudio(key, safeKey) {
@@ -1205,7 +1219,7 @@ function collectEdits() {
     }
   }
   const contentRows = currentContentRows.filter(r => r.z.trim());
-  return { image: td.image, audio: td.audio, vocab, items: td.items || {}, contentRows };
+  return { image: td.image, audio: td.audio, video: td.video, vocab, items: td.items || {}, contentRows };
 }
 
 const ADMIN_SAVE    = { vocab: saveVocabChanges, quiz: saveQuizChanges, reference: saveReferenceChanges, resources: saveResourcesChanges };
@@ -1215,9 +1229,7 @@ function saveChanges() {
   if (ADMIN_SAVE[adminMode]) return ADMIN_SAVE[adminMode]();
   const td = collectEdits();
   setTabData(currentLevel, currentLesson, currentTab, td);
-  saveData();
-  pendingChanges = false;
-  showToast('Saved successfully ✓');
+  if (saveData()) { pendingChanges = false; showToast('Saved successfully ✓'); }
   renderEditor();
 }
 
@@ -1540,13 +1552,14 @@ function deleteTab(lid, num, tabIdx) {
 // ── FEATURE FLAGS ──
 const FLAGS_KEY = KEYS.features;
 
-function getFlags() {
-  try { return JSON.parse(localStorage.getItem(FLAGS_KEY) || '{}'); }
-  catch { return {}; }
-}
+function getFlags() { return _flags; }
 
 function saveFlags(flags) {
-  localStorage.setItem(FLAGS_KEY, JSON.stringify(flags));
+  _flags = flags;
+  if (database) {
+    database.ref('features').set(flags).catch(e => console.error('Firebase sync:', e));
+  }
+  try { localStorage.setItem(FLAGS_KEY, JSON.stringify(flags)); } catch(e) {}
 }
 
 function renderFeatureControls() {
@@ -1705,7 +1718,7 @@ function toggleTab(level, lesson, tabIdx, enabled) {
 
 function resetAllFlags() {
   if (!confirm('Reset all feature controls to default (everything enabled, all names reset)?')) return;
-  localStorage.removeItem(FLAGS_KEY);
+  saveFlags({});
   renderFeatureControls();
   applyAdminLabels();
   showToast('All controls reset to default');
@@ -1748,8 +1761,13 @@ function saveFbUrl() {
     alert('URL must start with https://');
     return;
   }
-  if (url) localStorage.setItem(KEYS.firebaseUrl, url);
-  else localStorage.removeItem(KEYS.firebaseUrl);
+  if (url) {
+    localStorage.setItem(KEYS.firebaseUrl, url);
+    if (database) database.ref('settings/firebaseUrl').set(url).catch(e => {});
+  } else {
+    localStorage.removeItem(KEYS.firebaseUrl);
+    if (database) database.ref('settings/firebaseUrl').remove().catch(e => {});
+  }
   showToast(url ? 'Firebase URL saved' : 'Firebase URL cleared');
   showAnalytics();
 }
@@ -1760,8 +1778,13 @@ function saveGaId() {
     alert('Invalid format. GA4 Measurement IDs look like: G-ABCD1234');
     return;
   }
-  if (id) localStorage.setItem(KEYS.gaId, id);
-  else localStorage.removeItem(KEYS.gaId);
+  if (id) {
+    localStorage.setItem(KEYS.gaId, id);
+    if (database) database.ref('settings/gaId').set(id).catch(e => {});
+  } else {
+    localStorage.removeItem(KEYS.gaId);
+    if (database) database.ref('settings/gaId').remove().catch(e => {});
+  }
   showToast(id ? `GA4 configured: ${id}` : 'GA4 ID cleared');
   showAnalytics();
 }
@@ -1859,30 +1882,48 @@ function clearAllScores() {
 }
 
 // ── ANALYTICS ──
-function showAnalytics() {
+async function showAnalytics() {
   if (pendingChanges && !confirm('You have unsaved changes. Discard?')) return;
   pendingChanges = false;
   currentLevel = null; currentLesson = null;
   clearAllNav();
   document.getElementById('analyticsNavBtn').classList.add('active');
   document.getElementById('saveBar').style.display = 'none';
+  document.getElementById('topCrumb').textContent = 'Analytics';
 
-  const log = JSON.parse(localStorage.getItem(KEYS.visitLog) || '[]');
   const gaId = localStorage.getItem(KEYS.gaId) || '';
 
-  const sessions = log.filter(e => e.type === 'session').length;
-  const lessonLog = log.filter(e => !e.type || e.type === 'lesson');
+  // Show loading state while Firebase reads
+  document.getElementById('adminContent').innerHTML = `
+    <div class="section-card">
+      <div class="section-title">&#128202; Site Analytics</div>
+      <div style="padding:40px;text-align:center;color:var(--text-dim)">Loading realtime data&#8230;</div>
+    </div>`;
 
-  // Aggregate by level+lesson
-  const counts = {};
-  let total = 0;
-  lessonLog.forEach(e => {
-    const k = `${e.level}.${e.lesson}`;
-    counts[k] = (counts[k] || 0) + 1;
-    total++;
-  });
+  // Read analytics from Firebase
+  let sessions = 0, total = 0, counts = {}, levelCounts = {};
+  if (database) {
+    try {
+      const [sessSnap, visitsSnap] = await Promise.race([
+        Promise.all([
+          database.ref('analytics/sessions').once('value'),
+          database.ref('analytics/visits').once('value'),
+        ]),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+      ]);
+      sessions = Object.keys(sessSnap.val() || {}).length;
+      Object.values(visitsSnap.val() || {}).forEach(e => {
+        const k = `${e.level}.${e.lesson}`;
+        counts[k] = (counts[k] || 0) + 1;
+        levelCounts[e.level] = (levelCounts[e.level] || 0) + 1;
+        total++;
+      });
+    } catch(e) {
+      console.warn('Analytics read failed:', e.message);
+    }
+  }
+
   const maxCount = Math.max(1, ...Object.values(counts));
-
   const rows = Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
     .map(([k, n]) => {
@@ -1900,9 +1941,6 @@ function showAnalytics() {
       </tr>`;
     }).join('') || `<tr><td colspan="3" style="padding:20px;color:var(--text-dim);text-align:center;font-size:13px">No lesson visits yet — open the main app and browse lessons to see data here.</td></tr>`;
 
-  // Level breakdown (lesson visits only)
-  const levelCounts = {};
-  lessonLog.forEach(e => { levelCounts[e.level] = (levelCounts[e.level] || 0) + 1; });
   const levelRows = Object.entries(levelCounts).map(([lvl, n]) =>
     `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px">
       ${runtimeStructure[lvl]?.icon || ''} ${runtimeStructure[lvl]?.name || lvl} <strong style="color:var(--gold)">${n}</strong>
@@ -1915,11 +1953,11 @@ function showAnalytics() {
 
       <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:1;min-width:120px">
-          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">App Sessions (this device)</div>
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">App Sessions (All Devices)</div>
           <div style="font-size:28px;font-weight:600;color:var(--gold-light)">${sessions}</div>
         </div>
         <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:1;min-width:120px">
-          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Lesson Opens (this device)</div>
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Lesson Opens (All Devices)</div>
           <div style="font-size:28px;font-weight:600;color:var(--gold-light)">${total}</div>
         </div>
         <div style="padding:14px 18px;background:var(--surface2);border-radius:8px;flex:2;min-width:200px">
@@ -1927,7 +1965,6 @@ function showAnalytics() {
           <div style="display:flex;gap:8px;flex-wrap:wrap">${levelRows}</div>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px">&#9432; Data shown is from <strong>this browser only</strong>. Connect Firebase below to collect cross-device scores, or Google Analytics 4 for full visitor insights.</div>
 
       <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Lesson Visit Breakdown</div>
       <table class="analytics-table">
@@ -1936,33 +1973,13 @@ function showAnalytics() {
       </table>
       <button onclick="clearVisitLog()"
         style="margin-top:10px;font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:4px 12px;cursor:pointer">
-        Clear visit log
+        Clear all analytics data
       </button>
-
-      <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
-        <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Firebase Realtime Database — Leaderboard Backend</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
-          The leaderboard needs a free Firebase Realtime Database to store scores across devices.<br>
-          1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--gold)">console.firebase.google.com</a> → Create project → Build → Realtime Database.<br>
-          2. Start in <strong>test mode</strong> (open read/write rules).<br>
-          3. Copy the database URL (e.g. <code style="color:var(--gold-light)">https://yourapp-default-rtdb.firebaseio.com</code>) and paste below.
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input type="text" id="fbUrlInput" value="${esc(localStorage.getItem(KEYS.firebaseUrl)||'')}"
-            placeholder="https://your-project-default-rtdb.firebaseio.com"
-            style="flex:1;min-width:200px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none">
-          <button class="btn btn-gold" onclick="saveFbUrl()" style="font-size:12px;padding:9px 16px">Save</button>
-        </div>
-        ${localStorage.getItem(KEYS.firebaseUrl)
-          ? `<div style="margin-top:8px;font-size:12px;color:var(--green)">&#10003; Active — <a href="${esc(localStorage.getItem(KEYS.firebaseUrl))}/scores.json" target="_blank" style="color:var(--gold)">view raw data &#8599;</a></div>`
-          : ''}
-      </div>
 
       <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
         <div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Google Analytics 4 — Age, Gender &amp; Country</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
-          The visit log above only captures <em>this device</em>. To see <strong>all users</strong> —
-          including their country, device, and estimated age/gender — connect Google Analytics 4 (free).<br>
+          For demographic breakdowns (country, device, age/gender) connect Google Analytics 4 (free).<br>
           1. Go to <a href="https://analytics.google.com" target="_blank" style="color:var(--gold)">analytics.google.com</a>,
           create a Web property, and copy your <strong>Measurement ID</strong> (format: <code style="color:var(--gold-light)">G-XXXXXXXX</code>).<br>
           2. Paste it below. The app will automatically send lesson-view events to GA4.
@@ -1977,14 +1994,14 @@ function showAnalytics() {
       </div>
     </div>
   `;
-  document.getElementById('topCrumb').textContent = 'Analytics';
 }
 
 function clearVisitLog() {
-  if (!confirm('Clear all visit history on this device?')) return;
-  localStorage.removeItem(KEYS.visitLog);
-  showAnalytics();
-  showToast('Visit log cleared');
+  if (!confirm('Clear all analytics data from Firebase? This cannot be undone.')) return;
+  if (!database) { showToast('Not connected to Firebase'); return; }
+  database.ref('analytics').remove()
+    .then(() => { showToast('Analytics data cleared'); showAnalytics(); })
+    .catch(() => showToast('Failed to clear analytics data'));
 }
 
 // ── VOCABULARY ADMIN ──
@@ -2111,8 +2128,7 @@ function deleteVocabWord(ci, wi) {
 function saveVocabChanges() {
   if (!adminData[currentVocabLevel]) adminData[currentVocabLevel] = {};
   adminData[currentVocabLevel]['_vocab'] = JSON.parse(JSON.stringify(currentVocabData));
-  saveData(); pendingChanges = false;
-  showToast('Vocabulary saved ✓');
+  if (saveData()) { pendingChanges = false; showToast('Vocabulary saved ✓'); }
   renderVocabEditor();
 }
 
@@ -2233,8 +2249,7 @@ function deleteQuizQuestion(qi) {
 function saveQuizChanges() {
   if (!adminData[currentQuizLevel]) adminData[currentQuizLevel] = {};
   adminData[currentQuizLevel]['_quiz'] = JSON.parse(JSON.stringify(currentQuizData));
-  saveData(); pendingChanges = false;
-  showToast('Quiz bank saved ✓');
+  if (saveData()) { pendingChanges = false; showToast('Quiz bank saved ✓'); }
   renderQuizEditor();
 }
 
@@ -2377,8 +2392,7 @@ function deleteRefRow(si, ri) {
 function saveReferenceChanges() {
   if (!adminData['_reference']) adminData['_reference'] = [];
   adminData['_reference'] = JSON.parse(JSON.stringify(currentRefData));
-  saveData(); pendingChanges = false;
-  showToast('Reference saved ✓');
+  if (saveData()) { pendingChanges = false; showToast('Reference saved ✓'); }
   renderReferenceEditor();
 }
 
@@ -2449,7 +2463,7 @@ function renderResourcesEditor() {
       <div class="section-title">📎 ${esc(pageLabel)} Editor</div>
       <div class="info-box" style="margin-bottom:12px">
         Add resource categories and items. <strong>Click a category name to rename it. Click ✏ Edit on any row to update its title, description, URL or file.</strong>
-        Max file size: 5 MB.
+        Max file size: 50 MB.
       </div>
       ${secHtml || '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;text-align:center">No categories yet — click + Add Category to start.</div>'}
       <button class="btn btn-outline" onclick="addResSection()" style="font-size:12px;margin-top:10px">+ Add Category</button>
@@ -2497,20 +2511,30 @@ function editResItem(si, ri) {
   if (!r) return;
   const el = document.getElementById(`ri-${si}-${ri}`);
   if (!el) return;
-  _resFileData = null; _resFileName = null;
-  const curFile = r.fileName ? `📎 ${esc(r.fileName)}` : 'No file attached';
+  _resFileData = r.file || null; _resFileName = r.fileName || null;
+  const curFile = r.fileName ? `📎 ${esc(r.fileName)}` : '';
   el.outerHTML = `<div class="content-row editing" id="ri-${si}-${ri}" style="flex-direction:column;align-items:stretch;gap:7px;padding:12px">
     <input class="content-input-z" id="ril-${si}-${ri}" value="${esc(r.label)}" placeholder="Resource title (required)">
     <input class="content-input-e" id="rid-${si}-${ri}" value="${esc(r.desc)}" placeholder="Description (optional)">
-    <input id="riu-${si}-${ri}" value="${esc(r.url||'')}" placeholder="URL — https://... or relative file path (optional)"
+    <input id="riu-${si}-${ri}" value="${esc(r.url||'')}" placeholder="Link URL — https://... (opens as external link)"
       style="width:100%;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;box-sizing:border-box">
-    <div style="display:flex;align-items:center;gap:10px;font-size:12px;flex-wrap:wrap">
+    <div style="font-size:11px;color:var(--text-dim);margin-top:2px">📥 File attachment — paste a direct URL <em>or</em> upload:</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="rif-${si}-${ri}" value="${esc(r.file && !r.file.startsWith('data:') ? r.file : '')}"
+        placeholder="Paste file URL (Google Drive, Dropbox, direct link…)"
+        style="flex:1;min-width:180px;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;box-sizing:border-box"
+        oninput="setResFileUrl(${si},${ri},this.value)">
+      <input id="rifn-${si}-${ri}" value="${esc(r.fileName||'')}" placeholder="Display filename"
+        style="width:140px;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;box-sizing:border-box"
+        oninput="_resFileName=this.value">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap">
       <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2)">
-        📎 Attach file
+        📎 Upload file
         <input type="file" style="display:none" onchange="handleResFileChange(this,${si},${ri})">
       </label>
-      <span id="res-file-label-${si}-${ri}" style="color:var(--text-dim)">${curFile}</span>
-      ${r.file ? `<button class="btn btn-outline" onclick="currentResData[${si}].items[${ri}].file=null;currentResData[${si}].items[${ri}].fileName='';renderResourcesEditor()" style="font-size:11px;padding:2px 8px;color:var(--red)">✕ Remove</button>` : ''}
+      <span id="res-file-label-${si}-${ri}" style="color:var(--gold);font-size:11px">${curFile}</span>
+      ${r.file ? `<button class="btn btn-outline" onclick="_resFileData=null;_resFileName=null;document.getElementById('rif-${si}-${ri}').value='';document.getElementById('rifn-${si}-${ri}').value='';document.getElementById('res-file-label-${si}-${ri}').textContent=''" style="font-size:11px;padding:2px 8px;color:var(--red)">✕ Clear</button>` : ''}
     </div>
     <div style="display:flex;gap:6px;margin-top:2px">
       <button class="btn btn-gold" onclick="saveResItem(${si},${ri})" style="font-size:12px;padding:5px 14px">✓ Save</button>
@@ -2520,23 +2544,37 @@ function editResItem(si, ri) {
   document.getElementById(`ril-${si}-${ri}`)?.focus();
 }
 
+function setResFileUrl(si, ri, url) {
+  _resFileData = url.trim() || null;
+  const nameInput = document.getElementById(`rifn-${si}-${ri}`);
+  if (!_resFileName && url.trim()) {
+    let guessed = url.trim().split('/').pop().split('?')[0] || 'file';
+    // URL path segments that are navigation actions, not filenames
+    const nonNames = ['view', 'edit', 'preview', 'share', 'download', 'open', 'pub', 'export'];
+    if (nonNames.includes(guessed.toLowerCase()) || !guessed) guessed = 'file';
+    _resFileName = guessed;
+    if (nameInput && !nameInput.value) nameInput.value = guessed;
+  }
+}
+
 function handleResFileChange(input, si, ri) {
   const file = input.files[0];
   if (!file) { _resFileData = null; _resFileName = null; return; }
-  if (file.size > 5 * 1024 * 1024) {
-    alert('File is larger than 5 MB. Please choose a smaller file or link to it via URL instead.');
-    input.value = '';
-    _resFileData = null; _resFileName = null;
-    return;
+  if (file.size > 50 * 1024 * 1024) {
+    alert('File is larger than 50 MB. Please choose a smaller file or link to it via URL instead.');
+    input.value = ''; _resFileData = null; _resFileName = null; return;
   }
-  _resFileName = file.name;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    _resFileData = ev.target.result;
-    const lbl = document.getElementById(`res-file-label-${si}-${ri}`);
-    if (lbl) lbl.textContent = '📎 ' + file.name;
-  };
-  reader.readAsDataURL(file);
+  const lbl = document.getElementById(`res-file-label-${si}-${ri}`);
+  if (lbl) lbl.textContent = '⏳ Uploading to Firebase…';
+  uploadToStorage(file, 'resources').then(url => {
+    _resFileData = url;
+    _resFileName = file.name;
+    if (lbl) lbl.textContent = '📎 ' + file.name + ' ✓';
+  }).catch(e => {
+    _resFileData = null; _resFileName = null;
+    if (lbl) lbl.textContent = 'Upload failed';
+    alert('Upload failed: ' + e.message);
+  });
 }
 
 function saveResItem(si, ri) {
@@ -2559,8 +2597,7 @@ function deleteResItem(si, ri) {
 
 function saveResourcesChanges() {
   adminData['_resources'] = JSON.parse(JSON.stringify(currentResData));
-  saveData(); pendingChanges = false;
-  showToast('Resources saved ✓');
+  if (saveData()) { pendingChanges = false; showToast('Resources saved ✓'); }
   renderResourcesEditor();
 }
 

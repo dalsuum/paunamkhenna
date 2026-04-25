@@ -15,9 +15,9 @@ function isTabEnabled(lvl, n, i) { return getFeatureFlags().levels?.[lvl]?.[n]?.
 
 function getAdminSection(key) {
   try {
-    const raw = localStorage.getItem(KEYS.adminData);
-    if (!raw) return null;
-    const data = JSON.parse(raw)?.[key];
+    const source = _liveAdminData || JSON.parse(localStorage.getItem(KEYS.adminData) || 'null');
+    if (!source) return null;
+    const data = source[key];
     return (data && data.length > 0) ? data : null;
   } catch(e) { return null; }
 }
@@ -50,7 +50,8 @@ function applyFeatureFlags() {
 }
 
 // ── GOOGLE ANALYTICS 4 — loaded dynamically if admin configured an ID ──
-(function() {
+function _initAnalytics() {
+  if (window.gtag) return; // already initialized
   const gaId = localStorage.getItem(KEYS.gaId);
   if (!gaId) return;
   const s = document.createElement('script');
@@ -61,7 +62,8 @@ function applyFeatureFlags() {
   window.gtag = function(){ dataLayer.push(arguments); };
   gtag('js', new Date());
   gtag('config', gaId);
-})();
+}
+_initAnalytics(); // try immediately for cached gaId; called again after Firebase sync
 
 // ── STATE ──
 const state = {
@@ -1070,7 +1072,7 @@ function renderResources(c) {
         ? `<a href="${esc(r.url)}" target="_blank" rel="noopener" class="res-link-btn">🔗 Open Link</a>`
         : '';
       const fileBtn = r.file
-        ? `<a href="${esc(r.file)}" download="${esc(r.fileName||'file')}" class="res-link-btn res-dl-btn">📥 ${esc(r.fileName||'Download')}</a>`
+        ? `<a href="${esc(r.file)}" target="_blank" rel="noopener" class="res-link-btn res-dl-btn">📄 Open file</a>`
         : '';
       return `<div class="res-item">
         <div class="res-item-info">
@@ -1987,7 +1989,7 @@ const levelData = {
 };
 
 // ── APPLY CUSTOM STRUCTURE FROM ADMIN ──
-(function applyCustomStructure() {
+function applyCustomStructure() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEYS.structure) || '{}');
     for (const lid of (saved._deletedLevels || [])) delete levelData[lid];
@@ -2027,7 +2029,7 @@ const levelData = {
       for (const num of (lvl._deletedLessons || [])) delete levelData[lid].lessons[+num];
     }
   } catch(e) {}
-})();
+}
 
 function renderLevelSelector() {
   const grid = document.getElementById('lsGrid');
@@ -2068,9 +2070,9 @@ function renderVocabulary(c) {
   const ld = levelData[currentLevel];
   const adminVocab = (function() {
     try {
-      const raw = localStorage.getItem(KEYS.adminData);
-      if (!raw) return null;
-      const d = JSON.parse(raw)?.[currentLevel]?.['_vocab'];
+      const source = _liveAdminData || JSON.parse(localStorage.getItem(KEYS.adminData) || 'null');
+      if (!source) return null;
+      const d = source[currentLevel]?.['_vocab'];
       return (d && d.length > 0) ? d : null;
     } catch(e) { return null; }
   })();
@@ -2346,6 +2348,16 @@ function renderLevelLesson(n, c, tabIdx) {
   applyAdminItemAudio(currentLevel, n, tabIdx);
 }
 
+// ── VIDEO PLAYER HELPER ──
+function renderVideoPlayer(url) {
+  if (!url) return '';
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return `<div style="position:relative;padding-top:56.25%"><iframe src="https://www.youtube.com/embed/${ytMatch[1]}" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>`;
+  const vmMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vmMatch) return `<div style="position:relative;padding-top:56.25%"><iframe src="https://player.vimeo.com/video/${vmMatch[1]}" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:0" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe></div>`;
+  return `<video controls style="width:100%;border-radius:8px;max-height:300px" src="${url}"></video>`;
+}
+
 // ── ADMIN MEDIA OVERLAY ──
 function renderAdminMedia(level, lesson, tabIdx) {
   try {
@@ -2355,7 +2367,7 @@ function renderAdminMedia(level, lesson, tabIdx) {
     if (!td) return '';
     let html = '';
     if (td.image) html += `<div class="card" style="padding:12px"><img src="${td.image}" alt="" style="width:100%;border-radius:8px;max-height:300px;object-fit:contain"></div>`;
-    if (td.video) html += `<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Tab Video</div><video controls style="width:100%;max-height:300px;border-radius:8px" src="${td.video}"></video></div>`;
+    if (td.video) html += `<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Tab Video</div>${renderVideoPlayer(td.video)}</div>`;
     if (td.audio) html += `<div class="card" style="padding:14px"><div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Tab Audio</div><audio controls style="width:100%;height:36px" src="${td.audio}"></audio></div>`;
     if (td.vocab?.length) html += `<div class="card"><div class="card-title">Additional Vocabulary</div>${td.vocab.map(v=>`<div class="vocab-row"><div style="display:flex;align-items:center;gap:8px"><span class="vocab-zo">${v.z}</span>${v.audio?`<button onclick="(new Audio('${v.audio}')).play()" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);cursor:pointer;padding:2px 6px;font-size:11px">&#9654;</button>`:''}</div><span class="vocab-en">${v.e}</span></div>`).join('')}</div>`;
     return html;
@@ -2400,12 +2412,9 @@ function applyAdminItemAudio(level, lesson, tabIdx) {
 
 // ── VISIT TRACKING ──
 function trackVisit(level, lesson) {
-  try {
-    const log = JSON.parse(localStorage.getItem(KEYS.visitLog) || '[]');
-    log.push({ ts: Date.now(), level, lesson });
-    if (log.length > 500) log.splice(0, log.length - 500);
-    localStorage.setItem(KEYS.visitLog, JSON.stringify(log));
-  } catch(e) {}
+  if (_appDb) {
+    _appDb.ref('analytics/visits').push({ ts: Date.now(), level, lesson }).catch(() => {});
+  }
   if (window.gtag) gtag('event', 'lesson_view', { level_name: level, lesson_num: lesson });
 }
 
@@ -2979,15 +2988,74 @@ function updateXP() {
   document.getElementById('progressPct').textContent = pct + '%';
 }
 
-// ── INIT: show level selector, hide main app ──
-function initializeApp() {
-  // Track session start
+// ── FIREBASE SYNC — fetch shared content from Realtime Database ──
+let _appDb = null;          // db reference for analytics writes
+let _liveAdminData = null;  // kept in sync via real-time listener
+let _fbListenerSet = false; // ensure listener is only attached once
+
+const _APP_FB_CONFIG = {
+  apiKey:            "AIzaSyD6TuwAQSa00u9AiU_SrOh81X6yUHcWPDY",
+  authDomain:        "zopau-paunam-khenna.firebaseapp.com",
+  databaseURL:       "https://zopau-paunam-khenna-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "zopau-paunam-khenna",
+  storageBucket:     "zopau-paunam-khenna.firebasestorage.app",
+  messagingSenderId: "241580430522",
+  appId:             "1:241580430522:web:56e67804d07c91dfc71e83"
+};
+
+async function _fbSync() {
   try {
-    const log = JSON.parse(localStorage.getItem(KEYS.visitLog) || '[]');
-    log.push({ ts: Date.now(), type: 'session' });
-    if (log.length > 500) log.splice(0, log.length - 500);
-    localStorage.setItem(KEYS.visitLog, JSON.stringify(log));
-  } catch(e) {}
+    let fbApp;
+    try { fbApp = firebase.app('appClient'); }
+    catch(e) { fbApp = firebase.initializeApp(_APP_FB_CONFIG, 'appClient'); }
+    const db = firebase.database(fbApp);
+    _appDb = db;
+
+    // Real-time listener on adminData — fires immediately with current value,
+    // then on every admin save, pushing updates to all connected clients.
+    const adminFirstLoad = _fbListenerSet ? Promise.resolve() : new Promise(resolve => {
+      _fbListenerSet = true;
+      db.ref('adminData').on('value', snap => {
+        const val = snap.val();
+        if (val) {
+          _liveAdminData = val;
+          try { localStorage.setItem(KEYS.adminData, JSON.stringify(val)); } catch(e) {}
+        }
+        resolve(); // resolve exactly once on first callback
+      }, () => resolve()); // also resolve on permission error so init doesn't hang
+    });
+
+    // One-time reads for structure/features/settings (admin changes here need a reload anyway)
+    const [, structSnap, featSnap, settSnap] = await Promise.race([
+      Promise.all([
+        adminFirstLoad,
+        db.ref('structure').once('value'),
+        db.ref('features').once('value'),
+        db.ref('settings').once('value'),
+      ]),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+    ]);
+    const structVal = structSnap.val(); if (structVal) try { localStorage.setItem(KEYS.structure,  JSON.stringify(structVal)); } catch(e) {}
+    const featVal   = featSnap.val();   if (featVal)   try { localStorage.setItem(KEYS.features,   JSON.stringify(featVal));   } catch(e) {}
+    const settings  = settSnap.val() || {};
+    if (settings.gaId)        localStorage.setItem(KEYS.gaId,        settings.gaId);
+    if (settings.firebaseUrl) localStorage.setItem(KEYS.firebaseUrl, settings.firebaseUrl);
+  } catch(e) {
+    console.warn('Firebase sync failed, using cached content:', e.message);
+  }
+}
+
+// ── INIT: show level selector, hide main app ──
+async function initializeApp() {
+  await _fbSync();         // Fetch shared content from Firebase
+  applyCustomStructure(); // Apply with fresh data (levelData starts from hardcoded defaults)
+  renderLevelSelector();  // Re-render with Firebase-sourced structure
+  _initAnalytics();       // Initialize GA if gaId just arrived from Firebase
+
+  // Track session start in Firebase
+  if (_appDb) {
+    _appDb.ref('analytics/sessions').push({ ts: Date.now() }).catch(() => {});
+  }
 
   state.totalLessons = 5;
   state.currentQuizBank = null;
@@ -3017,7 +3085,6 @@ function initializeApp() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-  // DOM already ready
   setTimeout(initializeApp, 0);
 }
 
